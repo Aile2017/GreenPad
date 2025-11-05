@@ -128,8 +128,9 @@ void SearchManager::on_init()
 	fillFromHistoric(IDC_REPLACEBOX, replHistoric_, countof(replHistoric_) );
 
 	::SetFocus( item(IDC_FINDBOX) );
-	SendMsgToItem( IDC_FINDBOX, EM_SETSEL, 0,
-		::GetWindowTextLength(item(IDC_FINDBOX)) );
+	SendMsgToItem( IDC_FINDBOX, EM_SETSEL, 0, ::GetWindowTextLength(item(IDC_FINDBOX)) );
+	
+	bChanged_ = true;
 }
 
 void SearchManager::on_destroy()
@@ -238,7 +239,7 @@ void SearchManager::UpdateData()
 	str = (TCHAR*)TS.alloc( sizeof(TCHAR) * (n+1) );
 	if( str )
 	{
-		GetItemText(IDC_FINDBOX, n+1, str );
+		GetItemText( IDC_FINDBOX, n+1, str );
 		findStr_ = str;
 		AddToComboBoxHistoric(IDC_FINDBOX, str);
 		TS.freelast( str, sizeof(TCHAR) * (n+1) );
@@ -248,7 +249,7 @@ void SearchManager::UpdateData()
 	str = (TCHAR*)TS.alloc( sizeof(TCHAR) * (n+1) );
 	if( str )
 	{
-		GetItemText(IDC_REPLACEBOX, n+1, str );
+		GetItemText( IDC_REPLACEBOX, n+1, str );
 		replStr_ = str;
 		AddToComboBoxHistoric(IDC_REPLACEBOX, str);
 		TS.freelast( str, sizeof(TCHAR) * (n+1) );
