@@ -58,7 +58,7 @@ DEF = /D NDEBUG /D UNICODE /D _UNICODE /D USEGLOBALIME
 
 COPT = /nologo $(DEF) /utf-8 /O1 /Os /Gy /Gw /GL /GR- /EHs-c- /Zc:wchar_t /Fd$(INTDIR) /W3 /MD /c
 LOPT = /nologo /manifest:no /LTCG /OPT:REF /OPT:ICF
-ROPT = $(DEF) /L 0x411 /I "rsrc"
+ROPT = $(DEF) /L 0x411 /c 65001 /I "rsrc"
 
 $(TARGET): PRE $(OBJS) $(RES)
 	link $(LOPT) /OUT:$(TARGET) $(OBJS) $(RES) $(LIBS)

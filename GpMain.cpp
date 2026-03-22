@@ -29,6 +29,47 @@ void BootNewProcess( const TCHAR* cmd = TEXT("") )
 	}
 }
 
+static LANGID ResolveMenuLangId(LANGID uiLang)
+{
+	WORD primary = PRIMARYLANGID(uiLang);
+	WORD sublang = SUBLANGID(uiLang);
+
+	switch (primary)
+	{
+	case LANG_JAPANESE:
+		return MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT);
+	case LANG_KOREAN:
+		return MAKELANGID(LANG_KOREAN, SUBLANG_DEFAULT);
+	case LANG_CHINESE:
+		if (sublang == SUBLANG_CHINESE_TRADITIONAL ||
+			sublang == SUBLANG_CHINESE_HONGKONG ||
+			sublang == SUBLANG_CHINESE_MACAU)
+			return MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL);
+		return MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
+	default:
+		return MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+	}
+}
+
+static HMENU LoadLocalizedMainMenu(HINSTANCE hInst)
+{
+	LANGID langId = ResolveMenuLangId(::GetUserDefaultUILanguage());
+	HRSRC hRsrc = ::FindResourceEx(hInst, RT_MENU, MAKEINTRESOURCE(IDR_MAIN), langId);
+	if (!hRsrc)
+		return ::LoadMenu(hInst, MAKEINTRESOURCE(IDR_MAIN));
+
+	HGLOBAL hMem = ::LoadResource(hInst, hRsrc);
+	if (!hMem)
+		return ::LoadMenu(hInst, MAKEINTRESOURCE(IDR_MAIN));
+
+	const void* pMenu = ::LockResource(hMem);
+	if (!pMenu)
+		return ::LoadMenu(hInst, MAKEINTRESOURCE(IDR_MAIN));
+
+	HMENU hMenu = ::LoadMenuIndirect(reinterpret_cast<const MENUTEMPLATE*>(pMenu));
+	return hMenu ? hMenu : ::LoadMenu(hInst, MAKEINTRESOURCE(IDR_MAIN));
+}
+
 static HMENU getDocTypeSubMenu(HWND hwnd) { return GetSubMenu( ::GetSubMenu(::GetMenu(hwnd),3),9 ); }
 
 //-------------------------------------------------------------------------
@@ -1770,11 +1811,17 @@ GreenPadWnd::GreenPadWnd()
 {
 	LOGGER( "GreenPadWnd::Construct begin" );
 
+	// Keep resource selection aligned with the current UI language.
+	// This stabilizes menu language lookup when multiple localized
+	// resources are embedded in the same executable.
+	LANGID uiLang = ::GetUserDefaultUILanguage();
+	::SetThreadLocale( MAKELCID(uiLang, SORT_DEFAULT) );
+
 	static WNDCLASS wc;
 	wc.style         = 0; //CS_HREDRAW|CS_VREDRAW;
 	wc.hIcon         = app().LoadIcon( IDR_MAIN );
 	wc.hCursor       = app().LoadOemCursor( IDC_ARROW );
-	wc.lpszMenuName  = MAKEINTRESOURCE( IDR_MAIN );
+	wc.lpszMenuName  = NULL;
 	wc.lpszClassName = className_;
 	WndImpl::Register( &wc );
 #ifndef NO_IME
@@ -1786,6 +1833,10 @@ GreenPadWnd::GreenPadWnd()
 void GreenPadWnd::on_create( CREATESTRUCT* cs )
 {
 	LOGGER("GreenPadWnd::on_create begin");
+
+	HMENU hMenu = LoadLocalizedMainMenu(app().hinst());
+	if (hMenu)
+		::SetMenu(hwnd(), hMenu);
 
 	accel_ = app().LoadAccel( IDR_MAIN );
 	edit_.Create( NULL, hwnd(), 0, 0, 100, 100 );
