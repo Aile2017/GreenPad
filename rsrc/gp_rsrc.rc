@@ -81,6 +81,8 @@ IDR_MAIN                ICON                    "exefile.ico"
 
 #include <jp_jp.rc>
 #include <zh_cn.rc>
+#include <zh_tw.rc>
+#include <ko_kr.rc>
 
 #endif //TARGET_VER (Japaneese resources off on NT3.1)
 
