@@ -11,8 +11,7 @@ using namespace editwing::view;
 static DWORD myGetDpiForWindow(HWND hwnd, HDC hdc)
 {
 #ifdef PM_DPIAWARE
-	if( app().getOSVer() >= 0x0A00 ) // Win10.00
-	{	// Supported wince Windows 10, version 1607 [desktop apps only]
+	{	// GetDpiForWindow supported since Windows 10 version 1607
 		typedef UINT (WINAPI *funk_t)(const HWND hwnd);
 		static funk_t funk = (funk_t)1;
 		if (funk == (funk_t)1) /* First time */
@@ -46,23 +45,23 @@ static DWORD myGetDpiForWindow(HWND hwnd, HDC hdc)
 }
 
 //=========================================================================
-//---- ip_draw.cpp   •`‰æE‘¼
+//---- ip_draw.cpp   æç”»ãƒ»ä»–
 //
-//		Ü‚è•Ô‚µ‚Æ‚©F‚Æ‚©‚ğl—¶‚µ‚Â‚ÂAÀÛ‚É•`‰æˆ—‚ğ
-//		s‚¤‚Ì‚ª‚±‚±B‚ ‚ÆƒƒbƒZ[ƒWƒfƒBƒXƒpƒbƒ`ƒƒ‚È‚Ç‚à
-//		‚Â‚¢‚Å‚É‚±‚Ìƒtƒ@ƒCƒ‹‚ÉB^^;
+//		æŠ˜ã‚Šè¿”ã—ã¨ã‹è‰²ã¨ã‹ã‚’è€ƒæ…®ã—ã¤ã¤ã€å®Ÿéš›ã«æç”»å‡¦ç†ã‚’
+//		è¡Œã†ã®ãŒã“ã“ã€‚ã‚ã¨ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒ‡ã‚£ã‚¹ãƒ‘ãƒƒãƒãƒ£ãªã©ã‚‚
+//		ã¤ã„ã§ã«ã“ã®ãƒ•ã‚¡ã‚¤ãƒ«ã«ã€‚^^;
 //
-//---- ip_text.cpp   •¶š—ñ‘€ìE‘¼
-//---- ip_parse.cpp  ƒL[ƒ[ƒh‰ğÍ
-//---- ip_wrap.cpp   Ü‚è•Ô‚µ
-//---- ip_scroll.cpp ƒXƒNƒ[ƒ‹
-//---- ip_cursor.cpp ƒJ[ƒ\ƒ‹ƒRƒ“ƒgƒ[ƒ‹
+//---- ip_text.cpp   æ–‡å­—åˆ—æ“ä½œãƒ»ä»–
+//---- ip_parse.cpp  ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰è§£æ
+//---- ip_wrap.cpp   æŠ˜ã‚Šè¿”ã—
+//---- ip_scroll.cpp ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«
+//---- ip_cursor.cpp ã‚«ãƒ¼ã‚½ãƒ«ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«
 //=========================================================================
 
 
 
 //-------------------------------------------------------------------------
-// View‚Ì‰Šú‰»E‰ğ•ú
+// Viewã®åˆæœŸåŒ–ãƒ»è§£æ”¾
 //-------------------------------------------------------------------------
 
 View::ClsName
@@ -76,25 +75,25 @@ View::View( doc::Document& d, HWND wnd )
 	static bool ClassRegistered = false;
 	if( !ClassRegistered )
 	{
-		// ‰‰ñ\’z‚Ì‚İAƒNƒ‰ƒX“o˜^‚ğs‚¤
+		// åˆå›æ§‹ç¯‰æ™‚ã®ã¿ã€ã‚¯ãƒ©ã‚¹ç™»éŒ²ã‚’è¡Œã†
 		ClassRegistered = true;
 		WNDCLASS wc      = {0};
 		wc.lpszClassName = className_;
 		wc.style         = CS_DBLCLKS;
 		wc.hCursor       = app().LoadOemCursor( IDC_IBEAM );
 
-		// GlobalIME‚ğ—LŒø‚É‚·‚é
+		// GlobalIMEã‚’æœ‰åŠ¹ã«ã™ã‚‹
 		ATOM a = WndImpl::Register( &wc );
 		ime().FilterWindows( &a, 1 );
 	}
 
-	// ‘‹ì¬
+	// çª“ä½œæˆ
 	Create( NULL, wnd );
 }
 
 View::~View()
 {
-	// ‘‹”jŠü
+	// çª“ç ´æ£„
 	Destroy();
 }
 
@@ -114,7 +113,7 @@ void View::on_destroy()
 
 
 //-------------------------------------------------------------------------
-// ƒTƒuƒIƒuƒWƒFƒNƒg‚É‚»‚Ì‚Ü‚Ü‰ñ‚·
+// ã‚µãƒ–ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«ãã®ã¾ã¾å›ã™
 //-------------------------------------------------------------------------
 
 void View::SetWrapType( short wt )
@@ -290,7 +289,7 @@ LRESULT View::on_message( UINT msg, WPARAM wp, LPARAM lp )
 
 
 //-------------------------------------------------------------------------
-// ü‚ğˆø‚­‚Æ‚©lŠp‚­“h‚é‚Æ‚©A‚»[‚¢‚¤Šî–{“I‚Èˆ—
+// ç·šã‚’å¼•ãã¨ã‹å››è§’ãå¡—ã‚‹ã¨ã‹ã€ããƒ¼ã„ã†åŸºæœ¬çš„ãªå‡¦ç†
 //-------------------------------------------------------------------------
 static CW_INTTYPE wtable[65536]; // static width table
 static const uchar ctlMap[32] = {
@@ -319,9 +318,6 @@ Painter::Painter( HWND hwnd, const VConfig& vc )
 	, height_    ( 16 )
 	, figWidth_  ( 8  )
 	, fontranges_( NULL )
-#ifdef WIN32S
-	, useOutA_   ( app().isWin32s() || (!app().isNT() && app().getOOSVer() <= MKVER(4,00,99)) )
-#endif
 {
 	Init( vc );
 }
@@ -333,11 +329,11 @@ void Painter::Init( const VConfig& vc )
 
 	font_ = init_font( vc );
 	brush_ = ::CreateSolidBrush( vc.color[BG] );
-	// §Œä•¶š‚ğ•`‰æ‚·‚é‚©”Û‚©H‚Ìƒtƒ‰ƒO‚ğ‹L‰¯,
+	// åˆ¶å¾¡æ–‡å­—ã‚’æç”»ã™ã‚‹ã‹å¦ã‹ï¼Ÿã®ãƒ•ãƒ©ã‚°ã‚’è¨˜æ†¶,
 	// Whether to draw control characters or not? flag is stored.
 	scDraw_ = vc.sc;
 
-	// •¶šF‚ğ‹L‰¯, Memorize text color
+	// æ–‡å­—è‰²ã‚’è¨˜æ†¶, Memorize text color
 	for( unsigned i=0; i<countof(colorTable_); ++i )
 		colorTable_[i] = vc.color[i];
 	colorTable_[3] = vc.color[CMT];
@@ -345,13 +341,13 @@ void Painter::Init( const VConfig& vc )
 	if( !font_ ) // Dummy font, no CDC/Tablewidth to setup.
 		return;
 
-	// DC‚ÉƒZƒbƒg, Setup the Compatible Device Context (CDC)
+	// DCã«ã‚»ãƒƒãƒˆ, Setup the Compatible Device Context (CDC)
 	::SelectObject( cdc_, font_  );
 	::SelectObject( cdc_, brush_ );
 	::SetBkMode(    cdc_, TRANSPARENT );
 	::SetMapMode(   cdc_, MM_TEXT );
 
-	// ‚‚³‚Ìî•ñ, Height Information
+	// é«˜ã•ã®æƒ…å ±, Height Information
 	TEXTMETRIC met;
 	::GetTextMetrics( cdc_, &met );
 	height_ = (CW_INTTYPE) met.tmHeight;
@@ -361,14 +357,10 @@ void Painter::Init( const VConfig& vc )
 	::SelectObject( cdc_, pen_ );
 
 
-	// •¶š•ƒe[ƒuƒ‹‰Šú‰»iASCII”ÍˆÍ‚Ì•¶šˆÈŠO‚Í’x‰„ˆ—j
+	// æ–‡å­—å¹…ãƒ†ãƒ¼ãƒ–ãƒ«åˆæœŸåŒ–ï¼ˆASCIIç¯„å›²ã®æ–‡å­—ä»¥å¤–ã¯é…å»¶å‡¦ç†ï¼‰
 	memFF( widthTable_, 65536*sizeof(*widthTable_) );
 	{ // Ascii only characters
-		#ifdef WIN32S
-			#define GETCHARWIDTH GetCharWidthA
-		#else
-			#define GETCHARWIDTH GetCharWidthW
-		#endif
+		#define GETCHARWIDTH GetCharWidthW
 
 		#ifndef SHORT_TABLEWIDTH
 		::GETCHARWIDTH( cdc_, 0, 127, widthTable_ );
@@ -381,12 +373,9 @@ void Painter::Init( const VConfig& vc )
 
 		#undef GETCHARWIDTH
 	}
-	const unicode zsp[2] = { 0x3000, 0x0000 }; // L'@'
-	W(zsp); // Initialize width of L'@'
+	const unicode zsp[2] = { 0x3000, 0x0000 }; // L'ã€€'
+	W(zsp); // Initialize width of L'ã€€'
 
-#ifdef WIN32S
-	if( !useOutA_ )
-#endif
 	{	// Initialize width of U+FFFF on unicode drawing,
 		// because GetCharWidthW(0xFFFF) crashes on Win95!
 		SIZE sz;
@@ -395,9 +384,9 @@ void Painter::Init( const VConfig& vc )
 		widthTable_[ uniundef ] = static_cast<CW_INTTYPE>(sz.cx);
 	}
 
-	// ‰ºˆÊƒTƒƒQ[ƒg‚Í•¶š•ƒ[ƒ (Lower surrogates have zero character width)
+	// ä¸‹ä½ã‚µãƒ­ã‚²ãƒ¼ãƒˆã¯æ–‡å­—å¹…ã‚¼ãƒ­ (Lower surrogates have zero character width)
 	mem00( widthTable_+0xDC00, (0xE000 - 0xDC00)*sizeof(*widthTable_) );
-	// ”š‚ÌÅ‘å•‚ğŒvZ, Calculate maximum width of numbers
+	// æ•°å­—ã®æœ€å¤§å¹…ã‚’è¨ˆç®—, Calculate maximum width of numbers
 	figWidth_ = 0;
 	for( unicode ch=L'0'; ch<=L'9'; ++ch )
 		if( figWidth_ < widthTable_[ch] )
@@ -484,7 +473,7 @@ void Painter::RestoreDC()
 
 void Painter::Destroy()
 {
-	// “K“–‚È•ÊƒIƒuƒWƒFƒNƒg‚ğ‚­‚Á‚Â‚¯‚Ä©•ª‚ğ‰ğ•ú‚·‚é
+	// é©å½“ãªåˆ¥ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ãã£ã¤ã‘ã¦è‡ªåˆ†ã‚’è§£æ”¾ã™ã‚‹
 	::SelectObject( cdc_, ::GetStockObject( OEM_FIXED_FONT ) );
 	::SelectObject( cdc_, ::GetStockObject( BLACK_PEN ) );
 	::SelectObject( cdc_, ::GetStockObject( WHITE_BRUSH ) );
@@ -507,55 +496,18 @@ void Painter::Destroy()
 
 inline void Painter::CharOut( unicode ch, int x, int y )
 {
-#ifdef WIN32S
-	// Actually for now we only use CharOut for ASCII characters
-	::TextOutA( dc_, x, y, (char*)&ch, 1 ); // Only ASCII!!!
-#else
-	// Windows 9x/NT
 	::TextOutW( dc_, x, y, &ch, 1 );
-#endif
 }
 
 inline void Painter::StringOut
 	( const unicode* str, int len, int x, int y )
 {
-#ifdef WIN32S
-	if( useOutA_ )
-	{
-		DWORD dwNum;
-		char psTXT1K[1024];
-		char *psText = psTXT1K;
-		if(!len) return;
-		// 1st try to convert to ANSI with a small stack buffer...
-		dwNum = ::WideCharToMultiByte( CP_ACP,0, str,len, psText, countof(psTXT1K), NULL,NULL );
-		if( !dwNum )
-		{
-			if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER)
-			{	// If the small buffer failed, then properly allocate buffer.
-				// This happens verty rarely because token length is typically
-				// a single word, hence less than 128chars.
-				dwNum = ::WideCharToMultiByte(CP_ACP,0, str,len, NULL,0, NULL,NULL);
-				if (dwNum)
-				{
-					psText = (char *)malloc( dwNum * sizeof(char) ); if( !psText ) return;
-					dwNum = ::WideCharToMultiByte(CP_ACP,0 ,str,len ,psText,dwNum ,NULL,NULL);
-				}
-			}
-		}
-		::TextOutA( dc_, x, y, psText, dwNum );
-		if (psText != psTXT1K)
-			free( psText );
-	}
-	else
-#endif // WIN32S
-	{
-		// If unicode text is not 2bytes-aligned then TextOutW can randomly fail
-		// To avoid this we must be careful in the Line class...
-		BOOL ret = ::TextOutW( dc_, x, y, str, len );
-		#ifdef _DEBUG
-			if(!ret) LOGGER("TextOutW failed!");
-		#endif
-	}
+	// If unicode text is not 2bytes-aligned then TextOutW can randomly fail
+	// To avoid this we must be careful in the Line class...
+	BOOL ret = ::TextOutW( dc_, x, y, str, len );
+	#ifdef _DEBUG
+		if(!ret) LOGGER("TextOutW failed!");
+	#endif
 }
 
 inline void Painter::StringOutA( const char* str, int len, int x, int y )
@@ -568,11 +520,7 @@ inline void Painter::StringOutA( const char* str, int len, int x, int y )
 // This is much faster than a char by char print
 void Painter::DrawCTLs( const unicode *str, int len, int x, int y )
 {
-	#ifdef WIN32S
-	char buf[256];
-	#else
 	unicode buf[256];
-	#endif
 	do
 	{
 		int mx = Min( len, (int)countof(buf) );
@@ -585,11 +533,7 @@ void Painter::DrawCTLs( const unicode *str, int len, int x, int y )
 			else                               buf[j] = '?';
 			x2 += Wc( buf[j] );
 		}
-		#ifdef WIN32S
-		::TextOutA( dc_, x, y, buf, mx );
-		#else
 		::TextOutW( dc_, x, y, buf, mx );
-		#endif
 		len -= countof(buf);
 		str += countof(buf);
 		x = x2;
@@ -629,7 +573,7 @@ inline void Painter::ClearClip()
 
 void Painter::DrawHSP( int x, int y, int times )
 {
-	// ”¼ŠpƒXƒy[ƒX‹L†(ƒzƒ`ƒLƒX‚ÌcŒ^)‚ğ•`‚­
+	// åŠè§’ã‚¹ãƒšãƒ¼ã‚¹è¨˜å·(ãƒ›ãƒã‚­ã‚¹ã®èŠ¯å‹)ã‚’æã
 	// Draw a half-width space symbol (staple core type)
 	const int w=Wc(L' '), h=H();
 	const int rh = Max(h/4, 4);
@@ -654,9 +598,9 @@ void Painter::DrawHSP( int x, int y, int times )
 
 void Painter::DrawZSP( int x, int y, int times )
 {
-	// ‘SŠpƒXƒy[ƒX‹L†(•½‚½‚¢lŠp)‚ğ•`‚­
+	// å…¨è§’ã‚¹ãƒšãƒ¼ã‚¹è¨˜å·(å¹³ãŸã„å››è§’)ã‚’æã
 	// Draw a full-width space symbol (flat rectangle)
-	const int w=Wc(0x3000/*L'@'*/), h=H();
+	const int w=Wc(0x3000/*L'ã€€'*/), h=H();
 	const int rh = Max(h/4, 4);
 	const int pw = Max(h/16, 1);
 	RECT rc = { x+pw, y+h-rh, x+w-pw, y+h-pw };
@@ -672,22 +616,22 @@ void Painter::DrawZSP( int x, int y, int times )
 
 
 //-------------------------------------------------------------------------
-// Ä•`‰æ‚µ‚½‚¢”ÍˆÍ‚ğ Invalidate ‚·‚éB
+// å†æç”»ã—ãŸã„ç¯„å›²ã‚’ Invalidate ã™ã‚‹ã€‚
 //-------------------------------------------------------------------------
 
 void ViewImpl::ReDraw( ReDrawType r, const DPos* s )
 {
-	// ‚Ü‚¸ƒXƒNƒ[ƒ‹ƒo[‚ğXV, First update the scroll-bars
+	// ã¾ãšã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ãƒãƒ¼ã‚’æ›´æ–°, First update the scroll-bars
 	UpdateScrollBar();
 
 	switch( r )
 	{
-	case ALL: // ‘S‰æ–Ê, The whole client area
+	case ALL: // å…¨ç”»é¢, The whole client area
 
 		::InvalidateRect( hwnd_, NULL, FALSE );
 		break;
 
-	case LNAREA: // s”Ô†•\¦ˆæ‚Ì‚İ, Line number display area only
+	case LNAREA: // è¡Œç•ªå·è¡¨ç¤ºåŸŸã®ã¿, Line number display area only
 
 		if( lna() > 0 )
 		{
@@ -696,8 +640,8 @@ void ViewImpl::ReDraw( ReDrawType r, const DPos* s )
 		}
 		break;
 
-	case LINE: // w’è‚µ‚½s‚ÌŒã”¼, Second half of the specified line
-	case AFTER: // w’è‚µ‚½sˆÈ‰º‘S•”, Everything below the specified line
+	case LINE: // æŒ‡å®šã—ãŸè¡Œã®å¾ŒåŠ, Second half of the specified line
+	case AFTER: // æŒ‡å®šã—ãŸè¡Œä»¥ä¸‹å…¨éƒ¨, Everything below the specified line
 
 		{
 			DPos st = ( s->ad==0 ? *s : doc_.leftOf(*s,true) );
@@ -709,12 +653,12 @@ void ViewImpl::ReDraw( ReDrawType r, const DPos* s )
 
 
 //-------------------------------------------------------------------------
-// WM_PAINTƒnƒ“ƒhƒ‰
+// WM_PAINTãƒãƒ³ãƒ‰ãƒ©
 //-------------------------------------------------------------------------
 
 void A_HOT ViewImpl::on_paint( const PAINTSTRUCT& ps )
 {
-	// •`‰æ”ÍˆÍ‚Ìî•ñ‚ğÚ‚µ‚­æ“¾, Obtain detailed information about the drawing area
+	// æç”»ç¯„å›²ã®æƒ…å ±ã‚’è©³ã—ãå–å¾—, Obtain detailed information about the drawing area
 	Painter& p = cvs_.font_;
 	p.SetupDC( ps.hdc );
 	VDrawInfo v( ps.rcPaint );
@@ -729,17 +673,17 @@ void A_HOT ViewImpl::on_paint( const PAINTSTRUCT& ps )
 
 	if( ps.rcPaint.right <= lna()  )
 	{
-		// case A: s”Ô†•\¦ˆæ‚Ì‚İXV, Only the line number display area is updated.
+		// case A: è¡Œç•ªå·è¡¨ç¤ºåŸŸã®ã¿æ›´æ–°, Only the line number display area is updated.
 		DrawLNA( v, p );
 	}
 	else if( lna() <= ps.rcPaint.left )
 	{
-		// case B: ƒeƒLƒXƒg•\¦ˆæ‚Ì‚İXV, Update text display area only
+		// case B: ãƒ†ã‚­ã‚¹ãƒˆè¡¨ç¤ºåŸŸã®ã¿æ›´æ–°, Update text display area only
 		DrawTXT( v, p );
 	}
 	else
 	{
-		// case C: —¼•ûXV, Both updates
+		// case C: ä¸¡æ–¹æ›´æ–°, Both updates
 		DrawLNA( v, p );
 		p.SetClip( cvs_.zone() );
 		DrawTXT( v, p );
@@ -751,24 +695,24 @@ void A_HOT ViewImpl::on_paint( const PAINTSTRUCT& ps )
 
 
 //-------------------------------------------------------------------------
-// s”Ô†ƒ][ƒ“•`‰æ, Line Number Zone Drawing
+// è¡Œç•ªå·ã‚¾ãƒ¼ãƒ³æç”», Line Number Zone Drawing
 //-------------------------------------------------------------------------
 
 void ViewImpl::DrawLNA( const VDrawInfo& v, Painter& p )
 {
-	// ”w–ÊÁ‹, backward erase
+	// èƒŒé¢æ¶ˆå», backward erase
 	RECT rc = { v.rc.left, v.rc.top, lna(), v.rc.bottom };
 	TCHAR digitsbuf[ULONG_DIGITS+1];
 	p.Fill( rc );
 
 	if( v.rc.top < v.YMAX )
 	{
-		// ‹«ŠEü•\¦, Boundary line indication
+		// å¢ƒç•Œç·šè¡¨ç¤º, Boundary line indication
 		int line = lna() - p.F()/2;
 		p.DrawLine( line, v.rc.top, line, v.YMAX );
 		p.SetColor( LN );
 
-		// s”Ô†•\¦, line number indication
+		// è¡Œç•ªå·è¡¨ç¤º, line number indication
 		ulong  n = v.TLMIN+1;
 		int    y = v.YMIN;
 		int edge = lna() - p.F();
@@ -792,7 +736,7 @@ void ViewImpl::DrawLNA( const VDrawInfo& v, Painter& p )
 
 
 //-------------------------------------------------------------------------
-// ƒeƒLƒXƒg•`‰æ, text rendering
+// ãƒ†ã‚­ã‚¹ãƒˆæç”», text rendering
 //-------------------------------------------------------------------------
 
 inline void ViewImpl::Inv( int y, int xb, int xe, Painter& p )
@@ -807,25 +751,25 @@ inline void ViewImpl::Inv( int y, int xb, int xe, Painter& p )
 void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 {
 	if( doc_.isBusy() ) return;
-	// ’è”‚P, Constant 1
+	// å®šæ•°ï¼‘, Constant 1
 //	const int   TAB = p.T();
 	const int     H = p.H();
 	const ulong TLM = doc_.tln()-1;
 
-	// ì‹Æ—p•Ï”‚P, Working variable 1
+	// ä½œæ¥­ç”¨å¤‰æ•°ï¼‘, Working variable 1
 	RECT  a = { 0, v.YMIN, 0, v.YMIN+p.H() };
 	int clr = -1;
 	register int   x=0, x2;
 	register ulong i=0, i2;
-	// ˜_—s’PˆÊ‚ÌLoop. Loop per logical line.
+	// è«–ç†è¡Œå˜ä½ã®Loop. Loop per logical line.
 	for( ulong tl=v.TLMIN; a.top<v.YMAX; ++tl )
 	{
-		// ’è”‚Q, Constant 2
+		// å®šæ•°ï¼’, Constant 2
 		const unicode* str = doc_.tl(tl);
 		const uchar*   flg = doc_.pl(tl);
 		const int rYMAX = Min( v.YMAX, (int)(a.top+rln(tl)*H) );
 
-		// ì‹Æ—p•Ï”‚Q, Working variable 2
+		// ä½œæ¥­ç”¨å¤‰æ•°ï¼’, Working variable 2
 		ulong stt=0, end, t, n;
 		ulong rl=0;
 		if( a.top <= -H )
@@ -835,18 +779,18 @@ void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 			a.bottom += H * rl;
 			stt = end = rlend(tl,rl);
 		}
-		// •\¦s’PˆÊ‚ÌLoop
+		// è¡¨ç¤ºè¡Œå˜ä½ã®Loop
 		for( ; a.top<rYMAX; ++rl,a.top+=H,a.bottom+=H,stt=end )
 		{
-			// ì‹Æ—p•Ï”‚R, Working Variable 3
+			// ä½œæ¥­ç”¨å¤‰æ•°ï¼“, Working Variable 3
 			end = rlend(tl,rl);
 			if( a.bottom<=v.YMIN )
 				continue;
 
-			// ƒeƒLƒXƒgƒf[ƒ^•`‰æ, text data rendering
+			// ãƒ†ã‚­ã‚¹ãƒˆãƒ‡ãƒ¼ã‚¿æç”», text data rendering
 			for( x2=x=0, i2=i=stt; x<=v.XMAX && i<end; x=x2,i=i2 )
 			{
-				// n := Ÿ‚ÌToken‚Ì“ª, n := next Token head
+				// n := æ¬¡ã®Tokenã®é ­, n := next Token head
 				t = (flg[i]>>5);
 				n = i + t;
 				if( n >= end )
@@ -855,32 +799,32 @@ void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 					while( n<end && (flg[n]>>5)==0 )
 						++n;
 
-				// x2, i2 := ‚±‚ÌToken‚Ì‰E’[, x2, i2 := right end of this Token
+				// x2, i2 := ã“ã®Tokenã®å³ç«¯, x2, i2 := right end of this Token
 				i2 ++;
 				x2 = (str[i]==L'\t' ? p.nextTab(x2) : x2+p.W(&str[i]));
 			//	if( x2 <= v.XMIN )
 			//		x=x2, i=i2;
 				while( i2<n && x2<=v.XMAX )
 					x2 += p.W( &str[i2++] );
-				// Ä•`‰æ‚·‚×‚«”ÍˆÍ‚Æd‚È‚Á‚Ä‚¢‚È‚¢, Not overlapping with the area that should be redrawn.
+				// å†æç”»ã™ã¹ãç¯„å›²ã¨é‡ãªã£ã¦ã„ãªã„, Not overlapping with the area that should be redrawn.
 				if( x2<=v.XMIN )
 					continue;
 
-				// x, i := ‚±‚Ìƒg[ƒNƒ“‚Ì¶’[, x, i := left end of this token
+				// x, i := ã“ã®ãƒˆãƒ¼ã‚¯ãƒ³ã®å·¦ç«¯, x, i := left end of this token
 				if( x<v.XMIN )
 				{
-					// tab‚Ì•ª‚ª–ß‚è‚·‚¬H
+					// tabã®åˆ†ãŒæˆ»ã‚Šã™ãï¼Ÿ
 					x = x2, i = i2;
 					while( v.XMIN<x )
 						x -= p.W( &str[--i] );
 				}
 
-				// ”wŒi“h‚è‚Â‚Ô‚µ, background filling
+				// èƒŒæ™¯å¡—ã‚Šã¤ã¶ã—, background filling
 				a.left  = x + v.XBASE;
 				a.right = x2 + v.XBASE;
 				p.Fill( a );
 				// GdiFlush();
-				// •`‰æ, Drawing
+				// æç”», Drawing
 				switch( str[i] )
 				{
 				case L'\t': // 9
@@ -895,7 +839,7 @@ void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 					if( p.sc(scHSP) )
 						p.DrawHSP( x+v.XBASE, a.top, i2-i );
 					break;
-				case 0x3000://L'@':
+				case 0x3000://L'ã€€':
 					if( p.sc(scZSP) )
 						p.DrawZSP( x+v.XBASE, a.top, i2-i );
 					break;
@@ -917,12 +861,12 @@ void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 				}
 			}
 
-			// ‘I‘ğ”ÍˆÍ‚¾‚Á‚½‚ç”½“], If it is a selection, invert it.
+			// é¸æŠç¯„å›²ã ã£ãŸã‚‰åè»¢, If it is a selection, invert it.
 			if( v.SYB<=a.top && a.top<=v.SYE )
 				Inv( a.top, a.top==v.SYB?v.SXB:(v.XBASE),
 				            a.top==v.SYE?v.SXE:(v.XBASE+x), p );
 
-			// s––‚æ‚èŒã‚ë‚Ì—]”’‚ğ”wŒiF“h, Background color fill in the margin after the end of the line
+			// è¡Œæœ«ã‚ˆã‚Šå¾Œã‚ã®ä½™ç™½ã‚’èƒŒæ™¯è‰²å¡—, Background color fill in the margin after the end of the line
 			if( x<v.XMAX )
 			{
 				a.left = v.XBASE + Max( v.XMIN, x );
@@ -931,7 +875,7 @@ void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 			}
 		}
 
-		// s––‹L†•`‰æ”½“], line end symbol rendering inversion
+		// è¡Œæœ«è¨˜å·æç”»åè»¢, line end symbol rendering inversion
 		SpecialChars sc = (tl==TLM ? scEOF : scEOL);
 		if( i==doc_.len(tl) && -32768<x+v.XBASE )
 		{
@@ -947,7 +891,7 @@ void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 		}
 	}
 
-	// EOFŒã—]”’‚ğ”wŒiF“h, EOF after margin background color fill
+	// EOFå¾Œä½™ç™½ã‚’èƒŒæ™¯è‰²å¡—, EOF after margin background color fill
 	if( a.top < v.rc.bottom )
 	{
 		a.left   = v.rc.left;

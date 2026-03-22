@@ -164,7 +164,7 @@ bool IniFile::PutStrinSect( const TCHAR* key, const TCHAR *sect, const TCHAR* va
 {
 	if( val && val[0]==TEXT('"') && val[my_lstrlen(val)-1]==TEXT('"') )
 	{
-		// —¼’[‚É " ‚ª‚ ‚é‚ÆŸè‚Éí‚ç‚ê‚é‚Ì‚Å‘Îˆ
+		// ä¸¡ç«¯ã« " ãŒã‚ã‚‹ã¨å‹æ‰‹ã«å‰Šã‚‰ã‚Œã‚‹ã®ã§å¯¾å‡¦
 		String nval;
 		nval += TEXT('"');
 		nval += val;

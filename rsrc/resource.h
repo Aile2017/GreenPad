@@ -31,10 +31,13 @@
 #define IDS_INSERTUNI                   18
 #define IDS_INSSERT                     19
 #define IDS_ZOOMPC                      20
+#define IDS_UNTITLED                    21
+#define IDS_CHARSET_CAPTION             22
+#define IDS_CRLF_CAPTION                23
 
 #define IDR_MAIN                        103
 //#define IDD_OPENFILEHOOK                105
-#define IDD_OPENSAVEFILEHOOK            106
+//#define IDD_OPENSAVEFILEHOOK            106
 #define IDD_REOPENDLG                   107
 #define IDD_FINDREPLACE                 108
 #define IDD_JUMP                        109

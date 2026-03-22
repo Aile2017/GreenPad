@@ -9,7 +9,6 @@ using namespace ki;
 // 1) it does not removes the button up from message queue.
 // 2) Any button can be used to do the drag and a drag can occur
 //    in the non-client area.
-// 3) Should run on All windows versions, even Win32s beta/Chicago.
 bool coolDragDetect( HWND hwnd, LPARAM pt, WORD btup, WORD removebutton )
 {
 	int cxd = GetSystemMetrics(SM_CXDRAG);
@@ -62,8 +61,7 @@ Clipboard::Text Clipboard::GetUnicodeText() const
 	// Always try to get the best available clipboard data.
 	if( IsClipboardFormatAvailable(CF_UNICODETEXT) )
 	{
-		// NT‚È‚ç’¼ÚUnicode‚Å‚Æ‚ê‚é
-		// Also on Win9x we can use CF_UNICODETEXT with UNICOWS
+		// NTãªã‚‰ç›´æ¥Unicodeã§ã¨ã‚Œã‚‹
 		HANDLE h = GetData( CF_UNICODETEXT );
 		if( h != NULL )
 		{
@@ -77,7 +75,7 @@ Clipboard::Text Clipboard::GetUnicodeText() const
 	else if( IsClipboardFormatAvailable(CF_TEXT) )
 	{
 		// Fallback to ANSI clipboard data.
-		// 9x‚È‚ç•ÏŠ·‚ª•K—v
+		// 9xãªã‚‰å¤‰æ›ãŒå¿…è¦
 		HANDLE h = GetData( CF_TEXT );
 		if( h != NULL )
 		{
@@ -112,8 +110,7 @@ Clipboard::Text Clipboard::GetUnicodeText() const
 				UINT *lenmap = (UINT *)TS.alloc( sizeof(UINT) * nf );
 				if (!lenmap) return Text( NULL, Text::MALLOC );
 				for( uint i=0; i < nf; i++ )
-				{	// On Windows NT3.1 DragQueryFile() does not return
-					// The required buffer length hence the Min()...
+					{
 					lenmap[i] = Min((UINT)MAX_PATH, myDragQueryFile(h, i, NULL, 0));
 					totstrlen += lenmap[i];
 				}
@@ -216,7 +213,7 @@ HRESULT STDMETHODCALLTYPE IDataObjectTxt::GetDataHere(FORMATETC *fmt, STGMEDIUM 
 		{
 			DROPFILES *df = (DROPFILES *)data;
 			df->pFiles = sizeof(DROPFILES); // File path starts just after the end of struct.
-			df->fWide = app().isNT(); // Use unicode on NT!
+			df->fWide = TRUE;
 			df->fNC = 1;
 			df->pt.x = df->pt.y = 0;
 			// The string starts just at the end of the structure

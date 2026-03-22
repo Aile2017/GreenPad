@@ -42,7 +42,6 @@ Path& Path::BeSpecialPath( int nPATH, bool bs )
 	default:
 		*buf = TEXT('\0');
 // This part seems to never be used for now...
-//#if (defined(UNICODE) && defined(UNICOWS)) || !defined(TARGET_VER) || (defined(TARGET_VER) && TARGET_VER>350)
 #if 0
 		if(app().isNewShell())
 		{
@@ -51,7 +50,7 @@ Path& Path::BeSpecialPath( int nPATH, bool bs )
 			LPITEMIDLIST il;
 			if( NOERROR==MySHGetSpecialFolderLocation( NULL, nPATH, &il ) )
 			{
-				::SHGetPathFromIDList( il, buf ); // Dynamic in UNICOWS mode
+				::SHGetPathFromIDList( il, buf );
 				MyCoTaskMemFree( il );
 			}
 		}
@@ -70,7 +69,7 @@ Path& Path::BeSpecialPath( int nPATH, bool bs )
 
 Path& Path::BeBackSlash( bool add )
 {
-	// �Ō�̈ꕶ���𓾂�
+	// 最後の一文字を得る
 	const TCHAR* last=c_str();
 	for( const TCHAR *p=last; *p!=TEXT('\0'); p=next(p) )
 		last = p;
@@ -115,23 +114,15 @@ Path& Path::BeDriveOnly()
 
 Path& Path::BeShortStyle()
 {
-#if defined(UNICOWS) || !defined(TARGET_VER) || (defined(TARGET_VER) && TARGET_VER>=350)
-// In UNICOWS mode the A/W functions are imported dynamically anyway.
-// GetShortPathName needs at least 95/NT4 but there is a stub in NT3.5
-	if( app().isNewShell() ) // 95/NT4+
-	{
-		TCHAR* buf = ReallocMem( len()+1 );
-		if( !buf ) return *this;
-		::GetShortPathName( buf, buf, len()+1 );
-		UnlockMem();
-	}
-#endif
+	TCHAR* buf = ReallocMem( len()+1 );
+	if( !buf ) return *this;
+	::GetShortPathName( buf, buf, len()+1 );
+	UnlockMem();
 	return *this;
 }
 
 Path& Path::BeShortLongStyle()
 {
-#ifndef WIN32S
 	WIN32_FIND_DATA fd;
 	HANDLE h = ::FindFirstFile( c_str(), &fd );
 	if( h == INVALID_HANDLE_VALUE)
@@ -166,7 +157,6 @@ Path& Path::BeShortLongStyle()
 		*(nam-1) = t;
 
 	UnlockMem();
-#endif // not WIN32S
 	return *this;
 }
 
@@ -245,9 +235,7 @@ Path Path::body_all() const
 DWORD Path::GetExeName( TCHAR buf[MAX_PATH] )
 {
 	buf[0] = TEXT('\0');
-	// In Win32s 1.2 GetModuleFileName fails with NULL hinstance
 	DWORD len = ::GetModuleFileName( ::GetModuleHandle(NULL), buf, MAX_PATH );
-	// In Win32s 1.1 the return value includes the terminating NULL!!!
 	len -=  len > 0 && buf[len-1] == TEXT('\0');
 	return len;
 }

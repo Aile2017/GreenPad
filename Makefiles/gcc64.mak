@@ -3,8 +3,8 @@ NAME       = gcc64
 OBJ_SUFFIX = o
 
 ###############################################################################
-TARGET = release/GPad64.exe
-INTDIR = obj\$(NAME)
+TARGET = release/GreenPad.exe
+INTDIR = obj
 
 all: PRE $(TARGET)
 
@@ -34,12 +34,17 @@ OBJS = \
  $(INTDIR)/Search.$(OBJ_SUFFIX)       \
  $(INTDIR)/RSearch.$(OBJ_SUFFIX)      \
  $(INTDIR)/ConfigManager.$(OBJ_SUFFIX) \
+ $(INTDIR)/PcreSearch.$(OBJ_SUFFIX)   \
  $(INTDIR)/app.$(OBJ_SUFFIX)
 
-# -DSUPERTINY  -fpermissive -flto -fuse-linker-plugin
-#,--disable-reloc-section,--disable-runtime-pseudo-reloc
 LIBS = \
- -lkernel32 -nostdlib -Wl,-eentryp -flto -fuse-linker-plugin -flto-partition=none \
+-lkernel32 \
+-nostdlib \
+-lmsvcrt \
+-Wl,-eentryp \
+-flto \
+-fuse-linker-plugin \
+-flto-partition=none \
  -luser32   \
  -lgdi32    \
  -lshell32  \
@@ -53,36 +58,41 @@ LIBS = \
  -Wl,--disable-reloc-section,--disable-runtime-pseudo-reloc \
  -Wl,--tsaware,-s -s\
 
-# -Wl,--print-map \
-# -static-libstdc++ \
-#  -static-libgcc
 PRE:
-	-@if not exist release   mkdir release
-	-@if not exist obj       mkdir obj
-	-@if not exist $(INTDIR) mkdir $(INTDIR)
+	-@if [ ! -d release   ]; then   mkdir release; fi;
+	-@if [ ! -d obj       ]; then   mkdir obj; fi;
+	-@if [ ! -d $(INTDIR) ]; then   mkdir $(INTDIR); fi;
 ###############################################################################
+
+PCRE2_INC = -Ithird_party/pcre2/include
 
 RES = $(INTDIR)/gp_rsrc.o
 
 VPATH    = editwing:kilib
-# -DSUPERTINY  -flto -fuse-linker-plugin
-CXXFLAGS = -nostdlib -m64 -c -Os -mno-stack-arg-probe -momit-leaf-frame-pointer \
+CXXFLAGS = \
+ -nostdlib -m64 -c -Os -mno-stack-arg-probe -momit-leaf-frame-pointer \
  -flto -fuse-linker-plugin -flto-partition=none -fno-delete-null-pointer-checks \
  -fomit-frame-pointer -fno-stack-check -fno-stack-protector -fno-threadsafe-statics -fno-use-cxa-get-exception-ptr \
  -fno-access-control -fno-enforce-eh-specs -fno-nonansi-builtins -fnothrow-opt -fno-optional-diags -fno-use-cxa-atexit \
  -fno-exceptions -fno-dwarf2-cfi-asm -fno-asynchronous-unwind-tables -fno-extern-tls-init -fno-rtti -fno-ident \
  -Wno-narrowing -Wno-int-to-pointer-cast -Wstack-usage=4096 \
- -idirafter kilib -D_UNICODE -DUNICODE -UDEBUG -U_DEBUG -DUSEGLOBALIME -DSUPERTINY -DUSE_ORIGINAL_MEMMAN
-LOPT     = -m64 -mwindows
+ -idirafter kilib -D_UNICODE -DUNICODE -UDEBUG -U_DEBUG -DUSEGLOBALIME -DUSE_ORIGINAL_MEMMAN \
+ $(PCRE2_INC)
 
-ifneq ($(NOCHARSET),1)
-CXXFLAGS += -finput-charset=cp932 -fexec-charset=cp932
-endif
+LOPT = -m64 -mwindows
 
 $(TARGET) : $(OBJS) $(RES)
 	g++ $(LOPT) -o$(TARGET) $(OBJS) $(RES) $(LIBS) -fno-ident
 #	strip -s $(TARGET)
 $(INTDIR)/%.o: rsrc/%.rc
-	windres -Fpe-x86-64 -l=0x411 -I rsrc $< -O coff -o$@
+	windres --codepage 65001 -Fpe-x86-64 -l=0x411 -I rsrc $< -O coff -o$@
 $(INTDIR)/%.o: %.cpp
-	g++ $(CXXFLAGS) -o$@ $<
+	@echo CC $@ $<
+	@g++ $(CXXFLAGS) -o$@ $<
+
+clean : 
+	-rm $(RES)
+	-rm $(OBJS)
+	-rm $(TARGET)
+	-rmdir $(INTDIR)
+	-rmdir obj

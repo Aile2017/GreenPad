@@ -63,46 +63,15 @@ wchar_t * WINAPI my_CharLowerWW(wchar_t *s)
 }
 wchar_t my_CharUpperSingleW(wchar_t c)
 {
-#if defined(UNICOWS) || !defined(_UNICODE)
-	if( app().isNT() )
-		return (wchar_t)(LONG_PTR)::CharUpperW( (wchar_t *)(LONG_PTR)c );
-	else
-		return SingleCharUpperW_nonNT(c);
-#else
 	return (wchar_t)(LONG_PTR)::CharUpperW( (wchar_t *)(LONG_PTR)c );
-#endif
 }
 wchar_t my_CharLowerSingleW(wchar_t c)
 {
-#if defined(UNICOWS) || !defined(_UNICODE)
-	if( app().isNT() )
-		return (wchar_t)(LONG_PTR)::CharLowerW( (wchar_t *)(LONG_PTR)c );
-	else
-		return SingleCharLowerW_nonNT(c);
-#else
 	return (wchar_t)(LONG_PTR)::CharLowerW( (wchar_t *)(LONG_PTR)c );
-#endif
-}
-static BOOL my_IsCharLowerW_nonNT(wchar_t c)
-{
-	char buf[4];
-	BOOL defcharused=FALSE;
-	if( ::WideCharToMultiByte( CP_ACP, 0, &c, 1, buf, 4, NULL, &defcharused ) != 1 || defcharused )
-		return FALSE; // Cannot convert to a single char!
-
-	return ::IsCharLowerA( buf[0] );
 }
 BOOL my_IsCharLowerW(wchar_t c)
 {
-#if defined(UNICOWS) || !defined(_UNICODE)
-	if( app().isNT() )
-		return ::IsCharLowerW( c );
-	else
-		return my_IsCharLowerW_nonNT(c);
-#else
 	return ::IsCharLowerW( c );
-#endif
-
 }
 
 const TCHAR *Int2lStr(TCHAR str[INT_DIGITS+1], int n)
@@ -182,87 +151,6 @@ ulong Octal2Ulong( const TCHAR *s )
 	return u;
 }
 
-#ifdef OLDWIN32S
-#undef WideCharToMultiByte
-#undef MultiByteToWideChar
-int WINAPI SimpleWC2MB_1st(UINT cp, DWORD flg, LPCWSTR s, int sl, LPSTR d, int dl, LPCSTR defc, LPBOOL useddef);
-int (WINAPI *SimpleWC2MB)(UINT cp, DWORD flg, LPCWSTR s, int sl, LPSTR d, int dl, LPCSTR defc, LPBOOL useddef) = SimpleWC2MB_1st;
-int WINAPI SimpleWC2MB_fb(UINT cp, DWORD flg, LPCWSTR s, int sl, LPSTR d, int dl, LPCSTR defc, LPBOOL useddef);
-int WINAPI SimpleWC2MB_1st(UINT cp, DWORD flg, LPCWSTR s, int sl, LPSTR d, int dl, LPCSTR defc, LPBOOL useddef)
-{
-	// Try with a simple test buffer to see if the native function works.
-	char mb[2]; mb[0] = '\0';
-	int ret = ::WideCharToMultiByte(CP_ACP, 0, L"ts",2 , mb, countof(mb), NULL, NULL);
-	if( ret && mb[0] == 't' && mb[1] == 's' )
-		SimpleWC2MB = ::WideCharToMultiByte;
-	else
-		SimpleWC2MB = SimpleWC2MB_fb;
-
-	return SimpleWC2MB(cp, flg, s, sl, d, dl, defc, useddef);
-}
-int WINAPI SimpleWC2MB_fb(UINT cp, DWORD flg, LPCWSTR s, int sl, LPSTR d, int dl, LPCSTR defc, LPBOOL useddef)
-{
-	if( d == NULL || dl == 0 ) // return required length.
-		return sl==-1? my_lstrlenW(s): sl;
-
-	int i;
-	if( sl == -1 )
-	{ // Copy until NULL
-		for( i=0; i < dl && s[i]; i++)
-			d[i] = (char)s[i];
-		d[i] = '\0';
-		return i == dl? 0: i;
-	}
-
-	if( dl <= sl )
-		return 0;
-
-	for( i=0; i < sl; i++)
-		d[i] = (char)s[i];
-
-	d[i] = '\0';
-	return i;
-}
-int WINAPI SimpleMB2WC_1st(UINT cp, DWORD flg, LPCSTR s, int sl, LPWSTR d, int dl);
-int(WINAPI*SimpleMB2WC)   (UINT cp, DWORD flg, LPCSTR s, int sl, LPWSTR d, int dl) = SimpleMB2WC_1st;
-int WINAPI SimpleMB2WC_fb (UINT cp, DWORD flg, LPCSTR s, int sl, LPWSTR d, int dl);
-int WINAPI SimpleMB2WC_1st(UINT cp, DWORD flg, LPCSTR s, int sl, LPWSTR d, int dl)
-{
-	// Try with a simple test buffer to see if the native function works.
-	wchar_t wc[2]; wc[0] = '\0';
-	int ret = ::MultiByteToWideChar(CP_ACP, 0, "ts",2 , wc,countof(wc));
-	if( ret && wc[0] == L't' && wc[1] == L's' )
-		SimpleMB2WC = ::MultiByteToWideChar;
-	else
-		SimpleMB2WC = SimpleMB2WC_fb;
-
-	return SimpleMB2WC(cp, flg, s, sl, d, dl);
-}
-int WINAPI SimpleMB2WC_fb(UINT cp, DWORD flg, LPCSTR s, int sl, LPWSTR d, int dl)
-{
-	if( d == NULL || dl == 0 )
-		return sl==-1? my_lstrlenA(s): sl;
-
-	int i;
-	if( sl == -1 )
-	{ // Copy until NULL
-		for( i=0; i < dl && s[i]; i++)
-			d[i] = (wchar_t)s[i];
-		d[i] = L'\0';
-		return i == dl? 0: i;
-	}
-
-	if( dl <= sl )
-		return 0;
-
-	for( i=0; i < sl; i++)
-		d[i] = (char)s[i];
-	d[i] = L'\0';
-	return i;
-}
-#define WideCharToMultiByte SimpleWC2MB
-#define MultiByteToWideChar SimpleMB2WC
-#endif// OLDWIN32S
 
 //=========================================================================
 String::StringData* String::nullData_;
@@ -290,18 +178,18 @@ void String::LibInit()
 
 String::String( const TCHAR* s, long len )
 {
-	// ’·‚³Žw’è‚ª–³‚¢ê‡‚ÍŒvŽZ
+	// é•·ã•æŒ‡å®šãŒç„¡ã„å ´åˆã¯è¨ˆç®—
 	if( len==-1 )
 		len = my_lstrlen(s);
 
 	if( len==0 )
 	{
-		// 0•¶Žš—p‚Ì“ÁŽêƒoƒbƒtƒ@
+		// 0æ–‡å­—ç”¨ã®ç‰¹æ®Šãƒãƒƒãƒ•ã‚¡
 		SetData( null() );
 	}
 	else
 	{
-		// V‹Kƒoƒbƒtƒ@ì¬
+		// æ–°è¦ãƒãƒƒãƒ•ã‚¡ä½œæˆ
 		data_ = static_cast<StringData*>
 		    (malloc( sizeof(StringData)+(len+1)*sizeof(TCHAR) ));
 		if( !data_ )
@@ -412,13 +300,13 @@ String& String::Load( UINT rsrcID )
 {
 	enum { step=256 };
 
-	// 256ƒoƒCƒg‚ÌŒÅ’è’·ƒoƒbƒtƒ@‚Ö‚Ü‚¸“Ç‚ñ‚Å‚Ý‚é
+	// 256ãƒã‚¤ãƒˆã®å›ºå®šé•·ãƒãƒƒãƒ•ã‚¡ã¸ã¾ãšèª­ã‚“ã§ã¿ã‚‹
 	TCHAR tmp[step], *buf;
 	int red = app().LoadString( rsrcID, tmp, countof(tmp) );
 	if( countof(tmp) - red > 2 )
 		return (*this = tmp);
 
-	// ­‚µ‚¸‚Â‘‚â‚µ‚Ä‘Î‰ž‚µ‚Ä‚Ý‚é
+	// å°‘ã—ãšã¤å¢—ã‚„ã—ã¦å¯¾å¿œã—ã¦ã¿ã‚‹
 	size_t siz = step;
 	do
 	{
@@ -442,10 +330,10 @@ void String::TrimRight( size_t siz )
 	}
 	else
 	{
-		// •¶Žš—ñƒoƒbƒtƒ@‚ÌŽQÆƒJƒEƒ“ƒg‚ðŠmŽÀ‚É‚P‚É‚·‚é
+		// æ–‡å­—åˆ—ãƒãƒƒãƒ•ã‚¡ã®å‚ç…§ã‚«ã‚¦ãƒ³ãƒˆã‚’ç¢ºå®Ÿã«ï¼‘ã«ã™ã‚‹
 		ReallocMem();
 
-		// Žw’è•¶Žš”•ªí‚é
+		// æŒ‡å®šæ–‡å­—æ•°åˆ†å‰Šã‚‹
 		data_->len -= siz;
 		data_->buf()[data_->len-1] = TEXT('\0');
 	}

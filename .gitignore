@@ -1,0 +1,37 @@
+# Build directories and artifacts
+obj/
+release/*.exe
+release/*.dll
+release/*.ini
+release/*.res
+release/*.pch
+
+# IDE and editor files
+.claude/
+.vscode/
+*.dsp
+*.dsw
+*.vcproj
+*.sln
+*.pdb
+
+# Object and library files
+*.o
+*.obj
+*.a
+*.lib
+
+# Backup and temporary files
+*.rc~
+*~
+*.bak
+*.swp
+*.tmp
+
+# Platform-specific files
+*.ico
+*.res
+
+# Dependencies
+libunicows*.a
+libunicows*.lib

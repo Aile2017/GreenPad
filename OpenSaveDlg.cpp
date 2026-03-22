@@ -4,9 +4,10 @@
 #include "kilib/kilib.h"
 #include "OpenSaveDlg.h"
 using namespace ki;
+#include <shobjidl.h>
 
 //------------------------------------------------------------------------
-// ï∂éöÉRÅ[ÉhÉäÉXÉg
+// ÊñáÂ≠ó„Ç≥„Éº„Éâ„É™„Çπ„Éà
 //------------------------------------------------------------------------
 
 // merge 3 lists into 1 #define for easier management
@@ -14,25 +15,25 @@ using namespace ki;
 //  keep forward slash at line-end for non-last-line of list
 //  ordering are important as Enroll/EnrollS/EnrollL uses list in same order
 #define CHARSETS_LIST \
-	CHARSET_VALUE("é©ìÆîªíË",			"AutoDetect",			"") \
-	CHARSET_VALUE("ì˙ñ{åÍ(ShiftJIS)",	"Japanese(ShiftJIS)",	"SJIS") \
-	CHARSET_VALUE("ì˙ñ{åÍ(EUC)",		"Japanese(EUC)",		"EUC") \
-	CHARSET_VALUE("ì˙ñ{åÍ(ISO-2022-JP)","Japanese(ISO-2022-JP)","JIS") \
-	CHARSET_VALUE("äÿçëåÍ(EUC-KR)",		"Korean(EUC-KR)",		"UHC") \
-	CHARSET_VALUE("äÿçëåÍ(ISO-2022-KR)","Korean(ISO-2022-KR)",	"I2022KR") \
-	CHARSET_VALUE("äÿçëåÍ(Johab)",		"Korean(Johab)",		"Johab") \
-	CHARSET_VALUE("íÜçëåÍ(GB18030)",	"Chinese(GB18030)",		"GB18030") \
-	CHARSET_VALUE("íÜçëåÍ(GB18030,BOM)",	"Chinese(GB18030,BOM)",	"GB18030b") \
-	CHARSET_VALUE("íÜçëåÍ(GB2312)",		"Chinese(GB2312)",		"GBK") \
-	CHARSET_VALUE("íÜçëåÍ(ISO-2022-CN)","Chinese(ISO-2022-CN)",	"I2022CN") \
-	CHARSET_VALUE("íÜçëåÍ(HZ)",			"Chinese(HZ)",			"HZ") \
-	CHARSET_VALUE("íÜçëåÍ(Big5)",		"Chinese(Big5)",		"BIG5") \
-	CHARSET_VALUE("íÜçëåÍ(EUC-TW/CNS)",	"Chinese(EUC-TW/CNS)",	"CNS") \
-	CHARSET_VALUE("íÜçëåÍ(TCA)",		"Chinese(TCA)",			"TCA") \
-	CHARSET_VALUE("íÜçëåÍ(ETen)",		"Chinese(ETen)",		"ETEN") \
-	CHARSET_VALUE("íÜçëåÍ(IBM 5550)",	"Chinese(IBM 5550)",	"IBM5550") \
-	CHARSET_VALUE("íÜçëåÍ(Teletext)",	"Chinese(Teletext)",	"TLTEXT") \
-	CHARSET_VALUE("íÜçëåÍ(Wang)",		"Chinese(Wang)",		"WANG") \
+	CHARSET_VALUE("Ëá™ÂãïÂà§ÂÆö",			"AutoDetect",			"") \
+	CHARSET_VALUE("Êó•Êú¨Ë™û(ShiftJIS)",	"Japanese(ShiftJIS)",	"SJIS") \
+	CHARSET_VALUE("Êó•Êú¨Ë™û(EUC)",		"Japanese(EUC)",		"EUC") \
+	CHARSET_VALUE("Êó•Êú¨Ë™û(ISO-2022-JP)","Japanese(ISO-2022-JP)","JIS") \
+	CHARSET_VALUE("ÈüìÂõΩË™û(EUC-KR)",		"Korean(EUC-KR)",		"UHC") \
+	CHARSET_VALUE("ÈüìÂõΩË™û(ISO-2022-KR)","Korean(ISO-2022-KR)",	"I2022KR") \
+	CHARSET_VALUE("ÈüìÂõΩË™û(Johab)",		"Korean(Johab)",		"Johab") \
+	CHARSET_VALUE("‰∏≠ÂõΩË™û(GB18030)",	"Chinese(GB18030)",		"GB18030") \
+	CHARSET_VALUE("‰∏≠ÂõΩË™û(GB18030,BOM)",	"Chinese(GB18030,BOM)",	"GB18030b") \
+	CHARSET_VALUE("‰∏≠ÂõΩË™û(GB2312)",		"Chinese(GB2312)",		"GBK") \
+	CHARSET_VALUE("‰∏≠ÂõΩË™û(ISO-2022-CN)","Chinese(ISO-2022-CN)",	"I2022CN") \
+	CHARSET_VALUE("‰∏≠ÂõΩË™û(HZ)",			"Chinese(HZ)",			"HZ") \
+	CHARSET_VALUE("‰∏≠ÂõΩË™û(Big5)",		"Chinese(Big5)",		"BIG5") \
+	CHARSET_VALUE("‰∏≠ÂõΩË™û(EUC-TW/CNS)",	"Chinese(EUC-TW/CNS)",	"CNS") \
+	CHARSET_VALUE("‰∏≠ÂõΩË™û(TCA)",		"Chinese(TCA)",			"TCA") \
+	CHARSET_VALUE("‰∏≠ÂõΩË™û(ETen)",		"Chinese(ETen)",		"ETEN") \
+	CHARSET_VALUE("‰∏≠ÂõΩË™û(IBM 5550)",	"Chinese(IBM 5550)",	"IBM5550") \
+	CHARSET_VALUE("‰∏≠ÂõΩË™û(Teletext)",	"Chinese(Teletext)",	"TLTEXT") \
+	CHARSET_VALUE("‰∏≠ÂõΩË™û(Wang)",		"Chinese(Wang)",		"WANG") \
 	CHARSET_VALUE("UTF-1",				"UTF-1",				"UTF1") \
 	CHARSET_VALUE("UTF-1(BOM)",			"UTF-1(BOM)",			"UTF1b") \
 	CHARSET_VALUE("UTF-5",				"UTF-5",				"UTF5") \
@@ -58,47 +59,43 @@ using namespace ki;
 	CHARSET_VALUE("FSS-UTF(19920902,BOM)","FSS-UTF(19920902,BOM)","FSSUTFb") \
 	CHARSET_VALUE("UTF-EBCDIC",			"UTF-EBCDIC",			"UEBCDIC") \
 	CHARSET_VALUE("UTF-EBCDIC(BOM)",	"UTF-EBCDIC(BOM)",		"UEBCDICb") \
-	CHARSET_VALUE("â¢ïƒ",				"Latin-1",				"LTN1") \
-	CHARSET_VALUE("â¢ïƒ(DOS)",			"Latin-1(DOS)",			"LN1DOS") \
-	CHARSET_VALUE("íÜâ¢",				"Latin-2",				"LTN2") \
-	CHARSET_VALUE("íÜâ¢(DOS)",			"Latin-2(DOS)",			"LN2DOS") \
-	CHARSET_VALUE("ÉLÉäÉãåÍ",				"Cyrillic",			"CYRL") \
-	CHARSET_VALUE("ÉLÉäÉãåÍ(IBM)",		"Cyrillic(IBM)",		"CYRIBM") \
-	CHARSET_VALUE("ÉLÉäÉãåÍ(MS-DOS)",	"Cyrillic(MS-DOS)",		"CYRDOS") \
-	CHARSET_VALUE("ÉLÉäÉãåÍ(KOI8-R)",	"Cyrillic(KOI8-R)",		"KO8R") \
-	CHARSET_VALUE("ÉLÉäÉãåÍ(KOI8-U)",	"Cyrillic(KOI8-U)",		"KO8U") \
-	CHARSET_VALUE("É^ÉCåÍ",				"Thai",					"THAI") \
-	CHARSET_VALUE("ÉgÉãÉRåÍ",			"Turkish",				"TRK") \
-	CHARSET_VALUE("ÉgÉãÉRåÍ(DOS)",		"Turkish(DOS)",			"TRKDOS") \
-	CHARSET_VALUE("ÉoÉãÉgåÍ",			"Baltic",				"BALT") \
-	CHARSET_VALUE("ÉoÉãÉgåÍ(IBM)",		"Baltic(IBM)",			"BALIBM") \
-	CHARSET_VALUE("ÉxÉgÉiÉÄåÍ",			"Vietnamese",			"VTNM") \
-	CHARSET_VALUE("ÉMÉäÉVÉÉåÍ",			"Greek",				"GRK") \
-	CHARSET_VALUE("ÉMÉäÉVÉÉåÍ(IBM)",	"Greek(IBM)",			"GRKIBM") \
-	CHARSET_VALUE("ÉMÉäÉVÉÉåÍ(MS-DOS)",	"Greek(MS-DOS)",		"GRKDOS") \
-	CHARSET_VALUE("ÉAÉâÉrÉAåÍ",			"Arabic",				"ARA") \
-	CHARSET_VALUE("ÉAÉâÉrÉAåÍ(IBM)",	"Arabic(IBM)",			"ARAIBM") \
-	CHARSET_VALUE("ÉAÉâÉrÉAåÍ(MS-DOS)",	"Arabic(MS-DOS)",		"ARADOS") \
-	CHARSET_VALUE("ÉwÉuÉâÉCåÍ",			"Hebrew",				"HEB") \
-	CHARSET_VALUE("ÉwÉuÉâÉCåÍ(DOS)",	"Hebrew(DOS)",			"HEBDOS") \
-	CHARSET_VALUE("É|ÉãÉgÉKÉãåÍ(DOS)",	"Portuguese(DOS)",		"PRT") \
-	CHARSET_VALUE("ÉAÉCÉXÉâÉìÉhåÍ(DOS)","Icelandic(DOS)",		"ICE") \
-	CHARSET_VALUE("ÉtÉâÉìÉXåÍ(ÉJÉiÉ_)(DOS)","Canadian French(DOS)","CFR") \
-	CHARSET_VALUE("MSDOS(ñkâ¢)",		"MSDOS(Nodic)",			"NODIC") \
+	CHARSET_VALUE("Ê¨ßÁ±≥",				"Latin-1",				"LTN1") \
+	CHARSET_VALUE("Ê¨ßÁ±≥(DOS)",			"Latin-1(DOS)",			"LN1DOS") \
+	CHARSET_VALUE("‰∏≠Ê¨ß",				"Latin-2",				"LTN2") \
+	CHARSET_VALUE("‰∏≠Ê¨ß(DOS)",			"Latin-2(DOS)",			"LN2DOS") \
+	CHARSET_VALUE("„Ç≠„É™„É´Ë™û",				"Cyrillic",			"CYRL") \
+	CHARSET_VALUE("„Ç≠„É™„É´Ë™û(IBM)",		"Cyrillic(IBM)",		"CYRIBM") \
+	CHARSET_VALUE("„Ç≠„É™„É´Ë™û(MS-DOS)",	"Cyrillic(MS-DOS)",		"CYRDOS") \
+	CHARSET_VALUE("„Ç≠„É™„É´Ë™û(KOI8-R)",	"Cyrillic(KOI8-R)",		"KO8R") \
+	CHARSET_VALUE("„Ç≠„É™„É´Ë™û(KOI8-U)",	"Cyrillic(KOI8-U)",		"KO8U") \
+	CHARSET_VALUE("„Çø„Ç§Ë™û",				"Thai",					"THAI") \
+	CHARSET_VALUE("„Éà„É´„Ç≥Ë™û",			"Turkish",				"TRK") \
+	CHARSET_VALUE("„Éà„É´„Ç≥Ë™û(DOS)",		"Turkish(DOS)",			"TRKDOS") \
+	CHARSET_VALUE("„Éê„É´„ÉàË™û",			"Baltic",				"BALT") \
+	CHARSET_VALUE("„Éê„É´„ÉàË™û(IBM)",		"Baltic(IBM)",			"BALIBM") \
+	CHARSET_VALUE("„Éô„Éà„Éä„É†Ë™û",			"Vietnamese",			"VTNM") \
+	CHARSET_VALUE("„ÇÆ„É™„Ç∑„É£Ë™û",			"Greek",				"GRK") \
+	CHARSET_VALUE("„ÇÆ„É™„Ç∑„É£Ë™û(IBM)",	"Greek(IBM)",			"GRKIBM") \
+	CHARSET_VALUE("„ÇÆ„É™„Ç∑„É£Ë™û(MS-DOS)",	"Greek(MS-DOS)",		"GRKDOS") \
+	CHARSET_VALUE("„Ç¢„É©„Éì„Ç¢Ë™û",			"Arabic",				"ARA") \
+	CHARSET_VALUE("„Ç¢„É©„Éì„Ç¢Ë™û(IBM)",	"Arabic(IBM)",			"ARAIBM") \
+	CHARSET_VALUE("„Ç¢„É©„Éì„Ç¢Ë™û(MS-DOS)",	"Arabic(MS-DOS)",		"ARADOS") \
+	CHARSET_VALUE("„Éò„Éñ„É©„Ç§Ë™û",			"Hebrew",				"HEB") \
+	CHARSET_VALUE("„Éò„Éñ„É©„Ç§Ë™û(DOS)",	"Hebrew(DOS)",			"HEBDOS") \
+	CHARSET_VALUE("„Éù„É´„Éà„Ç¨„É´Ë™û(DOS)",	"Portuguese(DOS)",		"PRT") \
+	CHARSET_VALUE("„Ç¢„Ç§„Çπ„É©„É≥„ÉâË™û(DOS)","Icelandic(DOS)",		"ICE") \
+	CHARSET_VALUE("„Éï„É©„É≥„ÇπË™û(„Ç´„Éä„ÉÄ)(DOS)","Canadian French(DOS)","CFR") \
+	CHARSET_VALUE("MSDOS(ÂåóÊ¨ß)",		"MSDOS(Nodic)",			"NODIC") \
 	CHARSET_VALUE("MSDOS(us)",			"MSDOS(us)",			"DOS")
 
 CharSetList::CharSetList()
 	: list_( 72 )
 {
-	#if !defined(TARGET_VER) || TARGET_VER >= 350
 	short useJP = GetACP() == 932;
-	#else
-	#define useJP 0
-	#endif
 	#define Enroll(_id,_nm)  EnrollCs( _id, _nm | BOTH<<8 | useJP<<16 )
 	#define EnrollS(_id,_nm) EnrollCs( _id, _nm | SAVE<<8 | useJP<<16 )
 	#define EnrollL(_id,_nm) EnrollCs( _id, _nm | LOAD<<8 | useJP<<16 )
-	// ìKãXìoò^
+	// ÈÅ©ÂÆúÁôªÈå≤
 	                               EnrollL( AutoDetect,      0 );
 	if( ::IsValidCodePage(932) )   Enroll(  SJIS,            1 )
 	                             , Enroll(  EucJP,           2 )
@@ -173,7 +170,7 @@ CharSetList::CharSetList()
 	/* if( always ) */             Enroll(  DOSUS,          71 );
 
 
-	// èIóπ
+	// ÁµÇ‰∫Ü
 	#undef Enroll
 	#undef EnrollS
 	#undef EnrollL
@@ -181,13 +178,11 @@ CharSetList::CharSetList()
 
 void CharSetList::EnrollCs(int _id, uint nmtype)
 {
-	#if !defined(TARGET_VER) || TARGET_VER >= 350
 	static const TCHAR* const lnmJp[] = {
 		#define CHARSET_VALUE(a,b,c) TEXT(a),
 		CHARSETS_LIST
 		#undef CHARSET_VALUE
 	};
-	#endif
 
 	static const TCHAR* const lnmEn[] = {
 		#define CHARSET_VALUE(a,b,c) TEXT(b),
@@ -201,15 +196,8 @@ void CharSetList::EnrollCs(int _id, uint nmtype)
 		#undef CHARSET_VALUE
 	};
 
-	// ì˙ñ{åÍä¬ã´Ç»ÇÁì˙ñ{åÍï\é¶ÇëIÇ‘
-	#if !defined(TARGET_VER) || TARGET_VER >= 350
 	bool useJP = HIWORD(nmtype) != 0;
 	const TCHAR* const * lnm = (useJP ? lnmJp : lnmEn);
-	#else
-	// On Windows 3.1 we cannot have the japaneese UI so for
-	// Consistancy sake we remove also this string table.
-	const TCHAR* const * lnm = lnmEn;
-	#endif
 
 	CsInfo cs;
 	uchar type = LOWORD(nmtype)>>8;
@@ -314,131 +302,23 @@ int CharSetList::GetCSIFromComboBox( HWND dlg, const CharSetList& csl, uint Open
 
 
 //------------------------------------------------------------------------
-// ÅuäJÇ≠ÅvÉ_ÉCÉAÉçÉO
+// „ÄåÈñã„Åè„Äç„ÉÄ„Ç§„Ç¢„É≠„Ç∞
 //------------------------------------------------------------------------
 
-// Mingw has bad headers!
-typedef struct oldtagOFNA {
-	DWORD        lStructSize;
-	HWND         hwndOwner;
-	HINSTANCE    hInstance;
-	LPCSTR       lpstrFilter;
-	LPSTR        lpstrCustomFilter;
-	DWORD        nMaxCustFilter;
-	DWORD        nFilterIndex;
-	LPSTR        lpstrFile;
-	DWORD        nMaxFile;
-	LPSTR        lpstrFileTitle;
-	DWORD        nMaxFileTitle;
-	LPCSTR       lpstrInitialDir;
-	LPCSTR       lpstrTitle;
-	DWORD        Flags;
-	WORD         nFileOffset;
-	WORD         nFileExtension;
-	LPCSTR       lpstrDefExt;
-	LPARAM       lCustData;
-	LPOFNHOOKPROC lpfnHook;
-	LPCSTR       lpTemplateName;
-} oldOPENFILENAMEA, *oldLPOPENFILENAMEA;
-
-typedef struct oldtagOFNW {
-	DWORD        lStructSize;
-	HWND         hwndOwner;
-	HINSTANCE    hInstance;
-	LPCWSTR      lpstrFilter;
-	LPWSTR       lpstrCustomFilter;
-	DWORD        nMaxCustFilter;
-	DWORD        nFilterIndex;
-	LPWSTR       lpstrFile;
-	DWORD        nMaxFile;
-	LPWSTR       lpstrFileTitle;
-	DWORD        nMaxFileTitle;
-	LPCWSTR      lpstrInitialDir;
-	LPCWSTR      lpstrTitle;
-	DWORD        Flags;
-	WORD         nFileOffset;
-	WORD         nFileExtension;
-	LPCWSTR      lpstrDefExt;
-	LPARAM       lCustData;
-	LPOFNHOOKPROC lpfnHook;
-	LPCWSTR      lpTemplateName;
-} oldOPENFILENAMEW, *oldLPOPENFILENAMEW;
-
-typedef struct newtagOFNA {
-	DWORD lStructSize;
-	HWND hwndOwner;
-	HINSTANCE hInstance;
-	LPCSTR lpstrFilter;
-	LPSTR lpstrCustomFilter;
-	DWORD nMaxCustFilter;
-	DWORD nFilterIndex;
-	LPSTR lpstrFile;
-	DWORD nMaxFile;
-	LPSTR lpstrFileTitle;
-	DWORD nMaxFileTitle;
-	LPCSTR lpstrInitialDir;
-	LPCSTR lpstrTitle;
-	DWORD Flags;
-	WORD nFileOffset;
-	WORD nFileExtension;
-	LPCSTR lpstrDefExt;
-	LPARAM lCustData;
-	LPOFNHOOKPROC lpfnHook;
-	LPCSTR lpTemplateName;
-	void *pvReserved;
-	DWORD dwReserved;
-	DWORD FlagsEx;
-} newOPENFILENAMEA,*newLPOPENFILENAMEA;
-
-typedef struct newtagOFNW {
-	DWORD lStructSize;
-	HWND hwndOwner;
-	HINSTANCE hInstance;
-	LPCWSTR lpstrFilter;
-	LPWSTR lpstrCustomFilter;
-	DWORD nMaxCustFilter;
-	DWORD nFilterIndex;
-	LPWSTR lpstrFile;
-	DWORD nMaxFile;
-	LPWSTR lpstrFileTitle;
-	DWORD nMaxFileTitle;
-	LPCWSTR lpstrInitialDir;
-	LPCWSTR lpstrTitle;
-	DWORD Flags;
-	WORD nFileOffset;
-	WORD nFileExtension;
-	LPCWSTR lpstrDefExt;
-	LPARAM lCustData;
-	LPOFNHOOKPROC lpfnHook;
-	LPCWSTR lpTemplateName;
-	void *pvReserved;
-	DWORD dwReserved;
-	DWORD FlagsEx;
-} newOPENFILENAMEW,*newLPOPENFILENAMEW;
-
-
-#ifdef UNICODE
-typedef oldOPENFILENAMEW oldOPENFILENAME;
-typedef oldLPOPENFILENAMEW oldLPOPENFILENAME;
-typedef newOPENFILENAMEW newOPENFILENAME;
-typedef newLPOPENFILENAMEW newLPOPENFILENAME;
-#else
-typedef oldOPENFILENAMEA oldOPENFILENAME;
-typedef oldLPOPENFILENAMEA oldLPOPENFILENAME;
-typedef newOPENFILENAMEA newOPENFILENAME;
-typedef newLPOPENFILENAMEA newLPOPENFILENAME;
-#endif // UNICODE
-
-namespace
+static UINT ParseFilterSpecs( const TCHAR* fltr, COMDLG_FILTERSPEC* specs, UINT maxSpecs )
 {
-	// ä÷êîèIóπéûÇ…ÅAÉJÉåÉìÉgÉfÉBÉåÉNÉgÉäÇå≥Ç…ñﬂÇ∑
-	class CurrentDirRecovery
+	UINT n = 0;
+	const TCHAR* p = fltr;
+	while( p && *p && n < maxSpecs )
 	{
-		TCHAR cur_[MAX_PATH];
-	public:
-		CurrentDirRecovery()  { cur_[0] = TEXT('\0'); ::GetCurrentDirectory( countof(cur_), cur_ ); }
-		~CurrentDirRecovery() { ::SetCurrentDirectory( cur_ ); }
-	};
+		specs[n].pszName = p;
+		p += my_lstrlen(p) + 1;
+		if( !*p ) break;
+		specs[n].pszSpec = p;
+		p += my_lstrlen(p) + 1;
+		++n;
+	}
+	return n;
 }
 
 static void CommonDialogPrepareBuffers( const TCHAR* fnm, TCHAR* filepath, TCHAR* filename )
@@ -475,288 +355,172 @@ static void CommonDialogPrepareBuffers( const TCHAR* fnm, TCHAR* filepath, TCHAR
 	}
 }
 
-OpenFileDlg* OpenFileDlg::pThis;
-
 bool OpenFileDlg::DoModal( HWND wnd, const TCHAR* fltr, const TCHAR* fnm )
 {
 	LOGGER( "OpenFileDlg::DoModal begin" );
-	CurrentDirRecovery cdr;
 	TCHAR filepath[MAX_PATH];
 
 	CommonDialogPrepareBuffers(fnm, filepath, filename_);
 
-	newOPENFILENAME ofn = {0};
-	ofn.lStructSize = app().getOSVer() >= 0x500? sizeof(newOPENFILENAME): sizeof(oldOPENFILENAME);
-	ofn.hwndOwner      = wnd;
-	ofn.hInstance      = app().hinst();
-	ofn.lpstrFilter    = fltr;
-	ofn.lpstrFile      = filename_;
-	ofn.nMaxFile       = countof(filename_);
-	ofn.lpstrInitialDir= filepath;
-	ofn.lpfnHook       = OfnHook;
-	ofn.Flags = OFN_FILEMUSTEXIST |
-				OFN_HIDEREADONLY  |
-				OFN_ENABLEHOOK    |
-				OFN_ENABLESIZING  |
-				OFN_ENABLETEMPLATE|
-				OFN_CREATEPROMPT;
-
-	// On Windows 95 4.00.116 we cannot add the cs droplist.
-	// Only use the New style dialog on Win95 347+/NT4 RTM.
-	if(  !oldstyleDlg_ && app().isNewOpenSaveDlg() )
-	{
-		// Include the OFN_EXPLORER flag to get the new look.
-		ofn.Flags |= OFN_EXPLORER;
-		// Use the new template sans the Open File controls.
-		ofn.lpTemplateName = MAKEINTRESOURCE(IDD_OPENSAVEFILEHOOK);
-	}
-	else
-	{
-		// WinNT 3.x
-		// Win32s all versions.
-		// Win95 pre-4.00.180
-		// Use the old look template.
-		ofn.lpTemplateName = (LPTSTR)MAKEINTRESOURCE(FILEOPENORD);
-	}
-
-	// clear last error
-	pThis = this;
-	TryAgain:
-	pThis->dlgEverOpened_ = false;
-	::SetLastError(0);
-	BOOL ret = ::GetOpenFileName((LPOPENFILENAME)&ofn);
-	if( !ret )
-	{
-		DWORD ErrCode = ::GetLastError();
-
-		if( !pThis->dlgEverOpened_ && ofn.Flags&OFN_EXPLORER )
+	IFileOpenDialog* pfd = NULL;
+		HRESULT hr = CoCreateInstance( CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER,
+		                                IID_PPV_ARGS(&pfd) );
+		if( SUCCEEDED(hr) )
 		{
-			// maybe Common Dialog DLL doesn't like OFN_EXPLORER, try again without it
-			ofn.Flags &= ~OFN_EXPLORER;
-			ofn.lpTemplateName = (LPTSTR)MAKEINTRESOURCE(FILEOPENORD);
-
-			// try again!
-			goto TryAgain;
-		}
-		else if( !ErrCode
-			|| ErrCode == ERROR_NO_MORE_FILES
-			|| ErrCode == ERROR_INVALID_PARAMETER
-			|| ErrCode == ERROR_CLASS_DOES_NOT_EXIST ) // On XP I sometime get this!!!!
-		{
-			// user pressed Cancel button
+			COMDLG_FILTERSPEC specs[32];
+			UINT nSpecs = ParseFilterSpecs( fltr, specs, countof(specs) );
+			if( nSpecs > 0 )
+				pfd->SetFileTypes( nSpecs, specs );
+			if( filepath[0] )
+			{
+				IShellItem* psi = NULL;
+				if( SUCCEEDED(SHCreateItemFromParsingName( filepath, NULL, IID_PPV_ARGS(&psi) )) )
+				{
+					pfd->SetFolder( psi );
+					psi->Release();
+				}
+			}
+			if( filename_[0] )
+				pfd->SetFileName( filename_ );
+			IFileDialogCustomize* pfdc = NULL;
+			if( SUCCEEDED(pfd->QueryInterface( IID_PPV_ARGS(&pfdc) )) )
+			{
+				TCHAR szCap[64]; szCap[0] = TEXT('\0');
+				app().LoadString( IDS_CHARSET_CAPTION, szCap, countof(szCap) );
+				pfdc->StartVisualGroup( 200, szCap );
+				pfdc->AddComboBox( IDC_CODELIST );
+				for( size_t i = 0; i < csl_.size(); ++i )
+					if( csl_[i].type & 2 )
+						pfdc->AddControlItem( IDC_CODELIST, (DWORD)i, csl_[i].longName );
+				pfdc->SetSelectedControlItem( IDC_CODELIST, (DWORD)csIndex_ );
+				pfdc->EndVisualGroup();
+				pfdc->Release();
+			}
+			hr = pfd->Show( wnd );
+			if( SUCCEEDED(hr) )
+			{
+				IShellItem* psiResult = NULL;
+				if( SUCCEEDED(pfd->GetResult( &psiResult )) )
+				{
+					LPWSTR pszPath = NULL;
+					if( SUCCEEDED(psiResult->GetDisplayName( SIGDN_FILESYSPATH, &pszPath )) )
+					{
+						my_lstrcpys( filename_, MAX_PATH, pszPath );
+						CoTaskMemFree( pszPath );
+					}
+					psiResult->Release();
+				}
+				IFileDialogCustomize* pfdc2 = NULL;
+				if( SUCCEEDED(pfd->QueryInterface( IID_PPV_ARGS(&pfdc2) )) )
+				{
+					DWORD sel = 0;
+					if( SUCCEEDED(pfdc2->GetSelectedControlItem( IDC_CODELIST, &sel )) )
+						csIndex_ = (int)sel;
+					pfdc2->Release();
+				}
+				pfd->Release();
+				LOGGER( "OpenFileDlg::DoModal SUCCESS end with file" );
+				LOGGERS( filename_ );
+				return true;
+			}
+			pfd->Release();
 			LOGGER( "OpenFileDlg::DoModal CANCEL end" );
+			return false;
 		}
-		else
-		{	// Failed, display LastError.
-			//TCHAR tmp[64]; tmp[0] = TEXT('\0');
-			//::wsprintf(tmp,TEXT("GetOpenFileName LastError #%d, dlgEverOpened_=%d"), ErrCode, (int)pThis->dlgEverOpened_);
-			//::MessageBox( NULL, tmp, RzsString(IDS_APPNAME).c_str(), MB_OK );
-			LOGGERF( TEXT("OpenFileDlg::DoModal FAILED end, dlgEverOpened_=%d"), (int)pThis->dlgEverOpened_ );
-		}
-	}
-	else
-	{
-		LOGGER( "OpenFileDlg::DoModal SUCCESS end with file" );
-		LOGGERS( filename_ );
-	}
-
-	return ( ret != 0 );
-}
-
-UINT_PTR CALLBACK OpenFileDlg::OfnHook( HWND dlg, UINT msg, WPARAM wp, LPARAM lp )
-{
-
-	if( msg==WM_INITDIALOG )
-	{
-		// ÉRÉìÉ{É{ÉbÉNÉXÇñÑÇﬂÇƒÅAÅué©ìÆëIëÅvÇëIÇ‘
-		ComboBox cb( dlg, IDC_CODELIST );
-		const CharSetList& csl = pThis->csl_;
-		for( size_t i=0; i<csl.size(); ++i )
-			if( csl[i].type & 2 ) // 2:=LOAD
-				cb.Add( csl[i].longName );
-		cb.Select( csl[0].longName );
-
-		HWND hCRLFCombo = ::GetDlgItem( dlg, IDC_CRLFLIST );
-		if( hCRLFCombo )
-		{
-			::ShowWindow( hCRLFCombo, SW_HIDE );
-			HWND hCRLFlbl = ::GetDlgItem( dlg, IDC_CRLFLBL );
-			if( hCRLFlbl ) ::ShowWindow( hCRLFlbl, SW_HIDE );
-		}
-		// Older NT wants OfnHook returning TRUE in WM_INITDIALOG
-		return TRUE;
-	}
-	else if( msg==WM_NOTIFY ||( msg==WM_COMMAND && LOWORD(wp)==1 ))
-	{
-		// OKÇ™âüÇ≥ÇÍÇΩÇÁÅAï∂éöÉRÅ[ÉhÇÃëIëèÛãµÇãLò^
-		if(( msg==WM_COMMAND && LOWORD(wp)==1 ) || ((LPOFNOTIFY)lp)->hdr.code==CDN_FILEOK )
-		{
-			int csi = CharSetList::GetCSIFromComboBox( dlg, pThis->csl_, 2 ); // LOAD
-			if(csi != -1)
-				pThis->csIndex_ = csi;
-		}
-	}
-	else if (msg == WM_PAINT)
-	{
-		pThis->dlgEverOpened_ = true;
-	}
-
-	return FALSE;
+	return false;
 }
 
 
-
 //------------------------------------------------------------------------
-// Åuï€ë∂ÅvÉ_ÉCÉAÉçÉO
+// „Äå‰øùÂ≠ò„Äç„ÉÄ„Ç§„Ç¢„É≠„Ç∞
 //------------------------------------------------------------------------
-
-SaveFileDlg* SaveFileDlg::pThis;
 
 bool SaveFileDlg::DoModal( HWND wnd, const TCHAR* fltr, const TCHAR* fnm )
 {
-	CurrentDirRecovery cdr;
 	TCHAR filepath[MAX_PATH];
 
 	CommonDialogPrepareBuffers(fnm, filepath, filename_);
 
-	newOPENFILENAME ofn = {0};
-	ofn.lStructSize = app().getOSVer() >= 0x500? sizeof(newOPENFILENAME): sizeof(oldOPENFILENAME);
-	ofn.hwndOwner      = wnd;
-	ofn.hInstance      = app().hinst();
-	ofn.lpstrFilter    = fltr;
-	ofn.lpstrFile      = filename_;
-	ofn.nMaxFile       = countof(filename_);
-	ofn.lpstrInitialDir= filepath;
-	ofn.lpfnHook       = OfnHook;
-	ofn.Flags = OFN_HIDEREADONLY    |
-				OFN_PATHMUSTEXIST   |
-				OFN_ENABLESIZING    |
-				OFN_ENABLEHOOK      |
-				OFN_ENABLETEMPLATE  |
-				OFN_OVERWRITEPROMPT;
-
-
-	if( !oldstyleDlg_ && app().isNewOpenSaveDlg() )
-	{
-		// Include the OFN_EXPLORER flag to get the new look.
-		ofn.Flags |= OFN_EXPLORER;
-		// Use the new template sans the Open File controls.
-		ofn.lpTemplateName = MAKEINTRESOURCE(IDD_OPENSAVEFILEHOOK);
-	}
-	else
-	{	// WinNT 3.x
-		// Win32s all versions.
-		// Win95 pre-4.00.180
-	    ofn.lpstrTitle     = TEXT("Save File As");
-		// Use the old look template.
-		ofn.lpTemplateName = (LPTSTR)MAKEINTRESOURCE(FILEOPENORD);
-	}
-
-	pThis = this;
-	TryAgain:
-	pThis->dlgEverOpened_ = false;
-	::SetLastError(0);
-	BOOL ret = ::GetSaveFileName((LPOPENFILENAME)&ofn);
-	if( !ret )
-	{
-		DWORD ErrCode = ::GetLastError();
-
-		if( !pThis->dlgEverOpened_ && ofn.Flags&OFN_EXPLORER )
+	IFileSaveDialog* pfd = NULL;
+		HRESULT hr = CoCreateInstance( CLSID_FileSaveDialog, NULL, CLSCTX_INPROC_SERVER,
+		                                IID_PPV_ARGS(&pfd) );
+		if( SUCCEEDED(hr) )
 		{
-			// maybe Common Dialog DLL doesn't like OFN_EXPLORER, try again without it
-			ofn.Flags &= ~OFN_EXPLORER;
-			ofn.lpstrTitle     = TEXT("Save File As");
-			ofn.lpTemplateName = (LPTSTR)MAKEINTRESOURCE(FILEOPENORD);
-
-			// try again!
-			goto TryAgain;
-		}
-		else if( !ErrCode
-			|| ErrCode == ERROR_NO_MORE_FILES
-			|| ErrCode == ERROR_INVALID_PARAMETER
-			|| ErrCode == ERROR_CLASS_DOES_NOT_EXIST ) // On XP I sometime get this!!!!
-		{
-			// user pressed Cancel button
-		}
-		else
-		{	// Failed, display LastError.
-			//TCHAR tmp[64]; tmp[0] = TEXT('\0');
-			//::wsprintf(tmp,TEXT("GetSaveFileName LastError #%d"), ErrCode);
-			//::MessageBox( wnd, tmp, RzsString(IDS_APPNAME).c_str(), MB_OK );
-			LOGGERF( TEXT("SaveFileDlg::DoModal FAILED end, dlgEverOpened_=%d"), (int)pThis->dlgEverOpened_ );
-		}
-	}
-	return ( ret != 0 );
-}
-
-
-UINT_PTR CALLBACK SaveFileDlg::OfnHook( HWND dlg, UINT msg, WPARAM wp, LPARAM lp )
-{
-	if( msg==WM_INITDIALOG )
-	{
-		// ÉRÉìÉ{É{ÉbÉNÉXÇñÑÇﬂÇƒÅAìKêÿÇ»ÇÃÇëIÇ‘
-		{
-			ComboBox cb( dlg, IDC_CODELIST );
-			const CharSetList& csl = pThis->csl_;
-
-			for( size_t i=0; i<csl.size(); ++i )
-				if( csl[i].type & 1 ) // 1:=SAVE
-					cb.Add( csl[i].longName );
-
-			int csi = pThis->csIndex_;
-			if( 0 <= csi && csi < (int)pThis->csl_.size() )
+			COMDLG_FILTERSPEC specs[32];
+			UINT nSpecs = ParseFilterSpecs( fltr, specs, countof(specs) );
+			if( nSpecs > 0 )
+				pfd->SetFileTypes( nSpecs, specs );
+			if( filepath[0] )
 			{
-				// Select combobox item
-				cb.Select( pThis->csl_[csi].longName );
+				IShellItem* psi = NULL;
+				if( SUCCEEDED(SHCreateItemFromParsingName( filepath, NULL, IID_PPV_ARGS(&psi) )) )
+				{
+					pfd->SetFolder( psi );
+					psi->Release();
+				}
 			}
-			else
-			{	// Show CP number If selection failed.
-				TCHAR tmp[INT_DIGITS+1];
-				const TCHAR *cpnum = Int2lStr(tmp, csi&0xfffff);
-				cb.Add( cpnum );
-				cb.Select( cpnum );
+			if( filename_[0] )
+				pfd->SetFileName( filename_ );
+			IFileDialogCustomize* pfdc = NULL;
+			if( SUCCEEDED(pfd->QueryInterface( IID_PPV_ARGS(&pfdc) )) )
+			{
+				TCHAR szCap[64]; szCap[0] = TEXT('\0');
+				app().LoadString( IDS_CHARSET_CAPTION, szCap, countof(szCap) );
+				pfdc->StartVisualGroup( 200, szCap );
+				pfdc->AddComboBox( IDC_CODELIST );
+				for( size_t i = 0; i < csl_.size(); ++i )
+					if( csl_[i].type & 1 )
+						pfdc->AddControlItem( IDC_CODELIST, (DWORD)i, csl_[i].longName );
+				pfdc->SetSelectedControlItem( IDC_CODELIST, (DWORD)csIndex_ );
+				pfdc->EndVisualGroup();
+				TCHAR szCap2[64]; szCap2[0] = TEXT('\0');
+				app().LoadString( IDS_CRLF_CAPTION, szCap2, countof(szCap2) );
+				pfdc->StartVisualGroup( 202, szCap2 );
+				pfdc->AddComboBox( IDC_CRLFLIST );
+				static const TCHAR* const lbNames[] = { TEXT("CR"), TEXT("LF"), TEXT("CRLF") };
+				for( DWORD li = 0; li < 3; ++li )
+					pfdc->AddControlItem( IDC_CRLFLIST, li, lbNames[li] );
+				pfdc->SetSelectedControlItem( IDC_CRLFLIST, (DWORD)Clamp(0, lb_, 2) );
+				pfdc->EndVisualGroup();
+				pfdc->Release();
 			}
+			hr = pfd->Show( wnd );
+			if( SUCCEEDED(hr) )
+			{
+				IShellItem* psiResult = NULL;
+				if( SUCCEEDED(pfd->GetResult( &psiResult )) )
+				{
+					LPWSTR pszPath = NULL;
+					if( SUCCEEDED(psiResult->GetDisplayName( SIGDN_FILESYSPATH, &pszPath )) )
+					{
+						my_lstrcpys( filename_, MAX_PATH, pszPath );
+						CoTaskMemFree( pszPath );
+					}
+					psiResult->Release();
+				}
+				IFileDialogCustomize* pfdc2 = NULL;
+				if( SUCCEEDED(pfd->QueryInterface( IID_PPV_ARGS(&pfdc2) )) )
+				{
+					DWORD sel = 0;
+					if( SUCCEEDED(pfdc2->GetSelectedControlItem( IDC_CODELIST, &sel )) )
+						csIndex_ = (int)sel;
+					DWORD lb = (DWORD)Clamp( 0, lb_, 2 );
+					if( SUCCEEDED(pfdc2->GetSelectedControlItem( IDC_CRLFLIST, &lb )) )
+						lb_ = (int)lb;
+					pfdc2->Release();
+				}
+				pfd->Release();
+				return true;
+			}
+			pfd->Release();
+			return false;
 		}
-		{
-			ComboBox cb( dlg, IDC_CRLFLIST );
-			static const TCHAR* const lbList[] = {
-				TEXT("CR"),
-				TEXT("LF"),
-				TEXT("CRLF")
-			};
-
-			for( size_t i=0; i<countof(lbList); ++i )
-				cb.Add( lbList[i] );
-			cb.Select( lbList[Clamp(0, pThis->lb_, 2)] );
-		}
-		// Older NT wants OfnHook returning TRUE in WM_INITDIALOG
-		return TRUE;
-	}
-	else if( msg==WM_NOTIFY || msg==WM_COMMAND )
-	{
-		if(( msg==WM_COMMAND && LOWORD(wp) == 1 )
-		|| ( msg==WM_NOTIFY && ((LPOFNOTIFY)lp)->hdr.code==CDN_FILEOK) )
-		{
-			// OKÇ™âüÇ≥ÇÍÇΩÇÁÅAï∂éöÉRÅ[ÉhÇÃëIëèÛãµÇãLò^
-			// â¸çsÉRÅ[ÉhÇ‡
-			int lb = ComboBox(dlg,IDC_CRLFLIST).GetCurSel();
-			pThis->lb_ = lb == CB_ERR? 2 :lb; // Default to CRLF;
-
-			pThis->csIndex_ = CharSetList::GetCSIFromComboBox( dlg, pThis->csl_, 1 ); //SAVE
-		}
-	}
-	else if (msg == WM_PAINT)
-	{
-		pThis->dlgEverOpened_ = true;
-	}
-
-	return FALSE;
+	return false;
 }
-
 
 
 //------------------------------------------------------------------------
-// ÉÜÅ[ÉeÉBÉäÉeÉBÅ[
+// „É¶„Éº„ÉÜ„Ç£„É™„ÉÜ„Ç£„Éº
 //------------------------------------------------------------------------
 
 ki::aarr<TCHAR> OpenFileDlg::ConnectWithNull( const TCHAR *lst[], size_t num )
@@ -785,7 +549,7 @@ ki::aarr<TCHAR> OpenFileDlg::ConnectWithNull( const TCHAR *lst[], size_t num )
 
 
 //------------------------------------------------------------------------
-// ÅuäJÇ´íºÇ∑ÅvÉ_ÉCÉAÉçÉO
+// „ÄåÈñã„ÅçÁõ¥„Åô„Äç„ÉÄ„Ç§„Ç¢„É≠„Ç∞
 //------------------------------------------------------------------------
 
 ReopenDlg::ReopenDlg( const CharSetList& csl, int csi )
@@ -795,7 +559,7 @@ ReopenDlg::ReopenDlg( const CharSetList& csl, int csi )
 
 void ReopenDlg::on_init()
 {
-	// ÉRÉìÉ{É{ÉbÉNÉXÇñÑÇﬂÇƒÅAÅué©ìÆëIëÅvÇëIÇ‘
+	// „Ç≥„É≥„Éú„Éú„ÉÉ„ÇØ„Çπ„ÇíÂüã„ÇÅ„Å¶„ÄÅ„ÄåËá™ÂãïÈÅ∏Êäû„Äç„ÇíÈÅ∏„Å∂
 	ComboBox cb( hwnd(), IDC_CODELIST );
 	for( size_t i=0; i<csl_.size(); ++i )
 		if( csl_[i].type & 2 ) // 2:=LOAD

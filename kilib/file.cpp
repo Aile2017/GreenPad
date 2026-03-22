@@ -14,9 +14,6 @@ static TCHAR *GetUNCPath(const TCHAR *ifn)
 	// also we should not add it if it is alrady an UNC
 	// and we should prefix with \\?\UNC\ in case of Network path
 	ULONG len = GetFullPathName(ifn, 0, 0, 0);
-	// Note that it seems that UNC are not working on NT 3.1
-	// So we only convert them if the path is longer than MAX_PATH
-	// this also mean we do not have to check for Win9x/NT versions.
 	if (len > MAX_PATH) // len includes the terminating '\0'.
 	{
 		TCHAR *buf = (TCHAR *)malloc((len + 16) * sizeof(TCHAR));
@@ -79,12 +76,10 @@ HANDLE CreateFileUNC(
 {
 	TCHAR *UNCPath = const_cast<TCHAR*>(fname);
 #ifdef UNICODE
-	// UNC are supported only un Unicode mode on Windows NT
-	if( app().isNT() )
-		UNCPath = GetUNCPath(fname); // may return fname!
+	UNCPath = GetUNCPath(fname); // may return fname!
 #endif
 
-	// ƒtƒ@ƒCƒ‹‚ğ“Ç‚İ‚Æ‚èê—p‚ÅŠJ‚­
+	// ãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã¿ã¨ã‚Šå°‚ç”¨ã§é–‹ã
 	HANDLE hFile = ::CreateFile(
 		UNCPath,
 		dwDesiredAccess,
@@ -105,9 +100,7 @@ DWORD GetFileAttributesUNC(LPCTSTR fname)
 {
 	TCHAR *UNCPath = const_cast<TCHAR*>(fname);
 #ifdef UNICODE
-	// UNC are supported only un Unicode mode on Windows NT
-	if( app().isNT() )
-		UNCPath = GetUNCPath(fname); // may return fname!
+	UNCPath = GetUNCPath(fname); // may return fname!
 #endif
 
 	DWORD ret = ::GetFileAttributes(UNCPath);
@@ -126,7 +119,7 @@ bool FileR::Open( const TCHAR* fname, bool always)
 //	MessageBox(NULL, fname, fname, MB_OK);
 	Close();
 
-	// ƒtƒ@ƒCƒ‹‚ğ“Ç‚İ‚Æ‚èê—p‚ÅŠJ‚­
+	// ãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã¿ã¨ã‚Šå°‚ç”¨ã§é–‹ã
 	// |FILE_FLAG_NO_BUFFERING
 	handle_ = ::CreateFileUNC(fname, GENERIC_READ,
 		FILE_SHARE_READ|FILE_SHARE_WRITE,
@@ -144,7 +137,7 @@ bool FileR::Open( const TCHAR* fname, bool always)
 		return false;
 	}
 
-	// ƒTƒCƒY‚ğæ“¾
+	// ã‚µã‚¤ã‚ºã‚’å–å¾—
 	size_t bytesToMap=0; // 0 => map all
 	DWORD hisize=0;
 	size_ = ::GetFileSize( handle_, &hisize );
@@ -171,26 +164,15 @@ bool FileR::Open( const TCHAR* fname, bool always)
 
 	if( size_==0 )
 	{
-		// 0ƒoƒCƒg‚Ìƒtƒ@ƒCƒ‹‚Íƒ}ƒbƒsƒ“ƒOo—ˆ‚È‚¢‚Ì‚Å“K“–‚É‰ñ”ğ
+		// 0ãƒã‚¤ãƒˆã®ãƒ•ã‚¡ã‚¤ãƒ«ã¯ãƒãƒƒãƒ”ãƒ³ã‚°å‡ºæ¥ãªã„ã®ã§é©å½“ã«å›é¿
 		basePtr_ = &size_;
 	}
 	else
 	{
-		// ƒ}ƒbƒsƒ“ƒOƒIƒuƒWƒFƒNƒg‚ğì‚é
+		// ãƒãƒƒãƒ”ãƒ³ã‚°ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ä½œã‚‹
 		fmo_ = ::CreateFileMapping( handle_, NULL, PAGE_READONLY, 0, 0, NULL );
 		if( fmo_ == NULL )
 		{
-		#ifdef OLDWIN32S
-			// We cannot use CreateFileMapping() on old Win32s beta
-			// So we allocate a buffer for the whole file and use ReadFile().
-			basePtr_ = (BYTE *)malloc( size_ );
-			DWORD nBytesRead=0;
-			BOOL ret = ReadFile( handle_, (void*)basePtr_, size_, &nBytesRead,  NULL);
-			::CloseHandle( handle_ ); // We can already close the handle
-			handle_ = INVALID_HANDLE_VALUE;
-			size_ = nBytesRead; // Update size with what was actually read.
-			return nBytesRead && ret;
-		#else
 			// Just close the file handle and exit with error.
 			#ifdef _DEBUG
 			TCHAR msg[300];
@@ -200,10 +182,9 @@ bool FileR::Open( const TCHAR* fname, bool always)
 			::CloseHandle( handle_ );
 			handle_ = INVALID_HANDLE_VALUE;
 			return false;
-		#endif
 		}
 
-		// ƒrƒ…[
+		// ãƒ“ãƒ¥ãƒ¼
 		basePtr_ = ::MapViewOfFile( fmo_, FILE_MAP_READ, 0, 0, bytesToMap );
 		if( basePtr_ == NULL )
 		{
@@ -226,7 +207,7 @@ void FileR::Close()
 {
 	if( handle_ != INVALID_HANDLE_VALUE )
 	{
-		// ƒwƒ“ƒeƒRƒ}ƒbƒsƒ“ƒO‚ğ‚µ‚Ä‚È‚¯‚ê‚Î‚±‚±‚Å‰ğ•ú
+		// ãƒ˜ãƒ³ãƒ†ã‚³ãƒãƒƒãƒ”ãƒ³ã‚°ã‚’ã—ã¦ãªã‘ã‚Œã°ã“ã“ã§è§£æ”¾
 		if( basePtr_ != &size_ )
 			::UnmapViewOfFile( const_cast<void*>(basePtr_) );
 		basePtr_ = NULL;
@@ -238,23 +219,6 @@ void FileR::Close()
 		::CloseHandle( handle_ );
 		handle_ = INVALID_HANDLE_VALUE;
 	}
-#ifdef OLDWIN32S
-	else
-	{
-		// If basePtr_ is non-NULL it means we allocated file
-		// Via ReadFile (Win32s beta), so we must free the memory.
-		// File handle is already closed.
-		if( basePtr_ != NULL && basePtr_ != &size_ )
-		{
-		#ifdef _DEBUG
-			// Zero out in debug mode to detect use after free!
-			mem00( (void*)basePtr_, size_ );
-		#endif
-			free( (void*)basePtr_ );
-		}
-		basePtr_ = NULL;
-	}
-#endif
 
 }
 
@@ -290,9 +254,7 @@ bool FileW::Open( const TCHAR* fname, bool creat )
 
 	TCHAR *UNCPath = const_cast<TCHAR*>(fname);
 #ifdef UNICODE
-	// UNC are supported only un Unicode mode on Windows NT
-	if( app().isNT() )
-		UNCPath = GetUNCPath(fname); // may return fname!
+	UNCPath = GetUNCPath(fname); // may return fname!
 #endif
 
 	// Check for readonly flag
@@ -312,7 +274,7 @@ bool FileW::Open( const TCHAR* fname, bool creat )
 	}
 	// If file does not exist, use normal attributes.
 
-	// ƒtƒ@ƒCƒ‹‚ğ‘‚«‚İê—p‚ÅŠJ‚­
+	// ãƒ•ã‚¡ã‚¤ãƒ«ã‚’æ›¸ãè¾¼ã¿å°‚ç”¨ã§é–‹ã
 	handle_ = ::CreateFile( UNCPath,
 		GENERIC_WRITE, FILE_SHARE_READ, NULL,
 		creat ? CREATE_ALWAYS : OPEN_EXISTING,

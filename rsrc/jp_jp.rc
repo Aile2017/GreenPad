@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////
-// ���{�� resources
+// 日本語 resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_JPN)
 #ifdef _WIN32
 LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
-#pragma code_page(932)
+#pragma code_page(65001)
 #endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
@@ -14,56 +14,57 @@ LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
 
 IDR_MAIN MENU
 BEGIN
-    POPUP "�t�@�C��(&F)"
+    POPUP "ファイル(&F)"
     BEGIN
-        MENUITEM "�V�K�쐬(&N)\tCtrl+N",           ID_CMD_NEWFILE
+        MENUITEM "新規作成(&N)\tCtrl+N",           ID_CMD_NEWFILE
         MENUITEM SEPARATOR
-        MENUITEM "�J��(&O)...\tCtrl+O",          ID_CMD_OPENFILE
-        MENUITEM "�J������(&R)...\tCtrl+R",        ID_CMD_REOPENFILE
-        MENUITEM "�J elevated (&L)...\tCtrl+L",        ID_CMD_OPENELEVATED
+        MENUITEM "開く(&O)...\tCtrl+O",            ID_CMD_OPENFILE
+        MENUITEM "開き直す(&R)...\tCtrl+R",          ID_CMD_REOPENFILE
+        MENUITEM "再表示(&F)\tF5",                ID_CMD_REFRESHFILE
+        MENUITEM "管理者で開く(&L)...\tCtrl+L",   ID_CMD_OPENELEVATED
         MENUITEM SEPARATOR
-        MENUITEM "�ۑ�(&S)\tCtrl+S",             ID_CMD_SAVEFILE
-        MENUITEM "�ʖ��ŕۑ�(&A)...\tCtrl+Shift+S", ID_CMD_SAVEFILEAS
+        MENUITEM "保存(&S)\tCtrl+S",               ID_CMD_SAVEFILE
+        MENUITEM "別名で保存(&A)...\tCtrl+Shift+S",   ID_CMD_SAVEFILEAS
         MENUITEM SEPARATOR
-        MENUITEM "���(&P)...\tCtrl+P",          ID_CMD_PRINT
-        MENUITEM "Page Set&up...",              ID_CMD_PAGESETUP
+        MENUITEM "印刷(&P)...\tCtrl+P",           ID_CMD_PRINT
+        MENUITEM "ページ設定(&U)...",               ID_CMD_PAGESETUP
         MENUITEM SEPARATOR
-        POPUP "�ŋ߂̃t�@�C��(&M)"
+        POPUP "最近のファイル(&M)"
         BEGIN
-            MENUITEM "(no files)",                  ID_MENUITEM40029, GRAYED
+            MENUITEM "(なし)",                  ID_MENUITEM40030, GRAYED
         END
         MENUITEM SEPARATOR
-        MENUITEM "�ۑ����ďI��(&I)\tCtrl+E", ID_CMD_SAVEEXIT
-        MENUITEM "�ۑ������ɏI��(&D)\tCtrl+Shift+E", ID_CMD_DISCARDEXIT
-        MENUITEM "�I��(&X)",                    ID_CMD_EXIT
+        MENUITEM "保存して終了(&I)\tCtrl+E",   ID_CMD_SAVEEXIT
+        MENUITEM "保存せずに終了(&D)\tCtrl+Shift+E",   ID_CMD_DISCARDEXIT
+        MENUITEM "終了(&X)",                       ID_CMD_EXIT
     END
-    POPUP "�ҏW(&E)"
+    POPUP "編集(&E)"
     BEGIN
-        MENUITEM "���ɖ߂�(&U)\tCtrl+Z",        ID_CMD_UNDO
-        MENUITEM "��蒼��(&R)\tCtrl+Y",        ID_CMD_REDO
+        MENUITEM "元に戻す(&U)\tCtrl+Z",               ID_CMD_UNDO
+        MENUITEM "やり直す(&R)\tCtrl+Y",               ID_CMD_REDO
         MENUITEM SEPARATOR
-        MENUITEM "�؂���(&X)\tCtrl+X",        ID_CMD_CUT
-        MENUITEM "�R�s�[(&C)\tCtrl+C",          ID_CMD_COPY
-        MENUITEM "�\��t��(&P)\tCtrl+V",        ID_CMD_PASTE
-        MENUITEM "�폜(&D)\tDel",               ID_CMD_DELETE
+        MENUITEM "切り取り(&X)\tCtrl+X",                ID_CMD_CUT
+        MENUITEM "コピー(&C)\tCtrl+C",               ID_CMD_COPY
+        MENUITEM "貼り付け(&P)\tCtrl+V",              ID_CMD_PASTE
+
+        MENUITEM "削除(&D)\tDel",                ID_CMD_DELETE
         MENUITEM SEPARATOR
-        MENUITEM "�S�Ă�I��(&A)\tCtrl+A",      ID_CMD_SELECTALL
+        MENUITEM "全てを選択(&A)\tCtrl+A",         ID_CMD_SELECTALL
         MENUITEM SEPARATOR
-        MENUITEM "�����̑}��(&T)\tF6",          ID_CMD_DATETIME
-        MENUITEM "Insert Date&&&Time\tF6",      ID_CMD_DATETIME
-        MENUITEM "Insert U&nicode...\tCtrl+I",   ID_CMD_INSERTUNI
+        MENUITEM "日時の挿入(&T)\tF6",      ID_CMD_DATETIME
+        MENUITEM "Unicode挿入(&N)...\tCtrl+I",   ID_CMD_INSERTUNI
         MENUITEM SEPARATOR
-        POPUP "&Modify"
+        POPUP "変換(&M)"
         BEGIN
-            MENUITEM "&Upper Case\tAlt+U",          ID_CMD_UPPERCASE
-            MENUITEM "&Lower Case\tAlt+L",          ID_CMD_LOWERCASE
-            MENUITEM "&Invert Case\tAlt+I",         ID_CMD_INVERTCASE
-            MENUITEM "&Reduce to ASCII\tAlt+R",     ID_CMD_ASCIIFY
-            MENUITEM "Trim &Trailing Spaces\tAlt+W",ID_CMD_TTSPACES
-            MENUITEM "Strip &First Characters\tAlt+Z",ID_CMD_SFCHAR
-            MENUITEM "Strip L&ast Characters\tAlt+A",ID_CMD_SLCHAR
-            MENUITEM "&Quote\tAlt+Q",               ID_CMD_QUOTE
-            MENUITEM "U&nquote\tAlt+N",             ID_CMD_UNQUOTE
+            MENUITEM "大文字変換(&U)\tAlt+U",          ID_CMD_UPPERCASE
+            MENUITEM "小文字変換(&L)\tAlt+L",          ID_CMD_LOWERCASE
+            MENUITEM "大文字小文字反転(&I)\tAlt+I",         ID_CMD_INVERTCASE
+            MENUITEM "ASCII変換(&R)\tAlt+R",     ID_CMD_ASCIIFY
+            MENUITEM "行末空白削除(&T)\tAlt+W",ID_CMD_TTSPACES
+            MENUITEM "行頭1文字削除(&F)\tAlt+Z",ID_CMD_SFCHAR
+            MENUITEM "行末1文字削除(&A)\tAlt+A",ID_CMD_SLCHAR
+            MENUITEM "引用符付加(&Q)\tAlt+Q",               ID_CMD_QUOTE
+            MENUITEM "引用符削除(&n)\tAlt+N",             ID_CMD_UNQUOTE
         END
         POPUP "Unic&ode NF"
         BEGIN
@@ -74,44 +75,45 @@ BEGIN
         END
       # ifndef NO_IME
         MENUITEM SEPARATOR
-        MENUITEM "�ĕϊ�(&V)",              ID_CMD_RECONV
-        MENUITEM "IME On/Off(&I)",          ID_CMD_TOGGLEIME
-       # endif
+        MENUITEM "再変換(&V)",               ID_CMD_RECONV
+        MENUITEM "IME On/Off(&I)",                 ID_CMD_TOGGLEIME
+      # endif
+
     END
-    POPUP "����(&S)"
+    POPUP "検索(&S)"
     BEGIN
-        MENUITEM "�����E�u��(&F)\tCtrl+F",      ID_CMD_FIND
-        MENUITEM "��������(&N)\tF3",            ID_CMD_FINDNEXT
-        MENUITEM "�O������(&P)\tShift+F3",      ID_CMD_FINDPREV
+        MENUITEM "検索・置換(&F)\tCtrl+F",               ID_CMD_FIND
+        MENUITEM "次を検索(&N)\tF3",              ID_CMD_FINDNEXT
+        MENUITEM "前を検索(&P)\tShift+F3",        ID_CMD_FINDPREV
         MENUITEM SEPARATOR
-        MENUITEM "�w��s�փW�����v(&J)\tCtrl+J", ID_CMD_JUMP
+        MENUITEM "指定行へジャンプ(&J)\tCtrl+J",       ID_CMD_JUMP
         MENUITEM SEPARATOR
-        MENUITEM "Grep(&G)...\tCtrl+G",         ID_CMD_GREP
-        MENUITEM "&Open Selection...\tF7",      ID_CMD_OPENSELECTION
+        MENUITEM "Grep(&G)...\tCtrl+G",            ID_CMD_GREP
+        MENUITEM "選択範囲のファイルを開く(&O)...\tF7",      ID_CMD_OPENSELECTION
     END
-    POPUP "�\��(&V)"
+    POPUP "表示(&V)"
     BEGIN
-        MENUITEM "�܂�Ԃ��Ȃ�(&N)\tCtrl+1",    ID_CMD_NOWRAP
-        MENUITEM "�w�蕝�Ő܂�Ԃ�(&W)\tCtrl+2", ID_CMD_WRAPWIDTH
-        MENUITEM "�E�[�Ő܂�Ԃ�(&R)\tCtrl+3",  ID_CMD_WRAPWINDOW
+        MENUITEM "折り返さない(&N)\tCtrl+1",        ID_CMD_NOWRAP
+        MENUITEM "指定幅で折り返し(&W)\tCtrl+2", ID_CMD_WRAPWIDTH
+        MENUITEM "右端で折り返し(&R)\tCtrl+3", ID_CMD_WRAPWINDOW
         MENUITEM SEPARATOR
-        MENUITEM "&Set Zoom...",                 ID_CMD_ZOOMDLG
-        MENUITEM "R&eset Zoom",                  ID_CMD_ZOOMRZ
-        MENUITEM "Zoom &Up",                     ID_CMD_ZOOMUP
-        MENUITEM "Zoom Do&wn",                   ID_CMD_ZOOMDN
+        MENUITEM "ズーム設定(&S)...",                 ID_CMD_ZOOMDLG
+        MENUITEM "ズームリセット(&E)",                  ID_CMD_ZOOMRZ
+        MENUITEM "ズームアップ(&U)",                     ID_CMD_ZOOMUP
+        MENUITEM "ズームダウン(&W)",                   ID_CMD_ZOOMDN
         MENUITEM SEPARATOR
-        POPUP "�����^�C�v(&T)"
+        POPUP "文書タイプ(&T)"
         BEGIN
-            MENUITEM "(�Ȃ�)",                      ID_MENUITEM40025, GRAYED
+            MENUITEM "(なし)",                       ID_MENUITEM40025
         END
-        MENUITEM "�ݒ�(&S)...",                 ID_CMD_CONFIG
+        MENUITEM "設定(&S)...",                ID_CMD_CONFIG
         MENUITEM SEPARATOR
-        MENUITEM "�X�e�[�^�X �o�[(&B)",         ID_CMD_STATUSBAR
+        MENUITEM "ステータス バー(&B)",                  ID_CMD_STATUSBAR
     END
-    POPUP "�w���v(&H)"
+    POPUP "ヘルプ(&H)"
     BEGIN
-        MENUITEM "�o�[�W�������(&A)",    ID_CMD_HELPABOUT
-        MENUITEM "&Context Help...\tF1",         ID_CMD_HELP
+        MENUITEM "ヘルプ(&C)...\tF1",         ID_CMD_HELP
+        MENUITEM "バージョン情報(&A)",    ID_CMD_HELPABOUT
     END
 END
 
@@ -123,133 +125,134 @@ END
 
 IDD_OPENSAVEFILEHOOK DIALOG 0, 0, 187, 55
 STYLE DS_SETFONT | DS_CONTROL | DS_3DLOOK | WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS
-FONT 9, "�l�r �o�S�V�b�N"
+FONT 9, "Meiryo UI"
 BEGIN
-    LTEXT           "",1119,0,0,187,13,SS_SUNKEN | NOT WS_VISIBLE | NOT
-                    WS_GROUP
-    LTEXT           "�����R�[�h(&C):",IDC_STATIC,7,18,42,8
-    COMBOBOX        IDC_CODELIST,66,16,111,103,CBS_DROPDOWN | WS_VSCROLL |
-                    WS_TABSTOP
-    LTEXT           "���s�R�[�h(&L):",IDC_STATIC,7,37,41,8
-    COMBOBOX        IDC_CRLFLIST,66,35,60,103,CBS_DROPDOWNLIST | WS_VSCROLL |
-                    WS_TABSTOP
+    LTEXT           "",1119,0,0,187,13,SS_SUNKEN | NOT WS_VISIBLE | NOT WS_GROUP
+    LTEXT           "文字コード(&C):",IDC_STATIC,7,18,42,8
+    COMBOBOX        IDC_CODELIST,66,16,111,103,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "改行コード(&L):",IDC_CRLFLBL,7,37,41,8
+    COMBOBOX        IDC_CRLFLIST,66,35,60,103,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 END
 
 IDD_REOPENDLG DIALOG  0, 0, 187, 54
 STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_CENTER | WS_VISIBLE |
     WS_CLIPSIBLINGS | WS_CAPTION | WS_SYSMENU
-CAPTION "�J������"
-FONT 9, "�l�r �o�S�V�b�N"
+CAPTION "開き直す"
+FONT 9, "Meiryo UI"
 BEGIN
-    LTEXT           "�����R�[�h(&C):",IDC_STATIC,9,13,42,8
-    COMBOBOX        IDC_CODELIST,59,11,111,103,CBS_DROPDOWN | WS_VSCROLL |
-                    WS_TABSTOP
+    LTEXT           "文字コード(&C):",IDC_STATIC,9,13,42,8
+    COMBOBOX        IDC_CODELIST,59,11,111,103,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "OK",IDOK,66,32,56,14
-    PUSHBUTTON      "�L�����Z��",IDCANCEL,125,32,56,14
-END
-
-IDD_FINDREPLACE DIALOG  0, 0, 316, 84
-STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | WS_POPUP |
-    WS_CAPTION | WS_SYSMENU
-CAPTION "�����E�u��"
-FONT 9, "�l�r �S�V�b�N"
-BEGIN
-    LTEXT           "����������(&T)�F",IDC_STATIC,5,10,45,8
-    COMBOBOX        IDC_FINDBOX,52,7,130,130,CBS_AUTOHSCROLL | CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "�u��������(&W)�F",IDC_STATIC,5,31,45,8
-    COMBOBOX        IDC_REPLACEBOX,52,28,130,130, CBS_AUTOHSCROLL | CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
-    DEFPUSHBUTTON   "��������(&F)",ID_FINDNEXT,195,8,56,14
-    PUSHBUTTON      "�u��(&R)",ID_REPLACENEXT,195,27,56,14
-    PUSHBUTTON      "�O������(&E)",ID_FINDPREV,256,8,55,14
-    PUSHBUTTON      "�S�u��(&A)",ID_REPLACEALL,255,27,56,14
-    GROUPBOX        "�I�v�V����(&O)",IDC_STATIC,12,47,213,27
-    AUTOCHECKBOX    "�啶������������ʂ��Ȃ�(&I)",IDC_IGNORECASE,22,59,124,10
-    AUTOCHECKBOX    "���K�\��(&X)",IDC_REGEXP,153,58,60,10
-    PUSHBUTTON      "����",IDCANCEL,244,59,37,14
-END
-
-IDD_ABOUTDLG DIALOG  0, 0, 180, 110
-STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | WS_POPUP |
-    WS_CAPTION | WS_SYSMENU
-CAPTION "�o�[�W�������"
-FONT 9, "�l�r �o�S�V�b�N"
-BEGIN
-    ICON            IDR_MAIN,  IDC_STATIC, 8,8,0,0
-    EDITTEXT        IDC_ABOUTSTR, 40,8,135,32, ES_MULTILINE | ES_READONLY | NOT WS_BORDER |  NOT WS_TABSTOP
-
-    LTEXT           "Written by k.inaba 2002-2008\nDerived by roytam1 and RamonUnch", IDC_STATIC,8,50,140,16
-    LTEXT           "URL:", IDC_STATIC,8,70,16,8
-    EDITTEXT        IDC_ABOUTURL, 30,70,150,8, ES_MULTILINE | ES_READONLY | NOT WS_BORDER |  NOT WS_TABSTOP
-
-    PUSHBUTTON      "����",IDCANCEL,70,88,40,14
+    PUSHBUTTON      "キャンセル",IDCANCEL,125,32,56,14
 END
 
 IDD_JUMP DIALOG  0, 0, 131, 43
 STYLE DS_ABSALIGN | DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP |
     WS_CAPTION | WS_SYSMENU
-CAPTION "�w��s�փW�����v"
-FONT 9, "�l�r �o�S�V�b�N"
+CAPTION "指定行へジャンプ"
+FONT 9, "Meiryo UI"
 BEGIN
     DEFPUSHBUTTON   "&Go!",IDOK,87,12,25,14
     EDITTEXT        IDC_LINEBOX,14,13,40,12,ES_AUTOHSCROLL
-    LTEXT           "�s�ڂ�",IDC_LINLABEL,61,15,22,8
+    LTEXT           "行目へ",IDC_LINLABEL,61,15,22,8
 END
 
-IDD_CONFIG DIALOG 0, 0, 287, 236
-STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "�G�f�B�^�ݒ�"
-FONT 9, "�l�r �o�S�V�b�N"
+
+IDD_FINDREPLACE DIALOG  0, 0, 316, 84
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | WS_POPUP |
+    WS_CAPTION | WS_SYSMENU
+CAPTION "検索・置換"
+FONT 9, "Meiryo UI"
 BEGIN
-    GROUPBOX        "���ʐݒ�",IDC_STATIC,7,11,273,102
-    RTEXT           "[���ɖ߂�]���(&U):",IDC_STATIC,24,24,56,8
-    AUTORADIOBUTTON "����",IDC_UNDOLIM1,86,23,33,10, WS_GROUP
-    AUTORADIOBUTTON "",IDC_UNDOLIM2,122,23,11,8
-    EDITTEXT        IDC_UNDO_CT,134,21,24,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "��",IDC_STATIC,162,24,8,8
-    RTEXT           "���ʒu�̕\��(&L):",IDC_STATIC,29,37,51,8
-    AUTORADIOBUTTON "������",IDC_COUNTBYLETTER,86,36,33,10, WS_GROUP
-    AUTORADIOBUTTON "�\���ʒu",IDC_COUNTBYLETTER2,122,36,42,10
-    RTEXT           "̧�ٗ�������(&H):",IDC_STATIC,19,50,62,8
-    EDITTEXT        IDC_LATEST_NUM,86,48,32,12,ES_AUTOHSCROLL | ES_NUMBER
-    RTEXT           "̧�٥̨��(&F):",IDC_STATIC,21,65,60,8
-    EDITTEXT        IDC_TXTFILT,86,63,182,12,ES_AUTOHSCROLL
-    RTEXT           "�O��Grep(&G):",IDC_STATIC,21,80,60,8
-    EDITTEXT        IDC_EXTGREP,86,78,182,12,ES_AUTOHSCROLL
-    RTEXT           "�V�Ķ�ق�Ӱ��(&N):",IDC_STATIC,9,94,73,8
-    COMBOBOX        IDC_NEWCS, 86,92,76,162,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    COMBOBOX        IDC_NEWLB,164,92,39,162,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    COMBOBOX        IDC_NEWDT,204,92,65,164,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    AUTOCHECKBOX    "��������޳�ŊJ��(&R)",IDC_OPENSAME,181,25,90,10
-    AUTOCHECKBOX    "����޳���ނ��L��(&S)",IDC_REMSIZE,181,35,96,10
-    AUTOCHECKBOX    "����޳�ʒu���L��(&P)",IDC_REMPLACE,181,45,94,10
-    GROUPBOX        "�������ߕʐݒ�",IDC_STATIC,7,118,274,92
-    LISTBOX         IDC_DOCTYPELIST,15,133,88,53,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "�ǉ�",IDC_NEWDOCTYPE,17,191,29,14
-    PUSHBUTTON      "�폜",IDC_DELDOCTYPE,48,191,29,14
-    RTEXT           "�����:",IDC_STATIC,114,138,27,8
-    EDITTEXT        IDC_DT_PAT,146,135,127,12,ES_AUTOHSCROLL
-    RTEXT           "��ܰ��:",IDC_STATIC,108,155,34,8
-    COMBOBOX        IDC_PAT_KWD,146,152,75,172,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "�ҏW",IDC_EDITKWD,231,152,19,14
-    RTEXT           "ڲ���:",IDC_STATIC,111,172,31,8
-    COMBOBOX        IDC_PAT_LAY,146,169,75,172,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "�ҏW",IDC_EDITLAY,231,169,19,14
-    DEFPUSHBUTTON   "OK",IDOK,175,214,50,14
-    PUSHBUTTON      "��ݾ�",IDCANCEL,230,214,50,14
+    LTEXT           "検索文字列(&T):",IDC_STATIC,5,10,61,8
+    COMBOBOX        IDC_FINDBOX,70,9,120,100, CBS_AUTOHSCROLL | CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "置換文字列(&W):",IDC_STATIC,5,31,61,8
+    COMBOBOX        IDC_REPLACEBOX,70,28,120,100, CBS_AUTOHSCROLL | CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON   "次を検索(&F)",ID_FINDNEXT,195,8,56,14
+    PUSHBUTTON      "前を検索(&E)",ID_FINDPREV,255,8,56,14
+    PUSHBUTTON      "置換(&R)",ID_REPLACENEXT,195,27,56,14
+    PUSHBUTTON      "全置換(&A)",ID_REPLACEALL,255,27,56,14
+    GROUPBOX        "オプション(&O)",IDC_STATIC,12,47,213,27
+    AUTOCHECKBOX    "大文字小文字を区別しない(&I)",IDC_IGNORECASE,22,59,100,10
+    AUTOCHECKBOX    "正規表現(&X)",IDC_REGEXP,125,59,73,10
+    PUSHBUTTON      "閉じる",IDCANCEL,244,59,37,14
 END
+
+
+IDD_ABOUTDLG DIALOG  0, 0, 180, 118
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | WS_POPUP |
+    WS_CAPTION | WS_SYSMENU
+CAPTION "バージョン情報"
+FONT 9, "Meiryo UI"
+BEGIN
+    ICON            IDR_MAIN,  IDC_STATIC, 8,8,0,0
+    EDITTEXT        IDC_ABOUTSTR, 40,8,135,32, ES_MULTILINE | ES_READONLY | NOT WS_BORDER |  NOT WS_TABSTOP
+
+	LTEXT           "Written by k.inaba 2002-2008\nDerived by roytam1 and RamonUnch\nCompiled by asano@hpe.com", IDC_STATIC,8,50,140,24
+	LTEXT           "URL:", IDC_STATIC,8,78,16,8
+    EDITTEXT        IDC_ABOUTURL, 30,78,150,8, ES_MULTILINE | ES_READONLY | NOT WS_BORDER |  NOT WS_TABSTOP
+
+    PUSHBUTTON      "閉じる",IDCANCEL,70,96,40,14
+END
+
 
 IDD_ADDDOCTYPE DIALOG  0, 0, 123, 67
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "�����^�C�v�̒ǉ�"
-FONT 9, "�l�r �o�S�V�b�N"
+CAPTION "文書タイプの追加"
+FONT 9, "Meiryo UI"
 BEGIN
-    LTEXT           "���O(&N)�F",IDC_STATIC,17,11,27,8
+    LTEXT           "名前(&N):",IDC_STATIC,17,11,27,8
     EDITTEXT        IDC_NAME,46,8,69,12,ES_AUTOHSCROLL
-    LTEXT           "�g���q(&E)�F",IDC_STATIC,10,25,34,8
+    LTEXT           "拡張子(&E):",IDC_STATIC,10,25,34,8
     EDITTEXT        IDC_EXT,46,24,69,12,ES_AUTOHSCROLL
     DEFPUSHBUTTON   "OK",IDOK,33,43,34,14
-    PUSHBUTTON      "��ݾ�",IDCANCEL,71,43,33,14
+    PUSHBUTTON      "ｷｬﾝｾﾙ",IDCANCEL,71,43,33,14
 END
+
+IDD_CONFIG DIALOG DISCARDABLE 0, 0, 287, 236
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "エディタ設定"
+FONT 9, "Meiryo UI"
+BEGIN
+    GROUPBOX        "共通設定",IDC_STATIC,7,11,273,102
+    RTEXT           "[元に戻す]上限(&U):",IDC_STATIC,24,24,56,8
+    AUTORADIOBUTTON "無限",IDC_UNDOLIM1,86,23,33,10, WS_GROUP
+    AUTORADIOBUTTON "",IDC_UNDOLIM2,122,23,11,8
+    EDITTEXT        IDC_UNDO_CT,134,21,24,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "回",IDC_STATIC,162,24,8,8
+    RTEXT           "横位置の表示(&L):",IDC_STATIC,29,37,51,8
+    AUTORADIOBUTTON "文字数",IDC_COUNTBYLETTER,86,36,33,10, WS_GROUP
+    AUTORADIOBUTTON "表示位置",IDC_COUNTBYLETTER2,122,36,42,10
+    RTEXT           "ﾌｧｲﾙ履歴件数(&H):",IDC_STATIC,19,50,62,8
+    EDITTEXT        IDC_LATEST_NUM,86,48,32,12,ES_AUTOHSCROLL | ES_NUMBER
+    RTEXT           "ﾌｧｲﾙ･ﾌｨﾙﾀ(&F):",IDC_STATIC,21,65,60,8
+    EDITTEXT        IDC_TXTFILT,86,63,182,12,ES_AUTOHSCROLL
+    RTEXT           "外部Grep(&G):",IDC_STATIC,21,80,60,8
+    EDITTEXT        IDC_EXTGREP,86,78,182,12,ES_AUTOHSCROLL
+    RTEXT           "新規ﾌｧｲﾙのﾓｰﾄﾞ(&N):",IDC_STATIC,9,94,73,8
+    COMBOBOX        IDC_NEWCS,86,92,76,162,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_NEWLB,164,92,39,162,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_NEWDT,204,92,65,164,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    AUTOCHECKBOX    "同じｳｲﾝﾄﾞｳで開く(&R)",IDC_OPENSAME,181,25,90,10
+    AUTOCHECKBOX    "ｳｲﾝﾄﾞｳｻｲｽﾞを記憶(&S)",IDC_REMSIZE,181,35,96,10
+    AUTOCHECKBOX    "ｳｲﾝﾄﾞｳ位置を記憶(&P)",IDC_REMPLACE,181,45,94,10
+    GROUPBOX        "文書ﾀｲﾌﾟ別設定",IDC_STATIC,7,118,274,92
+    LISTBOX         IDC_DOCTYPELIST,15,133,88,53,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "追加",IDC_NEWDOCTYPE,17,191,29,14
+    PUSHBUTTON      "削除",IDC_DELDOCTYPE,48,191,29,14
+    RTEXT           "ﾊﾟﾀｰﾝ:",IDC_STATIC,114,138,27,8
+    EDITTEXT        IDC_DT_PAT,146,135,127,12,ES_AUTOHSCROLL
+    RTEXT           "ｷｰﾜｰﾄﾞ:",IDC_STATIC,108,155,34,8
+    COMBOBOX        IDC_PAT_KWD,146,152,75,172,CBS_DROPDOWNLIST | CBS_SORT | CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "編集",IDC_EDITKWD,231,152,19,14
+    RTEXT           "ﾚｲｱｳﾄ:",IDC_STATIC,111,172,31,8
+    COMBOBOX        IDC_PAT_LAY,146,169,75,172,CBS_DROPDOWNLIST | CBS_SORT | CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "編集",IDC_EDITLAY,231,169,19,14
+
+    DEFPUSHBUTTON   "OK",IDOK,175,214,50,14
+    PUSHBUTTON      "ｷｬﾝｾﾙ",IDCANCEL,230,214,50,14
+END
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -259,27 +262,30 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_ASKTOSAVE           "���݂̕�����ۑ����܂����H"
+    IDS_ASKTOSAVE           "現在の文書を保存しますか？"
     IDS_APPNAME             "GreenPad"
-    IDS_SAVEERROR           "�t�@�C���̕ۑ��Ɏ��s���܂����B"
-    IDS_ALLFILES            "�S�Ẵt�@�C��(*.*)"
-    IDS_TXTFILES            "�e�L�X�g�`���̃t�@�C��"
-    IDS_OPENERROR           "�t�@�C�����J���̂Ɏ��s���܂����B"
-    IDS_DEFAULT             "(�W��)"
-    IDS_NOTFOUND            "������܂���ł����B"
-    IDS_NOTFOUNDDOWN        "������܂���ł����B\nContinue searching from the top?"
-    IDS_REPLACEALLDONE      "%d�ӏ��u�����܂����B"
-    IDS_OKTODEL             "���폜���Ă�낵���ł����H"
-    IDS_LOADING             "�t�@�C����ǂݍ���ł��܂�..."
-    IDS_NOWRITEACESS        "\nWrite access denied!\n\nOpen elevated so that the file can be modified?"
-    IDS_ERRORNUM            "\n\nError #"
-    IDS_CANTOPENDIR         "\nCan not open directory!"
-    IDS_INVALIDCP           "Invalid codepage selected!"
-    IDS_MODIFIEDOUT         "File was modified outside of GreenPad!\nRelaod it?"
-    IDS_INSERTUNI           "Insert Unicode"
-    IDS_INSSERT             "&Insert"
+    IDS_SAVEERROR           "ファイルの保存に失敗しました。"
+    IDS_ALLFILES            "全てのファイル(*.*)"
+    IDS_TXTFILES            "テキスト形式のファイル"
+    IDS_OPENERROR           "ファイルを開くのに失敗しました。"
+    IDS_DEFAULT             "(標準)"
+    IDS_NOTFOUND            "見つかりませんでした。"
+    IDS_NOTFOUNDDOWN        "見つかりませんでした。\n先頭から再検索しますか？"
+    IDS_REPLACEALLDONE      "%d箇所置換しました。"
+    IDS_OKTODEL             "を削除してよろしいですか？"
+    IDS_LOADING             "ファイルを読み込んでいます..."
+    IDS_NOWRITEACESS        "\n書き込みアクセスが拒否されました。\n\n管理者で開きますか?"
+    IDS_ERRORNUM            "\n\nエラー #"
+    IDS_CANTOPENDIR         "\nディレクトリを開けません。"
+    IDS_INVALIDCP           "不正なコードページが選択されました。"
+    IDS_MODIFIEDOUT         "ファイルがGreenPad外で変更されました。\n開き直しますか？"
+    IDS_INSERTUNI           "Unicode挿入"
+    IDS_INSSERT             "挿入(&I)"
     IDS_ZOOMPC              "Zoom"
+    IDS_UNTITLED            "無題"
+    IDS_CHARSET_CAPTION     "文字コード:"
+    IDS_CRLF_CAPTION        "改行コード:"
 END
 
-#endif    // ���{�� resources
+#endif
 /////////////////////////////////////////////////////////////////////////////

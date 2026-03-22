@@ -2,7 +2,7 @@ NAME       = vcc
 OBJ_SUFFIX = obj
 
 ###############################################################################
-TARGET = release\GreenPad_$(NAME).exe
+TARGET = release\GreenPad.exe
 INTDIR = obj\$(NAME)
 
 all: PRE $(TARGET)
@@ -33,7 +33,8 @@ OBJS = \
  $(INTDIR)\OpenSaveDlg.$(OBJ_SUFFIX) \
  $(INTDIR)\Search.$(OBJ_SUFFIX)      \
  $(INTDIR)\RSearch.$(OBJ_SUFFIX)     \
- $(INTDIR)\ConfigManager.$(OBJ_SUFFIX)
+ $(INTDIR)\ConfigManager.$(OBJ_SUFFIX) \
+ $(INTDIR)\PcreSearch.$(OBJ_SUFFIX)
 
 LIBS = \
  kernel32.lib \
@@ -53,14 +54,13 @@ PRE:
 ###############################################################################
 
 RES = $(INTDIR)\gp_rsrc.res
-PCH = $(INTDIR)\gp.pch
 DEF = /D NDEBUG /D UNICODE /D _UNICODE /D USEGLOBALIME
 
-COPT = /nologo $(DEF) /O1isyb1 /GA /GF /FD /Zc:wchar_t /Yu"stdafx.h" /Fp$(PCH) /Fd$(INTDIR) /W3 /MT /c
-LOPT = /nologo /manifest:no bufferoverflowU.lib
+COPT = /nologo $(DEF) /utf-8 /O1 /Os /Gy /Gw /GL /GR- /EHs-c- /Zc:wchar_t /Fd$(INTDIR) /W3 /MD /c
+LOPT = /nologo /manifest:no /LTCG /OPT:REF /OPT:ICF
 ROPT = $(DEF) /L 0x411 /I "rsrc"
 
-$(TARGET): PRE $(PCH) $(OBJS) $(RES)
+$(TARGET): PRE $(OBJS) $(RES)
 	link $(LOPT) /OUT:$(TARGET) $(OBJS) $(RES) $(LIBS)
 
 {rsrc}.rc{$(INTDIR)}.res:
@@ -72,5 +72,3 @@ $(TARGET): PRE $(PCH) $(OBJS) $(RES)
 	cl $(COPT) /Fo$@ $**
 {editwing}.cpp{$(INTDIR)}.obj:
 	cl $(COPT) /Fo$@ $**
-$(PCH): kilib\stdafx.cpp
-	cl $(COPT) /Fo$(INTDIR)\stdafx.obj /Yc"stdafx.h" $**

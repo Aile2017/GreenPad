@@ -4,6 +4,8 @@
 #include "Search.h"
 #include "NSearch.h"
 #include "RSearch.h"
+#include "PcreSearch.h"
+
 using namespace ki;
 using namespace editwing;
 using view::VPos;
@@ -53,7 +55,7 @@ void SearchManager::LoadFromINI()
 }
 
 //-------------------------------------------------------------------------
-// ƒ_ƒCƒAƒƒOŠÖŒW
+// ãƒ€ã‚¤ã‚¢ãƒ­ã‚°é–¢ä¿‚
 //-------------------------------------------------------------------------
 
 void SearchManager::ShowDlg()
@@ -88,7 +90,7 @@ void SearchManager::on_init()
 	// Set non multiline selection as find string.
 	if( edit_.getCursor().isSelected() && stt->tl == end->tl )
 	{
-		// ‘I‘ğ‚³‚ê‚Ä‚¢‚éó‘Ô‚Å‚ÍAŠî–{“I‚É‚»‚ê‚ğƒ{ƒbƒNƒX‚É•\¦
+		// é¸æŠã•ã‚Œã¦ã„ã‚‹çŠ¶æ…‹ã§ã¯ã€åŸºæœ¬çš„ã«ãã‚Œã‚’ãƒœãƒƒã‚¯ã‚¹ã«è¡¨ç¤º
 		ulong dmy;
 		aarr<unicode> str = edit_.getCursor().getSelectedStr();
 
@@ -142,19 +144,19 @@ bool SearchManager::on_command( UINT cmd, UINT id, HWND ctrl )
 {
 	if( cmd==CBN_SELCHANGE || cmd == CBN_EDITCHANGE )
 	{
-		// •¶š—ñ•ÏX‚ª‚ ‚Á‚½‚±‚Æ‚ğ‹L‰¯
+		// æ–‡å­—åˆ—å¤‰æ›´ãŒã‚ã£ãŸã“ã¨ã‚’è¨˜æ†¶
 		bChanged_ = true;
 	}
 	else if( cmd==BN_CLICKED )
 	{
 		switch( id )
 		{
-		// ƒ`ƒFƒbƒNƒ{ƒbƒNƒX‚Ì•ÏX‚ª‚ ‚Á‚½‚±‚Æ‚ğ‹L‰¯
+		// ãƒã‚§ãƒƒã‚¯ãƒœãƒƒã‚¯ã‚¹ã®å¤‰æ›´ãŒã‚ã£ãŸã“ã¨ã‚’è¨˜æ†¶
 		case IDC_IGNORECASE:
 		case IDC_REGEXP:
 			bChanged_ = true;
 			break;
-		// ƒ{ƒ^ƒ“‚ª‰Ÿ‚³‚ê‚½ê‡
+		// ãƒœã‚¿ãƒ³ãŒæŠ¼ã•ã‚ŒãŸå ´åˆ
 		case ID_FINDNEXT:
 			on_findnext();
 			break;
@@ -223,7 +225,7 @@ void SearchManager::on_replaceall()
 
 void SearchManager::UpdateData()
 {
-	// ƒ_ƒCƒAƒƒO‚©‚ç•ÏX“_‚ğæ‚è‚İ
+	// ãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã‹ã‚‰å¤‰æ›´ç‚¹ã‚’å–ã‚Šè¾¼ã¿
 	bool IgnoreCase = isItemChecked( IDC_IGNORECASE );
 	bool RegExp     = isItemChecked( IDC_REGEXP );
 
@@ -261,7 +263,7 @@ void SearchManager::ConstructSearcher( bool down )
 	bChanged_ = (bChanged_ || (bDownSearch_ != down));
 	if( (bChanged_ || !isReady()) && findStr_.len()!=0 )
 	{
-		// ŒŸõÒì¬
+		// æ¤œç´¢è€…ä½œæˆ
 		bDownSearch_ = down;
 		const unicode *u = findStr_.ConvToWChar();
 
@@ -269,7 +271,12 @@ void SearchManager::ConstructSearcher( bool down )
 			delete searcher_;
 		searcher_ = NULL;
 		if( bRegExp_ )
+		{
+			if( PcreSearch::IsAvailable() )
+				searcher_ = new PcreSearch( u, !bIgnoreCase_, bDownSearch_ );
+			else
 			searcher_ = new RSearch( u, !bIgnoreCase_, bDownSearch_ );
+		}
 		else
 			if( bDownSearch_ )
 				if( bIgnoreCase_ )
@@ -284,7 +291,7 @@ void SearchManager::ConstructSearcher( bool down )
 
 		findStr_.FreeWCMem(u);
 
-		// •ÏXI—¹ƒtƒ‰ƒO
+		// å¤‰æ›´çµ‚äº†ãƒ•ãƒ©ã‚°
 		bChanged_ = false;
 	}
 }
@@ -324,17 +331,17 @@ void SearchManager::FindPrev()
 
 
 //-------------------------------------------------------------------------
-// ÀÛ‚Ìˆ—‚ÌÀ‘•
+// å®Ÿéš›ã®å‡¦ç†ã®å®Ÿè£…
 //-------------------------------------------------------------------------
 
 void SearchManager::FindNextImpl(bool redo)
 {
-	// ƒJ[ƒ\ƒ‹ˆÊ’uæ“¾
+	// ã‚«ãƒ¼ã‚½ãƒ«ä½ç½®å–å¾—
 	const VPos *stt, *end;
 	edit_.getCursor().getCurPos( &stt, &end );
 
-	// ‘I‘ğ”ÍˆÍ‚ ‚è‚È‚çA‘I‘ğ”ÍˆÍæ“ª‚Ì‚P•¶šæ‚©‚çŒŸõ
-	// ‚»‚¤‚Å‚È‚¯‚ê‚ÎƒJ[ƒ\ƒ‹ˆÊ’u‚©‚çŒŸõ
+	// é¸æŠç¯„å›²ã‚ã‚Šãªã‚‰ã€é¸æŠç¯„å›²å…ˆé ­ã®ï¼‘æ–‡å­—å…ˆã‹ã‚‰æ¤œç´¢
+	// ãã†ã§ãªã‘ã‚Œã°ã‚«ãƒ¼ã‚½ãƒ«ä½ç½®ã‹ã‚‰æ¤œç´¢
 	DPos s = *stt;
 	if( *stt != *end )
 	{
@@ -343,17 +350,17 @@ void SearchManager::FindNextImpl(bool redo)
 		else
 			s = DPos( stt->tl, stt->ad+1 );
 	}
-	// ŒŸõ
+	// æ¤œç´¢
 	DPos b, e;
 	if( FindNextFromImpl( s, &b, &e ) )
 	{
-		// Œ©‚Â‚©‚Á‚½‚ç‘I‘ğ
+		// è¦‹ã¤ã‹ã£ãŸã‚‰é¸æŠ
 		edit_.getCursor().MoveCur( b, false );
 		edit_.getCursor().MoveCur( e, true );
 		return;
 	}
 
-	// Œ©‚Â‚©‚ç‚È‚©‚Á‚½ê‡
+	// è¦‹ã¤ã‹ã‚‰ãªã‹ã£ãŸå ´åˆ
 	NotFound(!redo);
 }
 
@@ -372,37 +379,37 @@ void SearchManager::NotFound(bool GoingDown)
 
 void SearchManager::FindPrevImpl()
 {
-	// ƒJ[ƒ\ƒ‹ˆÊ’uæ“¾
+	// ã‚«ãƒ¼ã‚½ãƒ«ä½ç½®å–å¾—
 	const VPos *stt, *end;
 	edit_.getCursor().getCurPos( &stt, &end );
 
 	if( stt->ad!=0 || stt->tl!=0 )
 	{
-		// ‘I‘ğ”ÍˆÍæ“ª‚Ì‚P•¶š‘O‚©‚çŒŸõ
+		// é¸æŠç¯„å›²å…ˆé ­ã®ï¼‘æ–‡å­—å‰ã‹ã‚‰æ¤œç´¢
 		DPos s;
 		if( stt->ad == 0 )
 			s = DPos( stt->tl-1, edit_.getDoc().len(stt->tl-1) );
 		else
 			s = DPos( stt->tl, stt->ad-1 );
 
-		// ŒŸõ
+		// æ¤œç´¢
 		DPos b, e;
 		if( FindPrevFromImpl( s, &b, &e ) )
 		{
-			// Œ©‚Â‚©‚Á‚½‚ç‘I‘ğ
+			// è¦‹ã¤ã‹ã£ãŸã‚‰é¸æŠ
 			edit_.getCursor().MoveCur( b, false );
 			edit_.getCursor().MoveCur( e, true );
 			return;
 		}
 	}
 
-	// Œ©‚Â‚©‚ç‚È‚©‚Á‚½ê‡
+	// è¦‹ã¤ã‹ã‚‰ãªã‹ã£ãŸå ´åˆ
 	NotFound();
 }
 
 bool SearchManager::FindNextFromImpl( DPos s, DPos* beg, DPos* end )
 {
-	// ‚Ps‚¸‚ÂƒT[, Search one line at a time
+	// ï¼‘è¡Œãšã¤ã‚µãƒ¼, Search one line at a time
 	const doc::Document& d = edit_.getDoc();
 	for( ulong mbg,med,e=d.tln(); s.tl<e; ++s.tl, s.ad=0 )
 		if( searcher_ && searcher_->Search(
@@ -411,14 +418,14 @@ bool SearchManager::FindNextFromImpl( DPos s, DPos* beg, DPos* end )
 			beg->tl = end->tl = s.tl;
 			beg->ad = mbg;
 			end->ad = med;
-			return true; // ”­Œ©, Found!
+			return true; // ç™ºè¦‹, Found!
 		}
 	return false;
 }
 
 bool SearchManager::FindPrevFromImpl( DPos s, DPos* beg, DPos* end )
 {
-	// ‚Ps‚¸‚ÂƒT[ƒ`, Search one line at a time
+	// ï¼‘è¡Œãšã¤ã‚µãƒ¼ãƒ, Search one line at a time
 	const doc::Document& d = edit_.getDoc();
 	for( ulong mbg,med; ; s.ad=d.len(--s.tl) )
 	{
@@ -428,7 +435,7 @@ bool SearchManager::FindPrevFromImpl( DPos s, DPos* beg, DPos* end )
 			beg->tl = end->tl = s.tl;
 			beg->ad = mbg;
 			end->ad = med;
-			return true; // ”­Œ©, Found!
+			return true; // ç™ºè¦‹, Found!
 		}
 		if( s.tl==0 )
 			break;
@@ -436,31 +443,101 @@ bool SearchManager::FindPrevFromImpl( DPos s, DPos* beg, DPos* end )
 	return false;
 }
 
+// Expand \0-\9 backreferences in replacement string.
+// \0 = full match, \1-\9 = capture groups.
+// \\ = literal backslash.
+// If out is NULL, only computes and returns the expanded length.
+static ulong DoExpandRepl(
+	const unicode* repl, ulong replLen,
+	const unicode* line,
+	Searchable* searcher,
+	unicode* out )
+{
+	ulong outLen = 0;
+	for( ulong i = 0; i < replLen; i++ )
+	{
+		if( repl[i] == L'\\' && i + 1 < replLen )
+		{
+			unicode next = repl[i+1];
+			if( next >= L'0' && next <= L'9' )
+			{
+				ulong n = (ulong)(next - L'0');
+				ulong mbg, med;
+				if( searcher->getCapture(n, &mbg, &med) )
+				{
+					ulong len = med - mbg;
+					if( out ) ::memcpy( out + outLen, line + mbg, len * sizeof(unicode) );
+					outLen += len;
+				}
+				else
+				{
+					if( out ) { out[outLen] = L'\\'; out[outLen+1] = next; }
+					outLen += 2;
+				}
+				i++;
+			}
+			else if( next == L'\\' )
+			{
+				if( out ) out[outLen] = L'\\';
+				outLen++;
+				i++;
+			}
+			else
+			{
+				if( out ) out[outLen] = repl[i];
+				outLen++;
+			}
+		}
+		else
+		{
+			if( out ) out[outLen] = repl[i];
+			outLen++;
+		}
+	}
+	return outLen;
+}
+
 void SearchManager::ReplaceImpl()
 {
-	// ƒJ[ƒ\ƒ‹ˆÊ’uæ“¾
+	// ã‚«ãƒ¼ã‚½ãƒ«ä½ç½®å–å¾—
 	const VPos *stt, *end;
 	edit_.getCursor().getCurPos( &stt, &end );
 
-	// ‘I‘ğ”ÍˆÍæ“ª‚©‚çŒŸõ
+	// é¸æŠç¯„å›²å…ˆé ­ã‹ã‚‰æ¤œç´¢
 	DPos b, e;
 	if( FindNextFromImpl( *stt, &b, &e ) )
 	{
 		if( e == *end )
 		{
-			const wchar_t* ustr = replStr_.ConvToWChar();
-			const ulong ulen = my_lstrlenW( ustr );
+			const wchar_t* replPat = replStr_.ConvToWChar();
+			const ulong replPatLen = my_lstrlenW( replPat );
 
-			// ’uŠ·
-			edit_.getDoc().Execute( doc::Replace(
-				b, e, ustr, ulen
-			) );
+			const unicode* line = edit_.getDoc().tl(b.tl);
+			ulong ulen;
+			unicode* ustr;
+			if( bRegExp_ )
+			{
+				ulen = DoExpandRepl( replPat, replPatLen, line, searcher_, NULL );
+				ustr = (unicode*)ki::TS.alloc( (ulen+1) * sizeof(unicode) );
+				DoExpandRepl( replPat, replPatLen, line, searcher_, ustr );
+				ustr[ulen] = L'\0';
+			}
+			else
+			{
+				ulen = replPatLen;
+				ustr = const_cast<unicode*>(replPat);
+			}
 
-			replStr_.FreeWCMem( ustr );
+			// ç½®æ›
+			edit_.getDoc().Execute( doc::Replace(b, e, ustr, ulen) );
+
+			if( bRegExp_ )
+				ki::TS.freelast( ustr, (ulen+1) * sizeof(unicode) );
+			replStr_.FreeWCMem( replPat );
 
 			if( FindNextFromImpl( DPos(b.tl,b.ad+ulen), &b, &e ) )
 			{
-				// Ÿ‚ğ‘I‘ğ
+				// æ¬¡ã‚’é¸æŠ
 				edit_.getCursor().MoveCur( b, false );
 				edit_.getCursor().MoveCur( e, true );
 				return;
@@ -468,24 +545,24 @@ void SearchManager::ReplaceImpl()
 		}
 		else
 		{
-			// ‚»‚¤‚Å‚È‚¯‚ê‚Î‚Æ‚è‚ ‚¦‚¸‘I‘ğ
+			// ãã†ã§ãªã‘ã‚Œã°ã¨ã‚Šã‚ãˆãšé¸æŠ
 			edit_.getCursor().MoveCur( b, false );
 			edit_.getCursor().MoveCur( e, true );
 			return;
 		}
 	}
-	// Œ©‚Â‚©‚ç‚È‚©‚Á‚½ê‡
+	// è¦‹ã¤ã‹ã‚‰ãªã‹ã£ãŸå ´åˆ
 	NotFound();
 }
 
 void SearchManager::ReplaceAllImpl()
 {
-	// ‚Ü‚¸AÀs‚·‚é’uŠ·‚ğ‘S‚Ä‚±‚±‚É“o˜^‚·‚é
+	// ã¾ãšã€å®Ÿè¡Œã™ã‚‹ç½®æ›ã‚’å…¨ã¦ã“ã“ã«ç™»éŒ²ã™ã‚‹
 	doc::MacroCommand mcr;
 
-	// ’uŠ·Œã•¶š—ñ
-	const wchar_t* ustr = replStr_.ConvToWChar();
-	const ulong ulen = my_lstrlenW( ustr );
+	// ç½®æ›å¾Œæ–‡å­—åˆ—
+	const wchar_t* replPat = replStr_.ConvToWChar();
+	const ulong replPatLen = my_lstrlenW( replPat );
 
 	// Get selection position
 	const VPos *stt, *end;
@@ -503,26 +580,43 @@ void SearchManager::ReplaceAllImpl()
 		dend = *end; // End of selection
 	}
 
-	// •¶‘‚Ì“ª‚©‚çŒŸõ, Search from the beginning of the document (or selection)
+	// æ–‡æ›¸ã®é ­ã‹ã‚‰æ¤œç´¢, Search from the beginning of the document (or selection)
 	int dif=0;
+	ulong lastExpandedLen = replPatLen;
 	DPos b, e;
 	while( FindNextFromImpl( s, &b, &e ) && (noselection || e <= dend) )
 	{ // search until the end of selection if any
 		if( s.tl != b.tl ) dif = 0;
 		s = e;
 
-		// ’uŠ·ƒRƒ}ƒ“ƒh‚ğ“o˜^
+		// ç½®æ›ã‚³ãƒãƒ³ãƒ‰ã‚’ç™»éŒ²
 		b.ad += dif, e.ad += dif;
-		mcr.Add( new doc::Replace(b,e,ustr,ulen) );
-		dif -= e.ad-b.ad-ulen;
+		if( bRegExp_ )
+		{
+			const unicode* line = edit_.getDoc().tl(b.tl);
+			ulong expLen = DoExpandRepl( replPat, replPatLen, line, searcher_, NULL );
+			unicode* expBuf = (unicode*)ki::TS.alloc( (expLen+1) * sizeof(unicode) );
+			DoExpandRepl( replPat, replPatLen, line, searcher_, expBuf );
+			expBuf[expLen] = L'\0';
+			mcr.Add( new doc::Replace(b, e, expBuf, expLen) );
+			ki::TS.freelast( expBuf, (expLen+1) * sizeof(unicode) );
+			dif -= e.ad - b.ad - (int)expLen;
+			lastExpandedLen = expLen;
+		}
+		else
+		{
+			mcr.Add( new doc::Replace(b, e, replPat, replPatLen) );
+			dif -= e.ad - b.ad - (int)replPatLen;
+			lastExpandedLen = replPatLen;
+		}
 	}
 
 	if( mcr.size() > 0 )
 	{
-		// ‚±‚±‚Å˜A‘±’uŠ·
+		// ã“ã“ã§é€£ç¶šç½®æ›
 		edit_.getDoc().Execute( mcr );
-		// ƒJ[ƒ\ƒ‹ˆÚ“®
-		e.ad = b.ad + ulen;
+		// ã‚«ãƒ¼ã‚½ãƒ«ç§»å‹•
+		e.ad = b.ad + lastExpandedLen;
 		if (noselection)
 		{
 			edit_.getCursor().MoveCur( e, false );
@@ -532,7 +626,7 @@ void SearchManager::ReplaceAllImpl()
 			edit_.getCursor().MoveCur( oristt, false );
 			edit_.getCursor().MoveCur( DPos(dend.tl, dend.ad+dif), true );
 		}
-		// •Â‚¶‚éH
+		// é–‰ã˜ã‚‹ï¼Ÿ
 		End( IDOK );
 	}
 
@@ -540,5 +634,5 @@ void SearchManager::ReplaceAllImpl()
 	::wsprintf( str, RzsString(IDS_REPLACEALLDONE).c_str(), mcr.size() );
 	MsgBox( str, RzsString(IDS_APPNAME).c_str(), MB_ICONINFORMATION );
 
-	replStr_.FreeWCMem( ustr );
+	replStr_.FreeWCMem( replPat );
 }
