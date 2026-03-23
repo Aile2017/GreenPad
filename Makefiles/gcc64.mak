@@ -95,4 +95,3 @@ clean :
 	-rm $(OBJS)
 	-rm $(TARGET)
 	-rmdir $(INTDIR)
-	-rmdir obj

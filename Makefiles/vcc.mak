@@ -72,3 +72,10 @@ $(TARGET): PRE $(OBJS) $(RES)
 	cl $(COPT) /Fo$@ $**
 {editwing}.cpp{$(INTDIR)}.obj:
 	cl $(COPT) /Fo$@ $**
+
+clean :
+	-del $(RES)
+	-del $(OBJS)
+	-del $(TARGET)
+	-rmdir $(INTDIR)
+	-rmdir obj
