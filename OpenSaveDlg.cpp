@@ -10,94 +10,88 @@ using namespace ki;
 // 文字コードリスト
 //------------------------------------------------------------------------
 
-// merge 3 lists into 1 #define for easier management
-//  format: CHARSET_VALUE("jp-text", "en-text", "short-name")
-//  keep forward slash at line-end for non-last-line of list
+// format: CHARSET_VALUE("short-name")
 //  ordering are important as Enroll/EnrollS/EnrollL uses list in same order
 #define CHARSETS_LIST \
-	CHARSET_VALUE("自動判定",			"AutoDetect",			"") \
-	CHARSET_VALUE("日本語(ShiftJIS)",	"Japanese(ShiftJIS)",	"SJIS") \
-	CHARSET_VALUE("日本語(EUC)",		"Japanese(EUC)",		"EUC") \
-	CHARSET_VALUE("日本語(ISO-2022-JP)","Japanese(ISO-2022-JP)","JIS") \
-	CHARSET_VALUE("韓国語(EUC-KR)",		"Korean(EUC-KR)",		"UHC") \
-	CHARSET_VALUE("韓国語(ISO-2022-KR)","Korean(ISO-2022-KR)",	"I2022KR") \
-	CHARSET_VALUE("韓国語(Johab)",		"Korean(Johab)",		"Johab") \
-	CHARSET_VALUE("中国語(GB18030)",	"Chinese(GB18030)",		"GB18030") \
-	CHARSET_VALUE("中国語(GB18030,BOM)",	"Chinese(GB18030,BOM)",	"GB18030b") \
-	CHARSET_VALUE("中国語(GB2312)",		"Chinese(GB2312)",		"GBK") \
-	CHARSET_VALUE("中国語(ISO-2022-CN)","Chinese(ISO-2022-CN)",	"I2022CN") \
-	CHARSET_VALUE("中国語(HZ)",			"Chinese(HZ)",			"HZ") \
-	CHARSET_VALUE("中国語(Big5)",		"Chinese(Big5)",		"BIG5") \
-	CHARSET_VALUE("中国語(EUC-TW/CNS)",	"Chinese(EUC-TW/CNS)",	"CNS") \
-	CHARSET_VALUE("中国語(TCA)",		"Chinese(TCA)",			"TCA") \
-	CHARSET_VALUE("中国語(ETen)",		"Chinese(ETen)",		"ETEN") \
-	CHARSET_VALUE("中国語(IBM 5550)",	"Chinese(IBM 5550)",	"IBM5550") \
-	CHARSET_VALUE("中国語(Teletext)",	"Chinese(Teletext)",	"TLTEXT") \
-	CHARSET_VALUE("中国語(Wang)",		"Chinese(Wang)",		"WANG") \
-	CHARSET_VALUE("UTF-1",				"UTF-1",				"UTF1") \
-	CHARSET_VALUE("UTF-1(BOM)",			"UTF-1(BOM)",			"UTF1b") \
-	CHARSET_VALUE("UTF-5",				"UTF-5",				"UTF5") \
-	CHARSET_VALUE("UTF-5(BOM)",			"UTF-5(BOM)",			"UTF5b") \
-	CHARSET_VALUE("UTF-7",				"UTF-7",				"UTF7") \
-	CHARSET_VALUE("UTF-8",				"UTF-8",				"UTF8") \
-	CHARSET_VALUE("UTF-8(BOM)",			"UTF-8(BOM)",			"UTF8b") \
-	CHARSET_VALUE("UTF-9(1997)",		"UTF-9(1997)",			"UTF9") \
-	CHARSET_VALUE("UTF-9(1997,BOM)",	"UTF-9(1997,BOM)",		"UTF9b") \
-	CHARSET_VALUE("UTF-16BE(BOM)",		"UTF-16BE(BOM)",		"U16BEb") \
-	CHARSET_VALUE("UTF-16LE(BOM)",		"UTF-16LE(BOM)",		"U16LEb") \
-	CHARSET_VALUE("UTF-16BE",			"UTF-16BE",				"U16BE") \
-	CHARSET_VALUE("UTF-16LE",			"UTF-16LE",				"U16LE") \
-	CHARSET_VALUE("UTF-32BE(BOM)",		"UTF-32BE(BOM)",		"U32BEb") \
-	CHARSET_VALUE("UTF-32LE(BOM)",		"UTF-32LE(BOM)",		"U32LEb") \
-	CHARSET_VALUE("UTF-32BE",			"UTF-32BE",				"U32BE") \
-	CHARSET_VALUE("UTF-32LE",			"UTF-32LE",				"U32LE") \
-	CHARSET_VALUE("SCSU",				"SCSU",					"SCSU") \
-	CHARSET_VALUE("SCSU(BOM)",			"SCSU(BOM)",			"SCSUb") \
-	CHARSET_VALUE("BOCU",				"BOCU",					"BOCU") \
-	CHARSET_VALUE("BOCU(BOM)",			"BOCU(BOM)",			"BOCUb") \
-	CHARSET_VALUE("FSS-UTF(19920902)",	"FSS-UTF(19920902)",	"FSSUTF") \
-	CHARSET_VALUE("FSS-UTF(19920902,BOM)","FSS-UTF(19920902,BOM)","FSSUTFb") \
-	CHARSET_VALUE("UTF-EBCDIC",			"UTF-EBCDIC",			"UEBCDIC") \
-	CHARSET_VALUE("UTF-EBCDIC(BOM)",	"UTF-EBCDIC(BOM)",		"UEBCDICb") \
-	CHARSET_VALUE("欧米",				"Latin-1",				"LTN1") \
-	CHARSET_VALUE("欧米(DOS)",			"Latin-1(DOS)",			"LN1DOS") \
-	CHARSET_VALUE("中欧",				"Latin-2",				"LTN2") \
-	CHARSET_VALUE("中欧(DOS)",			"Latin-2(DOS)",			"LN2DOS") \
-	CHARSET_VALUE("キリル語",				"Cyrillic",			"CYRL") \
-	CHARSET_VALUE("キリル語(IBM)",		"Cyrillic(IBM)",		"CYRIBM") \
-	CHARSET_VALUE("キリル語(MS-DOS)",	"Cyrillic(MS-DOS)",		"CYRDOS") \
-	CHARSET_VALUE("キリル語(KOI8-R)",	"Cyrillic(KOI8-R)",		"KO8R") \
-	CHARSET_VALUE("キリル語(KOI8-U)",	"Cyrillic(KOI8-U)",		"KO8U") \
-	CHARSET_VALUE("タイ語",				"Thai",					"THAI") \
-	CHARSET_VALUE("トルコ語",			"Turkish",				"TRK") \
-	CHARSET_VALUE("トルコ語(DOS)",		"Turkish(DOS)",			"TRKDOS") \
-	CHARSET_VALUE("バルト語",			"Baltic",				"BALT") \
-	CHARSET_VALUE("バルト語(IBM)",		"Baltic(IBM)",			"BALIBM") \
-	CHARSET_VALUE("ベトナム語",			"Vietnamese",			"VTNM") \
-	CHARSET_VALUE("ギリシャ語",			"Greek",				"GRK") \
-	CHARSET_VALUE("ギリシャ語(IBM)",	"Greek(IBM)",			"GRKIBM") \
-	CHARSET_VALUE("ギリシャ語(MS-DOS)",	"Greek(MS-DOS)",		"GRKDOS") \
-	CHARSET_VALUE("アラビア語",			"Arabic",				"ARA") \
-	CHARSET_VALUE("アラビア語(IBM)",	"Arabic(IBM)",			"ARAIBM") \
-	CHARSET_VALUE("アラビア語(MS-DOS)",	"Arabic(MS-DOS)",		"ARADOS") \
-	CHARSET_VALUE("ヘブライ語",			"Hebrew",				"HEB") \
-	CHARSET_VALUE("ヘブライ語(DOS)",	"Hebrew(DOS)",			"HEBDOS") \
-	CHARSET_VALUE("ポルトガル語(DOS)",	"Portuguese(DOS)",		"PRT") \
-	CHARSET_VALUE("アイスランド語(DOS)","Icelandic(DOS)",		"ICE") \
-	CHARSET_VALUE("フランス語(カナダ)(DOS)","Canadian French(DOS)","CFR") \
-	CHARSET_VALUE("MSDOS(北欧)",		"MSDOS(Nodic)",			"NODIC") \
-	CHARSET_VALUE("MSDOS(us)",			"MSDOS(us)",			"DOS")
+	CHARSET_VALUE("AutoDetect",			"") \
+	CHARSET_VALUE("Japanese(ShiftJIS)",	"SJIS") \
+	CHARSET_VALUE("Japanese(EUC)",		"EUC") \
+	CHARSET_VALUE("Japanese(ISO-2022-JP)","JIS") \
+	CHARSET_VALUE("Korean(EUC-KR)",		"UHC") \
+	CHARSET_VALUE("Korean(ISO-2022-KR)",	"I2022KR") \
+	CHARSET_VALUE("Korean(Johab)",		"Johab") \
+	CHARSET_VALUE("Chinese(GB18030)",		"GB18030") \
+	CHARSET_VALUE("Chinese(GB18030,BOM)",	"GB18030b") \
+	CHARSET_VALUE("Chinese(GB2312)",		"GBK") \
+	CHARSET_VALUE("Chinese(ISO-2022-CN)",	"I2022CN") \
+	CHARSET_VALUE("Chinese(HZ)",			"HZ") \
+	CHARSET_VALUE("Chinese(Big5)",		"BIG5") \
+	CHARSET_VALUE("Chinese(EUC-TW/CNS)",	"CNS") \
+	CHARSET_VALUE("Chinese(TCA)",			"TCA") \
+	CHARSET_VALUE("Chinese(ETen)",		"ETEN") \
+	CHARSET_VALUE("Chinese(IBM 5550)",	"IBM5550") \
+	CHARSET_VALUE("Chinese(Teletext)",	"TLTEXT") \
+	CHARSET_VALUE("Chinese(Wang)",		"WANG") \
+	CHARSET_VALUE("UTF-1",				"UTF1") \
+	CHARSET_VALUE("UTF-1(BOM)",			"UTF1b") \
+	CHARSET_VALUE("UTF-5",				"UTF5") \
+	CHARSET_VALUE("UTF-5(BOM)",			"UTF5b") \
+	CHARSET_VALUE("UTF-7",				"UTF7") \
+	CHARSET_VALUE("UTF-8",				"UTF8") \
+	CHARSET_VALUE("UTF-8(BOM)",			"UTF8b") \
+	CHARSET_VALUE("UTF-9(1997)",			"UTF9") \
+	CHARSET_VALUE("UTF-9(1997,BOM)",		"UTF9b") \
+	CHARSET_VALUE("UTF-16BE(BOM)",		"U16BEb") \
+	CHARSET_VALUE("UTF-16LE(BOM)",		"U16LEb") \
+	CHARSET_VALUE("UTF-16BE",				"U16BE") \
+	CHARSET_VALUE("UTF-16LE",				"U16LE") \
+	CHARSET_VALUE("UTF-32BE(BOM)",		"U32BEb") \
+	CHARSET_VALUE("UTF-32LE(BOM)",		"U32LEb") \
+	CHARSET_VALUE("UTF-32BE",				"U32BE") \
+	CHARSET_VALUE("UTF-32LE",				"U32LE") \
+	CHARSET_VALUE("SCSU",					"SCSU") \
+	CHARSET_VALUE("SCSU(BOM)",			"SCSUb") \
+	CHARSET_VALUE("BOCU",					"BOCU") \
+	CHARSET_VALUE("BOCU(BOM)",			"BOCUb") \
+	CHARSET_VALUE("FSS-UTF(19920902)",	"FSSUTF") \
+	CHARSET_VALUE("FSS-UTF(19920902,BOM)","FSSUTFb") \
+	CHARSET_VALUE("UTF-EBCDIC",			"UEBCDIC") \
+	CHARSET_VALUE("UTF-EBCDIC(BOM)",		"UEBCDICb") \
+	CHARSET_VALUE("Latin-1",				"LTN1") \
+	CHARSET_VALUE("Latin-1(DOS)",			"LN1DOS") \
+	CHARSET_VALUE("Latin-2",				"LTN2") \
+	CHARSET_VALUE("Latin-2(DOS)",			"LN2DOS") \
+	CHARSET_VALUE("Cyrillic",			"CYRL") \
+	CHARSET_VALUE("Cyrillic(IBM)",		"CYRIBM") \
+	CHARSET_VALUE("Cyrillic(MS-DOS)",		"CYRDOS") \
+	CHARSET_VALUE("Cyrillic(KOI8-R)",		"KO8R") \
+	CHARSET_VALUE("Cyrillic(KOI8-U)",		"KO8U") \
+	CHARSET_VALUE("Thai",					"THAI") \
+	CHARSET_VALUE("Turkish",				"TRK") \
+	CHARSET_VALUE("Turkish(DOS)",			"TRKDOS") \
+	CHARSET_VALUE("Baltic",				"BALT") \
+	CHARSET_VALUE("Baltic(IBM)",			"BALIBM") \
+	CHARSET_VALUE("Vietnamese",			"VTNM") \
+	CHARSET_VALUE("Greek",				"GRK") \
+	CHARSET_VALUE("Greek(IBM)",			"GRKIBM") \
+	CHARSET_VALUE("Greek(MS-DOS)",		"GRKDOS") \
+	CHARSET_VALUE("Arabic",				"ARA") \
+	CHARSET_VALUE("Arabic(IBM)",			"ARAIBM") \
+	CHARSET_VALUE("Arabic(MS-DOS)",		"ARADOS") \
+	CHARSET_VALUE("Hebrew",				"HEB") \
+	CHARSET_VALUE("Hebrew(DOS)",			"HEBDOS") \
+	CHARSET_VALUE("Portuguese(DOS)",		"PRT") \
+	CHARSET_VALUE("Icelandic(DOS)",		"ICE") \
+	CHARSET_VALUE("Canadian French(DOS)","CFR") \
+	CHARSET_VALUE("MSDOS(Nodic)",			"NODIC") \
+	CHARSET_VALUE("MSDOS(us)",			"DOS")
 
 CharSetList::CharSetList()
 	: list_( 72 )
 {
-	// Determine language based on UI language, not system ACP
-	// GetUserDefaultUILanguage() returns language ID (0x411=Japanese, 0x804=Chinese Simplified, etc.)
-	LANGID uiLang = ::GetUserDefaultUILanguage();
-	short useJP = (uiLang & 0xFF) == LANG_JAPANESE;
-	#define Enroll(_id,_nm)  EnrollCs( _id, _nm | BOTH<<8 | useJP<<16 )
-	#define EnrollS(_id,_nm) EnrollCs( _id, _nm | SAVE<<8 | useJP<<16 )
-	#define EnrollL(_id,_nm) EnrollCs( _id, _nm | LOAD<<8 | useJP<<16 )
+	#define Enroll(_id,_nm)  EnrollCs( _id, _nm | BOTH<<8 )
+	#define EnrollS(_id,_nm) EnrollCs( _id, _nm | SAVE<<8 )
+	#define EnrollL(_id,_nm) EnrollCs( _id, _nm | LOAD<<8 )
 	// 適宜登録
 	                               EnrollL( AutoDetect,      0 );
 	if( ::IsValidCodePage(932) )   Enroll(  SJIS,            1 )
@@ -194,26 +188,17 @@ CharSetList::CharSetList()
 
 void CharSetList::EnrollCs(int _id, uint nmtype)
 {
-	static const TCHAR* const lnmJp[] = {
-		#define CHARSET_VALUE(a,b,c) TEXT(a),
-		CHARSETS_LIST
-		#undef CHARSET_VALUE
-	};
-
-	static const TCHAR* const lnmEn[] = {
-		#define CHARSET_VALUE(a,b,c) TEXT(b),
+	static const TCHAR* const lnm[] = {
+		#define CHARSET_VALUE(a,b) TEXT(a),
 		CHARSETS_LIST
 		#undef CHARSET_VALUE
 	};
 
 	static const TCHAR* const snm[] = {
-		#define CHARSET_VALUE(a,b,c) TEXT(c),
+		#define CHARSET_VALUE(a,b) TEXT(b),
 		CHARSETS_LIST
 		#undef CHARSET_VALUE
 	};
-
-	bool useJP = HIWORD(nmtype) != 0;
-	const TCHAR* const * lnm = (useJP ? lnmJp : lnmEn);
 
 	CsInfo cs;
 	uchar type = LOWORD(nmtype)>>8;
