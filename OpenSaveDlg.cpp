@@ -390,21 +390,27 @@ bool OpenFileDlg::DoModal( HWND wnd, const TCHAR* fltr, const TCHAR* fnm )
 			{
 				TCHAR szCap[128]; szCap[0] = TEXT('\0');
 				app().LoadString( IDS_CHARSET_CAPTION, szCap, countof(szCap) );
-				int capLen = ::lstrlen( szCap );
-				wchar_t chardetVer[64];
-				if( TextFileR::GetChardetVersionStr( chardetVer, countof(chardetVer) ) )
-				{
-					::wsprintfW( szCap + capLen, L" (chardet %s)", chardetVer );
-				}
-				else if( TextFileR::IsChardetAvailable() )
-				{
-					::lstrcpyn( szCap + capLen, TEXT(" (chardet loaded)"), countof(szCap) - capLen );
-				}
 				pfdc->StartVisualGroup( 200, szCap );
 				pfdc->AddComboBox( IDC_CODELIST );
+				
+				// Check if chardet is available for modifying AutoDetect item label
+				bool chardetAvailable = TextFileR::IsChardetAvailable();
+				
 				for( size_t i = 0; i < csl_.size(); ++i )
 					if( csl_[i].type & 2 )
-						pfdc->AddControlItem( IDC_CODELIST, (DWORD)i, csl_[i].longName );
+					{
+						// Modify AutoDetect label with (chardet) if available
+						TCHAR itemLabel[256];
+						if( chardetAvailable && csl_[i].ID == AutoDetect )
+						{
+							::wsprintf( itemLabel, TEXT("%s(chardet)"), csl_[i].longName );
+							pfdc->AddControlItem( IDC_CODELIST, (DWORD)i, itemLabel );
+						}
+						else
+						{
+							pfdc->AddControlItem( IDC_CODELIST, (DWORD)i, csl_[i].longName );
+						}
+					}
 				pfdc->SetSelectedControlItem( IDC_CODELIST, (DWORD)csIndex_ );
 				pfdc->EndVisualGroup();
 				pfdc->Release();
