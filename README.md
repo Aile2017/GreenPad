@@ -137,4 +137,4 @@ Enable=1
 
 ## License
 
-NYSL Version 0.9982 — essentially public domain. See [readme.en.txt](readme.en.txt) for the full text.
+NYSL Version 0.9982 — essentially public domain. See [readme.en.txt](docs/readme.en.txt) for the full text.
