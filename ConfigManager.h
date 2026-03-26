@@ -121,8 +121,24 @@ public:
 	//@{ ウインドウ位置・サイズ復元処理 //@}
 	inline int GetWndX() const { return rememberWindowPlace_ ? wndPos_.left : CW_USEDEFAULT; }
 	inline int GetWndY() const { return rememberWindowPlace_ ? wndPos_.top : CW_USEDEFAULT; }
-	inline int GetWndW() const { return rememberWindowSize_ ? wndPos_.right-wndPos_.left : CW_USEDEFAULT; }
-	inline int GetWndH() const { return rememberWindowSize_ ? wndPos_.bottom-wndPos_.top : CW_USEDEFAULT; }
+	inline int GetWndW() const {
+		if (rememberWindowSize_) {
+			return wndPos_.right - wndPos_.left;
+		}
+		if (wndPos_.right > wndPos_.left) {
+			return wndPos_.right - wndPos_.left;
+		}
+		return CW_USEDEFAULT;
+	}
+	inline int GetWndH() const {
+		if (rememberWindowSize_) {
+			return wndPos_.bottom - wndPos_.top;
+		}
+		if (wndPos_.bottom > wndPos_.top) {
+			return wndPos_.bottom - wndPos_.top;
+		}
+		return CW_USEDEFAULT;
+	}
 	inline bool GetWndM() const { return rememberWindowSize_ && wndM_; }
 	void RememberWnd( const ki::Window* wnd );
 	inline const RECT *PMargins() const { return &rcPMargins_; }

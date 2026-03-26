@@ -706,13 +706,9 @@ void ConfigManager::LoadIni()
 	rememberWindowPlace_ = ini_.GetBool( TEXT("RememberWindowPos"), false );
 
 	static const RECT defpos = { CW_USEDEFAULT, CW_USEDEFAULT, 0, 0 };
-	CopyRect(&wndPos_, &defpos);
-	if( rememberWindowPlace_ || rememberWindowSize_ )
-	{
-		ini_.GetRect( TEXT("WndPos"), &wndPos_, &defpos );
-		if( rememberWindowSize_ )
-			wndM_ = ini_.GetBool( TEXT("WndM"), false );
-	}
+	ini_.GetRect( TEXT("WndPos"), &wndPos_, &defpos );
+	if( rememberWindowSize_ )
+		wndM_ = ini_.GetBool( TEXT("WndM"), false );
 	// Exit with the ESC key?
 	useQuickExit_ = ini_.GetBool( TEXT("QuickExit"), false );
 	// Use the old Windows 3.x Open/Save dialog style?
