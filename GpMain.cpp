@@ -532,7 +532,7 @@ void GreenPadWnd::on_helpabout()
 			s += SInt2Str( osbuild ).c_str();
 
 			SetItemText(IDC_ABOUTSTR, s.c_str());
-			SetItemText(IDC_ABOUTURL, TEXT("https://github.com/RamonUnch/GreenPad"));
+			SetItemText(IDC_ABOUTURL, RzsString(IDS_PROJECT_URL).c_str());
 			SetCenter(hwnd(), parent_);
 		}
 		HWND parent_;

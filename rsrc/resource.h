@@ -34,6 +34,7 @@
 #define IDS_UNTITLED                    21
 #define IDS_CHARSET_CAPTION             22
 #define IDS_CRLF_CAPTION                23
+#define IDS_PROJECT_URL                 24
 
 #define IDR_MAIN                        103
 //#define IDD_OPENFILEHOOK                105
