@@ -1873,16 +1873,58 @@ int kmain()
 	LOGGER( "kmain() begin" );
 
 	// Load runtime language file from lang/ directory next to the exe.
+	// Language priority: command-line (-lang xx_XX) > ini (Language=xx_XX) > OS auto-detect
 	{
 		wchar_t exePath[MAX_PATH];
 		GetModuleFileNameW(nullptr, exePath, MAX_PATH);
-		// Trim to directory part
 		wchar_t* lastSlash = wcsrchr(exePath, L'\\');
-		if (lastSlash)
-			*lastSlash = L'\0';
+		if (lastSlash) *lastSlash = L'\0';
+
 		wchar_t langDir[MAX_PATH];
 		wsprintfW(langDir, L"%s\\lang", exePath);
-		LangManager::AutoLoad(langDir);
+
+		// 1. Check command-line: GreenPad.exe -lang ja_JP ...
+		wchar_t langFromCmdLine[32] = L"";
+		{
+			int argc = 0;
+			LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+			if (argv) {
+				for (int i = 1; i < argc - 1; ++i) {
+					if (lstrcmpiW(argv[i], L"-lang") == 0) {
+						lstrcpynW(langFromCmdLine, argv[i + 1], 32);
+						break;
+					}
+				}
+				LocalFree(argv);
+			}
+		}
+
+		// 2. Check ini file: Language=ja_JP
+		// ConfigManager uses either the current username or "SharedConfig" as section.
+		wchar_t langFromIni[32] = L"";
+		{
+			wchar_t iniPath[MAX_PATH];
+			DWORD len = GetModuleFileNameW(nullptr, iniPath, MAX_PATH);
+			if (len > 3)
+				lstrcpyW(iniPath + len - 3, L"ini");
+			// Try username section first
+			wchar_t username[256] = L"";
+			DWORD unLen = 256;
+			GetUserNameW(username, &unLen);
+			if (username[0])
+				GetPrivateProfileStringW(username, L"Language", L"", langFromIni, 32, iniPath);
+			// Fall back to SharedConfig section
+			if (!langFromIni[0])
+				GetPrivateProfileStringW(L"SharedConfig", L"Language", L"", langFromIni, 32, iniPath);
+		}
+
+		// Apply priority: cmdline > ini > auto-detect
+		const wchar_t* locale =
+			langFromCmdLine[0] ? langFromCmdLine :
+			langFromIni[0]     ? langFromIni     :
+			nullptr;
+
+		LangManager::AutoLoad(langDir, locale);
 	}
 
 	GreenPadWnd wnd;
