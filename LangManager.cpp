@@ -417,7 +417,7 @@ void LangManager::ApplyToDialog(HWND hDlg, UINT dialogId) const {
     for (HWND child : children) {
         int id = GetDlgCtrlID(child);
         wchar_t key[32];
-        if (id == -1 || id == 0) {
+        if (id == 0 || (WORD)id == 0xFFFF) { // 0xFFFF = IDC_STATIC from dialog template
             wsprintfW(key, L"static.%d", staticIdx++);
         } else {
             wsprintfW(key, L"%u", (UINT)id);
