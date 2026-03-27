@@ -1321,12 +1321,18 @@ void GreenPadWnd::GetTitleText( TCHAR *name )
 {
 	TCHAR *end = name+1;
 	RzsString untitled(IDS_UNTITLED);
+	const TCHAR* untitledText = untitled.c_str();
+	RzsString appName(IDS_APPNAME);
+	const TCHAR* appNameText = appName.c_str();
 	name[0] = TEXT('[');
-	end = my_lstrkpy( end, isUntitled() ? untitled : filename_.name() );
+	if( isUntitled() )
+		end = my_lstrkpy( end, untitledText );
+	else
+		end = my_lstrkpy( end, filename_.name() );
 	if( edit_.getDoc().isModified() )
 		end = my_lstrkpy( end, TEXT(" *") );
 	end = my_lstrkpy( end, TEXT("] - ") );
-	end = my_lstrkpy( end, RzsString(IDS_APPNAME).c_str() );
+	end = my_lstrkpy( end, appNameText );
 }
 
 void GreenPadWnd::UpdateWindowName()
