@@ -130,6 +130,12 @@ To share one `GreenPad.ini` across user accounts, add to the ini file:
 Enable=1
 ```
 
+## Credits
+
+### Application Icon
+
+[Compose, create, edit, file, office, pencil, writing, creative Icon](https://icon-icons.com/icon/compose-create-edit-file-office-pencil-writing-creative/107746) by [icon-icons.com](https://icon-icons.com/), used under free for commercial use license.
+
 ## License
 
 NYSL Version 0.9982 — essentially public domain. See [readme.en.txt](docs/readme.en.txt) for the full text.

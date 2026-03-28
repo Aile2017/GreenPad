@@ -448,7 +448,9 @@ void GreenPadWnd::on_helpabout()
 		#define UNIANSI TEXT(" (ANSI)")
 	#endif
 
-	#if defined(__GNUC__)
+	#if defined(__clang__)
+		#define COMPILER TEXT("LLVM Clang - ")  TEXT(STR(__clang_major__)) TEXT(".") TEXT(STR(__clang_minor__))
+	#elif defined(__GNUC__)
 		#define COMPILER TEXT( "GNU C Compiler - " __VERSION__ )
 	#elif defined(_MSC_VER)
 //		#define COMPILER TEXT("Visual C++ - ")  TEXT(STR(_MSC_VER))
@@ -461,8 +463,6 @@ void GreenPadWnd::on_helpabout()
 		#define COMPILER TEXT("Borland C++ - ") TEXT(STR(__DMC__))
 	#elif defined(__INTEL_COMPILER)
 		#define COMPILER TEXT("Borland C++ - ") TEXT(STR(__INTEL_COMPILER))
-	#elif defined(__clang__)
-		#define COMPILER TEXT("LLVM Clang - ")  TEXT(STR(__clang_major__)) TEXT(".") TEXT(STR(__clang_minor__))
 	#else
 		//#error Unknown compiler, consider adding it to the list.
 		#define COMPILER TEXT( "?\n" )
