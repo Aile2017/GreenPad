@@ -89,12 +89,9 @@ BEGIN
     "1",            ID_CMD_NOWRAP,          VIRTKEY, CONTROL, NOINVERT
     "2",            ID_CMD_WRAPWIDTH,       VIRTKEY, CONTROL, NOINVERT
     "3",            ID_CMD_WRAPWINDOW,      VIRTKEY, CONTROL, NOINVERT
-    VK_F1,          ID_CMD_HELP,            VIRTKEY, NOINVERT
     VK_F7,          ID_CMD_OPENSELECTION,   VIRTKEY, NOINVERT
     VK_F8,          ID_CMD_SELECTIONLEN,    VIRTKEY, NOINVERT
-    "J",            ID_CMD_JUMP,            VIRTKEY, CONTROL, NOINVERT
-    "N",            ID_CMD_NEWFILE,         VIRTKEY, CONTROL, NOINVERT
-    "P",            ID_CMD_PRINT,           VIRTKEY, CONTROL, NOINVERT
+    "J",            ID_CMD_HELP,            VIRTKEY, CONTROL, NOINVERT
     "L",            ID_CMD_OPENELEVATED,    VIRTKEY, CONTROL, NOINVERT
     "L",            ID_CMD_LOWERCASE,       VIRTKEY, ALT, NOINVERT
     "U",            ID_CMD_UPPERCASE,       VIRTKEY, ALT, NOINVERT
@@ -141,7 +138,7 @@ IDR_MAIN MENU
 BEGIN
     POPUP "&File"
     BEGIN
-        MENUITEM "&New File\tCtrl+N",           ID_CMD_NEWFILE
+        MENUITEM "&New File\t^KN",              ID_CMD_NEWFILE
         MENUITEM SEPARATOR
         MENUITEM "&Open...\t^KO",               ID_CMD_OPENFILE
         MENUITEM "&ReOpen...\tAlt+Enter",       ID_CMD_REOPENFILE
@@ -151,7 +148,7 @@ BEGIN
         MENUITEM "&Save\t^KS",                  ID_CMD_SAVEFILE
         MENUITEM "Save &As...\tF12",            ID_CMD_SAVEFILEAS
         MENUITEM SEPARATOR
-        MENUITEM "&Print...\tCtrl+P",           ID_CMD_PRINT
+        MENUITEM "&Print...\t^KP",              ID_CMD_PRINT
         MENUITEM "Page Set&up...",               ID_CMD_PAGESETUP
         MENUITEM SEPARATOR
         POPUP "R&ecent Files"
@@ -210,7 +207,7 @@ BEGIN
         MENUITEM "Find &Next\tF3",              ID_CMD_FINDNEXT
         MENUITEM "Find &Prev\tShift+F3",        ID_CMD_FINDPREV
         MENUITEM SEPARATOR
-        MENUITEM "&Jump to Line\tCtrl+J",       ID_CMD_JUMP
+        MENUITEM "&Jump to Line",               ID_CMD_JUMP
         MENUITEM SEPARATOR
         MENUITEM "&Grep...\t^QG",               ID_CMD_GREP
         MENUITEM "&Open Selection...\tF7",      ID_CMD_OPENSELECTION
@@ -236,7 +233,7 @@ BEGIN
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "&Context Help...\tF1",         ID_CMD_HELP
+        MENUITEM "&Context Help...\tCtrl+J",     ID_CMD_HELP
         MENUITEM "&About",    ID_CMD_HELPABOUT
     END
 END

@@ -409,9 +409,11 @@ bool GreenStarWnd::HandleWsKey( MSG* msg )
 		{
 			switch( vk )
 			{
+			case 'N': on_newfile();                               return true;
 			case 'O': on_openfile();                              return true;
 			case 'S': on_savefile();                              return true;
 			case 'D': on_savefileas();                            return true;
+			case 'P': on_print();                                 return true;
 			case 'X': if(Save_showDlgIfNeeded()) on_exit();      return true;
 			case 'Q': Destroy();                                  return true;
 			// Block operations: TODO
