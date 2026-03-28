@@ -268,7 +268,7 @@ public:
 
 	bool does_esc()
 	{
-		// Whether to escape with \
+		// Whether to escape with backslash
 		return esc_;
 	}
 
@@ -313,7 +313,7 @@ public:
 						goto symbolfound;
 					}
 				}
-				else if( str[ans] == L'\\' ) // Skip the character after \
+				else if( str[ans] == L'\\' ) // Skip the character after backslash
 				{
 					if( esc_ && ans+1<len )
 						++ans;
