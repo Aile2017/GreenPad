@@ -1,0 +1,403 @@
+
+#include "resource.h"
+#ifndef DS_SETFOREGROUND
+    #define DS_SETFOREGROUND 0x200L
+#endif
+
+// Use the prefered default dialog font
+#define MYDIALOGFONT "Segoe UI"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RT_MANIFEST
+//
+#ifndef RT_MANIFEST
+    #define RT_MANIFEST 24
+#endif
+1                       RT_MANIFEST             "manifest.xml"
+
+#include <winresrc.h>
+#include <winuser.h>
+#ifndef IDC_STATIC
+#define IDC_STATIC (-1)
+#endif
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION VER_FILEVERSION
+ PRODUCTVERSION VER_FILEVERSION
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "041104b0"
+        BEGIN
+            VALUE "CompanyName", "kMonos.NET\0"
+            VALUE "FileDescription", "GreenStar\0"
+            VALUE "FileVersion", "#1\0"
+            VALUE "InternalName", "GreenStar\0"
+            VALUE "LegalCopyright", "Written by k.inaba 2002-2008\0"
+            VALUE "OriginalFilename", "GreenStar.exe\0"
+            VALUE "ProductName", "GreenStar\0"
+            VALUE "ProductVersion", VER_FILEVERSIONSTR
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x411, 1200
+    END
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAIN                ICON                    "greenstar.ico"
+
+// Non-English language resources can be added to external .lng files.
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator (Language neutral)
+//
+// Note: Many Ctrl+letter keys are reserved for WordStar navigation and are
+// handled in GreenStarWnd::HandleWsKey() rather than via accelerators.
+// Ctrl+E=Up  Ctrl+X=Down  Ctrl+S=Left  Ctrl+D=Right
+// Ctrl+A=WordLeft  Ctrl+F=WordRight  Ctrl+R=PageUp  Ctrl+C=PageDown
+// Ctrl+G=DelChar  Ctrl+H=BS  Ctrl+T=DelWord  Ctrl+Y=DelLine
+// Ctrl+K=<prefix>  Ctrl+Q=<prefix>
+//
+IDR_MAIN ACCELERATORS
+BEGIN
+    "1",            ID_CMD_NOWRAP,          VIRTKEY, CONTROL, NOINVERT
+    "2",            ID_CMD_WRAPWIDTH,       VIRTKEY, CONTROL, NOINVERT
+    "3",            ID_CMD_WRAPWINDOW,      VIRTKEY, CONTROL, NOINVERT
+    VK_F1,          ID_CMD_HELP,            VIRTKEY, NOINVERT
+    VK_F7,          ID_CMD_OPENSELECTION,   VIRTKEY, NOINVERT
+    VK_F8,          ID_CMD_SELECTIONLEN,    VIRTKEY, NOINVERT
+    "J",            ID_CMD_JUMP,            VIRTKEY, CONTROL, NOINVERT
+    "N",            ID_CMD_NEWFILE,         VIRTKEY, CONTROL, NOINVERT
+    "O",            ID_CMD_OPENFILE,        VIRTKEY, CONTROL, NOINVERT
+    "P",            ID_CMD_PRINT,           VIRTKEY, CONTROL, NOINVERT
+    "L",            ID_CMD_OPENELEVATED,    VIRTKEY, CONTROL, NOINVERT
+    "L",            ID_CMD_LOWERCASE,       VIRTKEY, ALT, NOINVERT
+    "U",            ID_CMD_UPPERCASE,       VIRTKEY, ALT, NOINVERT
+    "I",            ID_CMD_INVERTCASE,      VIRTKEY, ALT, NOINVERT
+    "R",            ID_CMD_ASCIIFY,         VIRTKEY, ALT, NOINVERT
+    "W",            ID_CMD_TTSPACES,        VIRTKEY, ALT, NOINVERT
+    "Z",            ID_CMD_SFCHAR,          VIRTKEY, ALT, NOINVERT
+    "A",            ID_CMD_SLCHAR,          VIRTKEY, ALT, NOINVERT
+    "Q",            ID_CMD_QUOTE,           VIRTKEY, ALT, NOINVERT
+    "N",            ID_CMD_UNQUOTE,         VIRTKEY, ALT, NOINVERT
+    VK_DELETE,      ID_CMD_CUT,             VIRTKEY, SHIFT, NOINVERT
+    VK_F3,          ID_CMD_FINDNEXT,        VIRTKEY, NOINVERT
+    VK_F2,          ID_CMD_FINDPREV,        VIRTKEY, NOINVERT
+    VK_F3,          ID_CMD_FINDPREV,        VIRTKEY, SHIFT, NOINVERT
+    VK_F4,          ID_CMD_EXIT,            VIRTKEY, CONTROL, NOINVERT
+    VK_F5,          ID_CMD_REFRESHFILE,     VIRTKEY, NOINVERT
+    VK_F6,          ID_CMD_DATETIME,        VIRTKEY, NOINVERT
+    VK_F12,         ID_CMD_SAVEFILEAS,      VIRTKEY, NOINVERT
+    VK_INSERT,      ID_CMD_COPY,            VIRTKEY, CONTROL, NOINVERT
+    VK_INSERT,      ID_CMD_PASTE,           VIRTKEY, SHIFT, NOINVERT
+    VK_RETURN,      ID_CMD_REOPENFILE,      VIRTKEY, ALT, NOINVERT
+    VK_TAB,         ID_CMD_NEXTWINDOW,      VIRTKEY, CONTROL, NOINVERT
+    VK_TAB,         ID_CMD_PREVWINDOW,      VIRTKEY, SHIFT, CONTROL, NOINVERT
+    VK_MULTIPLY,    ID_CMD_ZOOMRZ,          VIRTKEY, CONTROL, NOINVERT
+    VK_ADD,         ID_CMD_ZOOMUP,          VIRTKEY, CONTROL, NOINVERT
+    VK_SUBTRACT,    ID_CMD_ZOOMDN,          VIRTKEY, CONTROL, NOINVERT
+END
+
+/////////////////////////////////////////////////////////////////////////////
+// English resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(65001)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MAIN MENU
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&New File\tCtrl+N",           ID_CMD_NEWFILE
+        MENUITEM SEPARATOR
+        MENUITEM "&Open...\tCtrl+O",            ID_CMD_OPENFILE
+        MENUITEM "&ReOpen...\tAlt+Enter",       ID_CMD_REOPENFILE
+        MENUITEM "Re&fresh\tF5",                ID_CMD_REFRESHFILE
+        MENUITEM "Open e&levated...\tCtrl+L",   ID_CMD_OPENELEVATED
+        MENUITEM SEPARATOR
+        MENUITEM "&Save\tCtrl+KS",              ID_CMD_SAVEFILE
+        MENUITEM "Save &As...\tF12",            ID_CMD_SAVEFILEAS
+        MENUITEM SEPARATOR
+        MENUITEM "&Print...\tCtrl+P",           ID_CMD_PRINT
+        MENUITEM "Page Set&up...",               ID_CMD_PAGESETUP
+        MENUITEM SEPARATOR
+        POPUP "R&ecent Files"
+        BEGIN
+            MENUITEM "(no files)",                  ID_MENUITEM40030, GRAYED
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "Save and E&xit\tCtrl+KX",  ID_CMD_SAVEEXIT
+        MENUITEM "&Discard and Exit\tCtrl+KQ",    ID_CMD_DISCARDEXIT
+        MENUITEM "E&xit\tCtrl+F4",               ID_CMD_EXIT
+    END
+    POPUP "&Edit"
+    BEGIN
+        MENUITEM "&Undo\tCtrl+U",               ID_CMD_UNDO
+        MENUITEM "&Redo\tCtrl+W",               ID_CMD_REDO
+        MENUITEM SEPARATOR
+        MENUITEM "Cut\tShift+Del",              ID_CMD_CUT
+        MENUITEM "&Copy\tCtrl+Ins",             ID_CMD_COPY
+        MENUITEM "&Paste\tShift+Ins",           ID_CMD_PASTE
+        MENUITEM "&Delete\tCtrl+G",             ID_CMD_DELETE
+        MENUITEM SEPARATOR
+        MENUITEM "Select &All\tCtrl+QA",        ID_CMD_SELECTALL
+        MENUITEM SEPARATOR
+        MENUITEM "Insert Date&&&Time\tF6",      ID_CMD_DATETIME
+        MENUITEM "Insert U&nicode...",           ID_CMD_INSERTUNI
+        MENUITEM SEPARATOR
+        POPUP "&Modify"
+        BEGIN
+            MENUITEM "&Upper Case\tAlt+U",          ID_CMD_UPPERCASE
+            MENUITEM "&Lower Case\tAlt+L",          ID_CMD_LOWERCASE
+            MENUITEM "&Invert Case\tAlt+I",         ID_CMD_INVERTCASE
+            MENUITEM "&Reduce to ASCII\tAlt+R",     ID_CMD_ASCIIFY
+            MENUITEM "Trim &Trailing Spaces\tAlt+W",ID_CMD_TTSPACES
+            MENUITEM "Strip &First Characters\tAlt+Z",ID_CMD_SFCHAR
+            MENUITEM "Strip L&ast Characters\tAlt+A",ID_CMD_SLCHAR
+            MENUITEM "&Quote\tAlt+Q",               ID_CMD_QUOTE
+            MENUITEM "U&nquote\tAlt+N",             ID_CMD_UNQUOTE
+        END
+        POPUP "Unic&ode NF"
+        BEGIN
+            MENUITEM "NF&C (composed)",                  ID_CMD_UNINORMC
+            MENUITEM "NF&D (decomposed)",                ID_CMD_UNINORMD
+            MENUITEM "NF&KC (compatibility composed)",   ID_CMD_UNINORMKC
+            MENUITEM "&NFKD (compatibility decomposed)", ID_CMD_UNINORMKD
+        END
+      # ifndef NO_IME
+        MENUITEM SEPARATOR
+        MENUITEM "Recon&version",               ID_CMD_RECONV
+        MENUITEM "&IME On/Off",                 ID_CMD_TOGGLEIME
+      # endif
+
+    END
+    POPUP "&Search"
+    BEGIN
+        MENUITEM "&Find\tCtrl+QF",              ID_CMD_FIND
+        MENUITEM "Find &Next\tF3",              ID_CMD_FINDNEXT
+        MENUITEM "Find &Prev\tShift+F3",        ID_CMD_FINDPREV
+        MENUITEM SEPARATOR
+        MENUITEM "&Jump to Line\tCtrl+J",       ID_CMD_JUMP
+        MENUITEM SEPARATOR
+        MENUITEM "&Grep...\tCtrl+QG",           ID_CMD_GREP
+        MENUITEM "&Open Selection...\tF7",      ID_CMD_OPENSELECTION
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "&No wrapping\tCtrl+1",        ID_CMD_NOWRAP
+        MENUITEM "&Wrap at #th letter\tCtrl+2", ID_CMD_WRAPWIDTH
+        MENUITEM "Wrap at &Right Edge\tCtrl+3", ID_CMD_WRAPWINDOW
+        MENUITEM SEPARATOR
+        MENUITEM "&Set Zoom...",                 ID_CMD_ZOOMDLG
+        MENUITEM "R&eset Zoom",                  ID_CMD_ZOOMRZ
+        MENUITEM "Zoom &Up",                     ID_CMD_ZOOMUP
+        MENUITEM "Zoom Do&wn",                   ID_CMD_ZOOMDN
+        MENUITEM SEPARATOR
+        POPUP "&Document Type"
+        BEGIN
+            MENUITEM "dummy",                       ID_MENUITEM40025
+        END
+        MENUITEM "&Settings...",                ID_CMD_CONFIG
+        MENUITEM SEPARATOR
+        MENUITEM "Status&Bar",                  ID_CMD_STATUSBAR
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&Context Help...\tF1",         ID_CMD_HELP
+        MENUITEM "&About",    ID_CMD_HELPABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+IDD_REOPENDLG DIALOG  0, 0, 187, 54
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_CENTER | WS_VISIBLE |
+    WS_CLIPSIBLINGS | WS_CAPTION | WS_SYSMENU
+CAPTION "ReOpen File"
+FONT 9, MYDIALOGFONT
+BEGIN
+    LTEXT           "&Character Encoding:",IDC_STATIC,9,13,42,8
+    COMBOBOX        IDC_CODELIST,59,11,111,103,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "OK",IDOK,66,32,56,14
+    PUSHBUTTON      "Cancel",IDCANCEL,125,32,56,14
+END
+
+IDD_JUMP DIALOG  0, 0, 131, 43
+STYLE DS_ABSALIGN | DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP |
+    WS_CAPTION | WS_SYSMENU
+CAPTION "Jump To"
+FONT 9, MYDIALOGFONT
+BEGIN
+    DEFPUSHBUTTON   "&Go!",IDOK,87,12,25,14
+    EDITTEXT        IDC_LINEBOX,14,13,40,12,ES_AUTOHSCROLL
+    LTEXT           "&Line",IDC_LINLABEL,61,15,22,8
+END
+
+
+IDD_FINDREPLACE DIALOG  0, 0, 316, 84
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | WS_POPUP |
+    WS_CAPTION | WS_SYSMENU
+CAPTION "Find & Replace"
+FONT 9, MYDIALOGFONT
+BEGIN
+    RTEXT           "Fi&nd:",IDC_STATIC,5,10,61,8
+    COMBOBOX        IDC_FINDBOX,70,9,120,100, CBS_AUTOHSCROLL | CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    RTEXT           "Re&place:",IDC_STATIC,5,31,61,8
+    COMBOBOX        IDC_REPLACEBOX,70,28,120,100, CBS_AUTOHSCROLL | CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON   "&Find",ID_FINDNEXT,195,8,56,14
+    PUSHBUTTON      "Find&Prev",ID_FINDPREV,255,8,56,14
+    PUSHBUTTON      "&Replace",ID_REPLACENEXT,195,27,56,14
+    PUSHBUTTON      "Replace&All",ID_REPLACEALL,255,27,56,14
+    GROUPBOX        "&Options",IDC_STATIC,12,47,240,27
+    AUTOCHECKBOX    "&Ignore Case",IDC_IGNORECASE,22,59,100,10
+    AUTOCHECKBOX    "Regular E&xpression",IDC_REGEXP,125,59,135,10
+    PUSHBUTTON      "Close",IDCANCEL,255,59,56,14
+END
+
+
+IDD_ABOUTDLG DIALOG  0, 0, 180, 118
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | WS_POPUP |
+    WS_CAPTION | WS_SYSMENU
+CAPTION "About GreenStar"
+FONT 9, MYDIALOGFONT
+BEGIN
+    ICON            IDR_MAIN,  IDC_STATIC, 8,8,0,0
+    EDITTEXT        IDC_ABOUTSTR, 40,8,135,32, ES_MULTILINE | ES_READONLY | NOT WS_BORDER |  NOT WS_TABSTOP
+
+    LTEXT           "Written by k.inaba 2002-2008\nDerived by roytam1 and RamonUnch\nFurther modified by ASANO, Kazuhiro", IDC_STATIC,8,50,140,24
+    EDITTEXT        IDC_ABOUTURL, 8,78,172,8, ES_MULTILINE | ES_READONLY | NOT WS_BORDER |  NOT WS_TABSTOP
+
+    PUSHBUTTON      "Close",IDCANCEL,70,96,40,14
+END
+
+
+IDD_ADDDOCTYPE DIALOG  0, 0, 123, 67
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New DocType"
+FONT 9, MYDIALOGFONT
+BEGIN
+    LTEXT           "&Name:",IDC_STATIC,17,11,27,8
+    EDITTEXT        IDC_NAME,46,8,69,12,ES_AUTOHSCROLL
+    LTEXT           "&Extension:",IDC_STATIC,10,25,34,8
+    EDITTEXT        IDC_EXT,46,24,69,12,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,33,43,34,14
+    PUSHBUTTON      "Cancel",IDCANCEL,71,43,33,14
+END
+
+IDD_CONFIG DIALOG DISCARDABLE 0, 0, 287, 236
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Config"
+FONT 9, MYDIALOGFONT
+BEGIN
+    GROUPBOX        "Common",IDC_STATIC,7,11,273,102
+    RTEXT           "&Undo:",IDC_STATIC,9,24,73,8
+    AUTORADIOBUTTON "Infinite",IDC_UNDOLIM1,86,24,40,8, WS_GROUP
+    AUTORADIOBUTTON "",IDC_UNDOLIM2,130,24,11,8
+    EDITTEXT        IDC_UNDO_CT,139,22,12,10,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "times",IDC_STATIC,155,24,10,8
+    RTEXT           "&Column by:",IDC_STATIC,9,37,73,8
+    AUTORADIOBUTTON "Letters",IDC_COUNTBYLETTER,86,36,33,10, WS_GROUP
+    AUTORADIOBUTTON "Positions",IDC_COUNTBYLETTER2,130,36,42,10
+    RTEXT           "M&RU File Num:",IDC_STATIC,9,50,73,8
+    EDITTEXT        IDC_LATEST_NUM,86,48,32,12,ES_AUTOHSCROLL | ES_NUMBER
+    RTEXT           "TextFile &Filter:",IDC_STATIC,9,65,73,8
+    EDITTEXT        IDC_TXTFILT,86,63,182,12,ES_AUTOHSCROLL
+    RTEXT           "External &Grep Program:",IDC_STATIC,9,80,73,8
+    EDITTEXT        IDC_EXTGREP,86,78,182,12,ES_AUTOHSCROLL
+    RTEXT           "&New File Mode:",IDC_STATIC,9,94,73,8
+    COMBOBOX        IDC_NEWCS,86,92,76,162,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_NEWLB,164,92,39,162,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_NEWDT,204,92,65,164,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    AUTOCHECKBOX    "Open in Same &Window",IDC_OPENSAME,181,25,90,10
+    AUTOCHECKBOX    "Remember Window &Size",IDC_REMSIZE,181,35,96,10
+    AUTOCHECKBOX    "Remember Window &Pos",IDC_REMPLACE,181,45,94,10
+    GROUPBOX        "&Document Types",IDC_STATIC,7,118,274,92
+    LISTBOX         IDC_DOCTYPELIST,15,133,88,53,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Add",IDC_NEWDOCTYPE,17,191,29,14
+    PUSHBUTTON      "Del",IDC_DELDOCTYPE,48,191,29,14
+    RTEXT           "P&attern:",IDC_STATIC,114,138,27,8
+    EDITTEXT        IDC_DT_PAT,146,135,127,12,ES_AUTOHSCROLL
+    RTEXT           "&Keyword:",IDC_STATIC,108,155,34,8
+    COMBOBOX        IDC_PAT_KWD,146,152,75,172,CBS_DROPDOWNLIST | CBS_SORT | CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "edit",IDC_EDITKWD,231,152,19,14
+    RTEXT           "&Layout:",IDC_STATIC,111,172,31,8
+    COMBOBOX        IDC_PAT_LAY,146,169,75,172,CBS_DROPDOWNLIST | CBS_SORT | CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "edit",IDC_EDITLAY,231,169,19,14
+
+    DEFPUSHBUTTON   "OK",IDOK,175,214,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,230,214,50,14
+END
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_ASKTOSAVE           "Do you want to Save the current file?"
+    IDS_APPNAME             "GreenStar"
+    IDS_SAVEERROR           "Could not save file:"
+    IDS_ALLFILES            "All Files(*.*)"
+    IDS_TXTFILES            "Text Files"
+    IDS_OPENERROR           "Could not open file:"
+    IDS_DEFAULT             "(default)"
+    IDS_NOTFOUND            "String Not Found."
+    IDS_NOTFOUNDDOWN        "String Not Found.\nContinue searching from the top?"
+    IDS_REPLACEALLDONE      "%d times Replaced."
+    IDS_OKTODEL             " will be removed. OK?"
+    IDS_LOADING             "Loading file..."
+    IDS_NOWRITEACESS        "\nWrite access denied!\n\nOpen elevated so that the file can be modified?"
+    IDS_ERRORNUM            "\n\nError #"
+    IDS_CANTOPENDIR         "\nCan not open directory!"
+    IDS_INVALIDCP           "Invalid codepage selected!"
+    IDS_MODIFIEDOUT         "File was modified outside of GreenStar!\nRelaod it?"
+    IDS_INSERTUNI           "Insert Unicode"
+    IDS_INSSERT             "&Insert"
+    IDS_ZOOMPC              "Zoom"
+    IDS_UNTITLED            "untitled"
+    IDS_CHARSET_CAPTION     "Character Encoding:"
+    IDS_CRLF_CAPTION        "Line ending:"
+    IDS_PROJECT_URL         "URL: https://github.com/Aile2017/GreenPad"
+END
+
+#endif
+/////////////////////////////////////////////////////////////////////////////

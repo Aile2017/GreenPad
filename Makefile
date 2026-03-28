@@ -19,3 +19,6 @@ gcc64:
 	$(MAKE) -f Makefiles/gcc64.mak -j2
 clang64:
 	$(MAKE) -f Makefiles/clang64.mak -j2
+
+greenstar:
+	$(MAKE) -f Makefiles/greenstar_vcc.mak
