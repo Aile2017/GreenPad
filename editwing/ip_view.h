@@ -341,6 +341,9 @@ public:
 	ViewImpl( View& vw, doc::Document &dc );
 
 	//@{ Switch loopback method //@}
+	inline void SetLineBreakType( int lb )
+		{ lbType_ = lb; }
+
 	inline void SetWrapType( short wt )
 		{ cvs_.on_config_change( wt, cvs_.showLN(), cvs_.wrapSmart() );
 		  DoConfigChange(); }
@@ -435,6 +438,7 @@ private:
 	const doc::Document&   doc_;
 	Canvas           cvs_;
 	Cursor           cur_;
+	int              lbType_;    // 0=CR, 1=LF, 2=CRLF
 	ki::gapbufobjnoref<WLine> wrap_;
 	ulong            vlNum_;
 	ulong            textCx_;
@@ -501,6 +505,9 @@ public:
 	//@{ Constructor that does nothing //@}
 	View( doc::Document& d, HWND wnd );
 	~View();
+
+	//@{ Line break type (0=CR, 1=LF, 2=CRLF) for EOL symbol display //@}
+	void SetLineBreakType( int lb );
 
 	//@{ Switch loopback method //@}
 	void SetWrapType( short wt );

@@ -33,6 +33,7 @@ ViewImpl::ViewImpl( View& vw, doc::Document& dc )
 	, textCx_( 0 )
 	, accdelta_  ( 0 )
 	, accdeltax_ ( 0 )
+	, lbType_    ( 2 )
 	, hwnd_  ( vw.hwnd() )
 {
 	// Initialize return information appropriately
