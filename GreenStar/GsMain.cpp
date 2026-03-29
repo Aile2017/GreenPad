@@ -574,7 +574,7 @@ void GreenStarWnd::on_helpabout()
 		AboutDlg(HWND parent) : DlgImpl(IDD_ABOUTDLG), parent_( parent ) { GoModal(parent_); }
 		void on_init() override
 		{
-			String s = TEXT("GreenStar");
+			String s = RzsString(IDS_APPNAME).c_str();
 			s += TEXT(" - ") TEXT( VER_FILEVERSIONSTR ) UNIANSI TEXT("\r\n")
 			     COMPILER TEXT(" on ") TEXT( __DATE__ ) TEXT("\r\n")
 			     TARGETOS TGVER USEOLE PALT TEXT("\r\n")
@@ -1333,7 +1333,8 @@ void GreenStarWnd::GetTitleText( TCHAR *name )
 	TCHAR *end = name+1;
 	RzsString untitled(IDS_UNTITLED);
 	const TCHAR* untitledText = untitled.c_str();
-	const TCHAR* appNameText = TEXT("GreenStar");
+	RzsString appName(IDS_APPNAME);
+	const TCHAR* appNameText = appName.c_str();
 	name[0] = TEXT('[');
 	if( isUntitled() )
 		end = my_lstrkpy( end, untitledText );
@@ -1810,7 +1811,7 @@ int kmain()
 		if (lastSlash) *lastSlash = L'\0';
 
 		wchar_t langDir[MAX_PATH];
-		wsprintfW(langDir, L"%s\\lang", exePath);
+		wsprintfW(langDir, L"%s\\lang-gs", exePath);
 
 		// 1. Check command-line: GreenStar.exe -lang ja-JP ...
 		wchar_t langFromCmdLine[32] = L"";
