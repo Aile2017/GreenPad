@@ -833,9 +833,11 @@ void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 				case L'\t': // 9
 					if( p.sc(scTAB) )
 					{
+						static const unicode tabSym = L'\x203A';
+						p.W( &tabSym ); // ensure widthTable_ entry is initialized
 						p.SetColor( clr=CTL );
 						for( ; i<i2; ++i, x=p.nextTab(x) )
-							p.CharOut( L'\x203A', x+v.XBASE, a.top );
+							p.CharOut( tabSym, x+v.XBASE, a.top );
 					}
 					break;
 				case L' ': // Normal ASCII space (0x0020)
@@ -882,24 +884,21 @@ void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 		SpecialChars sc = (tl==TLM ? scEOF : scEOL);
 		if( i==doc_.len(tl) && -32768<x+v.XBASE )
 		{
-			if( p.sc(sc) )
 			{
-				// EOL symbol depends on line break type: 0=CR ← 1=LF ↓ 2=CRLF ↲
+				// EOL symbol depends on line break type: 0=CR 1=LF 2=CRLF
 				static const unicode eolSyms[] = { L'\xFFE9', L'\xFFEC', L'\x21B2' };
 				const unicode eolSym = eolSyms[ lbType_ < 3 ? lbType_ : 2 ];
-				static const unicode* const sstr[] = { L"[EOF]", nullptr };
-				static const int slen[] = { 5, 1 };
-				p.SetColor( clr=CTL );
-				if( sc == scEOF )
-					p.StringOut( sstr[0], slen[0], x+v.XBASE, a.top-H );
-				else
-					p.CharOut( eolSym, x+v.XBASE, a.top-H );
-			}
-			if( v.SYB<a.top && a.top<=v.SYE && sc==scEOL )
-			{
-				static const unicode eolSyms[] = { L'\xFFE9', L'\xFFEC', L'\x21B2' };
-				const unicode eolSym = eolSyms[ lbType_ < 3 ? lbType_ : 2 ];
-				Inv( a.top-H, x+v.XBASE, x+v.XBASE+p.Wc(eolSym), p );
+				p.W( &eolSym ); // ensure widthTable_ entry is initialized
+				if( p.sc(sc) )
+				{
+					p.SetColor( clr=CTL );
+					if( sc == scEOF )
+						p.StringOut( L"[EOF]", 5, x+v.XBASE, a.top-H );
+					else
+						p.CharOut( eolSym, x+v.XBASE, a.top-H );
+				}
+				if( v.SYB<a.top && a.top<=v.SYE && sc==scEOL )
+					Inv( a.top-H, x+v.XBASE, x+v.XBASE+p.Wc(eolSym), p );
 			}
 		}
 	}
