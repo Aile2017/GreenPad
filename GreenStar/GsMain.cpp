@@ -414,14 +414,11 @@ bool GreenStarWnd::HandleWsKey( MSG* msg )
 			case 'S': on_savefile();                              return true;
 			case 'D': on_savefileas();                            return true;
 			case 'P': on_print();                                 return true;
+			case 'C': edit_.getCursor().Copy();                   return true;
+			case 'Y': edit_.getCursor().Cut();                    return true;
+			case 'V': edit_.getCursor().Paste();                  return true;
 			case 'X': if(Save_showDlgIfNeeded()) on_exit();      return true;
 			case 'Q': Destroy();                                  return true;
-			// Block operations: TODO
-			// case 'B': mark block begin
-			// case 'K': mark block end
-			// case 'C': copy block
-			// case 'V': move block
-			// case 'Y': delete block
 			}
 		}
 		else if( prevState == 'Q' )

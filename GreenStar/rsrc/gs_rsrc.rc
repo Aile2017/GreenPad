@@ -165,9 +165,9 @@ BEGIN
         MENUITEM "&Undo\t^U",                   ID_CMD_UNDO
         MENUITEM "&Redo\t^W",                   ID_CMD_REDO
         MENUITEM SEPARATOR
-        MENUITEM "Cut\tShift+Del",              ID_CMD_CUT
-        MENUITEM "&Copy\tCtrl+Ins",             ID_CMD_COPY
-        MENUITEM "&Paste\tShift+Ins",           ID_CMD_PASTE
+        MENUITEM "Cut\t^KY",                    ID_CMD_CUT
+        MENUITEM "&Copy\t^KC",                  ID_CMD_COPY
+        MENUITEM "&Paste\t^KV",                 ID_CMD_PASTE
         MENUITEM "&Delete",                      ID_CMD_DELETE
         MENUITEM SEPARATOR
         MENUITEM "Select &All\t^QA",            ID_CMD_SELECTALL
