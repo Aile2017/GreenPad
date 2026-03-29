@@ -574,7 +574,7 @@ void GreenStarWnd::on_helpabout()
 		AboutDlg(HWND parent) : DlgImpl(IDD_ABOUTDLG), parent_( parent ) { GoModal(parent_); }
 		void on_init() override
 		{
-			String s = RzsString(IDS_APPNAME).c_str();
+			String s = TEXT("GreenStar");
 			s += TEXT(" - ") TEXT( VER_FILEVERSIONSTR ) UNIANSI TEXT("\r\n")
 			     COMPILER TEXT(" on ") TEXT( __DATE__ ) TEXT("\r\n")
 			     TARGETOS TGVER USEOLE PALT TEXT("\r\n")
@@ -1333,8 +1333,7 @@ void GreenStarWnd::GetTitleText( TCHAR *name )
 	TCHAR *end = name+1;
 	RzsString untitled(IDS_UNTITLED);
 	const TCHAR* untitledText = untitled.c_str();
-	RzsString appName(IDS_APPNAME);
-	const TCHAR* appNameText = appName.c_str();
+	const TCHAR* appNameText = TEXT("GreenStar");
 	name[0] = TEXT('[');
 	if( isUntitled() )
 		end = my_lstrkpy( end, untitledText );
