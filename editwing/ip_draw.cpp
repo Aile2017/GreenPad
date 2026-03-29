@@ -116,6 +116,9 @@ void View::on_destroy()
 // Turn it into a subobject as it is
 //-------------------------------------------------------------------------
 
+void View::SetLineBreakType( int lb )
+	{ impl_->SetLineBreakType( lb ); }
+
 void View::SetWrapType( short wt )
 	{ impl_->SetWrapType( wt ); }
 
@@ -879,15 +882,26 @@ void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 		SpecialChars sc = (tl==TLM ? scEOF : scEOL);
 		if( i==doc_.len(tl) && -32768<x+v.XBASE )
 		{
-			if( p.sc(sc) )
 			{
-				static const unicode* const sstr[] = { L"[EOF]", L"/" };
-				static const int slen[] = { 5, 1 };
-				p.SetColor( clr=CTL );
-				p.StringOut( sstr[sc], slen[sc], x+v.XBASE, a.top-H );
+				// EOL symbol depends on line break type: 0=CR 1=LF 2=CRLF
+				static const unicode eolSymTbl[3][2] = {
+					{ L'\xFFE9', L'\0' }, // CR
+					{ L'\xFFEC', L'\0' }, // LF
+					{ L'\x21B2', L'\0' }, // CRLF
+				};
+				const unicode* eolSym = eolSymTbl[ lbType_ < 3 ? lbType_ : 2 ];
+				p.W( eolSym ); // ensure widthTable_ entry is initialized
+				if( p.sc(sc) )
+				{
+					p.SetColor( clr=CTL );
+					if( sc == scEOF )
+						p.StringOut( L"[EOF]", 5, x+v.XBASE, a.top-H );
+					else
+						p.StringOut( eolSym, 1, x+v.XBASE, a.top-H );
+				}
+				if( v.SYB<a.top && a.top<=v.SYE && sc==scEOL )
+					Inv( a.top-H, x+v.XBASE, x+v.XBASE+p.Wc(*eolSym), p );
 			}
-			if( v.SYB<a.top && a.top<=v.SYE && sc==scEOL )
-				Inv( a.top-H, x+v.XBASE, x+v.XBASE+p.Wc(L'/'), p );
 		}
 	}
 

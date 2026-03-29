@@ -35,6 +35,9 @@ public:
 	//@{ Display function operation //@}
 	view::View& getView() { return *view_; }
 
+	//@{ Line break type for EOL symbol (0=CR, 1=LF, 2=CRLF) //@}
+	void SetLineBreakType( int lb ) { view_->SetLineBreakType(lb); }
+
 	//@{ Cursor function operation //@}
 	view::Cursor& getCursor() { return view_->cur(); }
 

@@ -1372,6 +1372,7 @@ void GreenPadWnd::UpdateWindowName()
 		stb_.SetCsText( Int2lStr(cpname, csi_) );
 	}
 	stb_.SetLbText( lb_ );
+	edit_.SetLineBreakType( lb_ );
 }
 
 void GreenPadWnd::SetupMRUMenu()
