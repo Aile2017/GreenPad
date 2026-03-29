@@ -833,11 +833,9 @@ void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 				case L'\t': // 9
 					if( p.sc(scTAB) )
 					{
-						static const unicode tabSym[2] = { L'\x203A', L'\0' };
-						p.W( tabSym ); // ensure widthTable_ entry is initialized
 						p.SetColor( clr=CTL );
 						for( ; i<i2; ++i, x=p.nextTab(x) )
-							p.StringOut( tabSym, 1, x+v.XBASE, a.top );
+							p.CharOut( L'>', x+v.XBASE, a.top );
 					}
 					break;
 				case L' ': // Normal ASCII space (0x0020)
