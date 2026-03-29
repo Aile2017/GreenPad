@@ -885,7 +885,7 @@ void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 			if( p.sc(sc) )
 			{
 				// EOL symbol depends on line break type: 0=CR ← 1=LF ↓ 2=CRLF ↲
-				static const unicode eolSyms[] = { L'\x2190', L'\x2193', L'\x21B2' };
+				static const unicode eolSyms[] = { L'\xFFE9', L'\xFFEC', L'\x21B2' };
 				const unicode eolSym = eolSyms[ lbType_ < 3 ? lbType_ : 2 ];
 				static const unicode* const sstr[] = { L"[EOF]", nullptr };
 				static const int slen[] = { 5, 1 };
@@ -897,7 +897,7 @@ void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 			}
 			if( v.SYB<a.top && a.top<=v.SYE && sc==scEOL )
 			{
-				static const unicode eolSyms[] = { L'\x2190', L'\x2193', L'\x21B2' };
+				static const unicode eolSyms[] = { L'\xFFE9', L'\xFFEC', L'\x21B2' };
 				const unicode eolSym = eolSyms[ lbType_ < 3 ? lbType_ : 2 ];
 				Inv( a.top-H, x+v.XBASE, x+v.XBASE+p.Wc(eolSym), p );
 			}
