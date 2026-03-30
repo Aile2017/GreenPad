@@ -29,11 +29,11 @@ ViewImpl::ViewImpl( View& vw, doc::Document& dc )
 	: doc_   ( dc )
 	, cvs_   ( vw )
 	, cur_   ( vw.hwnd(), *this, dc )
+	, lbType_    ( 2 )
 	, vlNum_ ( 0 )
 	, textCx_( 0 )
 	, accdelta_  ( 0 )
 	, accdeltax_ ( 0 )
-	, lbType_    ( 2 )
 	, hwnd_  ( vw.hwnd() )
 {
 	// Initialize return information appropriately
