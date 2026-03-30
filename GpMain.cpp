@@ -1879,7 +1879,7 @@ int kmain()
 	LOGGER( "kmain() begin" );
 
 	// Load runtime language file from lang/ directory next to the exe.
-	// Language priority: command-line (-lang xx_XX) > ini (Language=xx_XX) > OS auto-detect
+	// Language priority: command-line (-exx-XX) > ini (Language=xx_XX) > OS auto-detect
 	{
 		wchar_t exePath[MAX_PATH];
 		GetModuleFileNameW(nullptr, exePath, MAX_PATH);
@@ -1889,15 +1889,15 @@ int kmain()
 		wchar_t langDir[MAX_PATH];
 		wsprintfW(langDir, L"%s\\lang", exePath);
 
-		// 1. Check command-line: GreenPad.exe -lang ja-JP (or ja_JP) ...
+		// 1. Check command-line: GreenPad.exe -eja-JP (or -eja_JP) ...
 		wchar_t langFromCmdLine[32] = L"";
 		{
 			int argc = 0;
 			LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 			if (argv) {
-				for (int i = 1; i < argc - 1; ++i) {
-					if (lstrcmpiW(argv[i], L"-lang") == 0) {
-						lstrcpynW(langFromCmdLine, argv[i + 1], 32);
+				for (int i = 1; i < argc; ++i) {
+					if (argv[i][0] == L'-' && argv[i][1] == L'e' && argv[i][2] != L'\0') {
+						lstrcpynW(langFromCmdLine, argv[i] + 2, 32);
 						break;
 					}
 				}
@@ -1950,11 +1950,11 @@ int kmain()
 			case TEXT('c'):
 				optC = String::GetInt( arg[i]+2 );
 				break;
+			case TEXT('e'):
+				// locale; already handled by language block above
+				break;
 			case TEXT('l'):
-				if( lstrcmpiW(arg[i], TEXT("-lang")) == 0 )
-					++i; // consume locale value; already handled by language block above
-				else
-					optL = String::GetInt( arg[i]+2 );
+				optL = String::GetInt( arg[i]+2 );
 				break;
 			}
 

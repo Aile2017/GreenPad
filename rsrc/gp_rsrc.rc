@@ -317,7 +317,7 @@ BEGIN
     ICON            IDR_MAIN,  IDC_STATIC, 8,8,0,0
     EDITTEXT        IDC_ABOUTSTR, 40,8,135,32, ES_MULTILINE | ES_READONLY | NOT WS_BORDER |  NOT WS_TABSTOP
 
-    LTEXT           "Written by k.inaba 2002-2008\nDerived by roytam1 and RamonUnch\nFurther modified by ASANO, Kazuhiro", IDC_STATIC,8,50,140,24
+    LTEXT           "Written by k.inaba 2002-2008\nDerived by roytam1 and RamonUnch\nFurther modified by Aile2017 2026", IDC_STATIC,8,50,140,24
     EDITTEXT        IDC_ABOUTURL, 8,78,172,8, ES_MULTILINE | ES_READONLY | NOT WS_BORDER |  NOT WS_TABSTOP
 
     PUSHBUTTON      "Close",IDCANCEL,70,96,40,14

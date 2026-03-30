@@ -1,0 +1,44 @@
+GreenPad Help
+===========
+
+Overview
+--------
+GreenPad is a lightweight text editor for Windows.
+It is designed as a practical Notepad replacement with a minimal footprint.
+
+Original author: k.inaba
+Extended by: roytam1, RamonUnch
+This build: modernized 64-bit fork with PCRE2 and chardet support.
+
+Keyboard Shortcuts
+------------------
+Ctrl+R                Reopen
+Ctrl+L                Open elevated
+Shift+Ctrl+S / F12    Save As
+Ctrl+Y                Redo
+F5                    Reload file
+F6                    Insert date and time
+F7                    Open selection as file/URL
+F8                    Display selection length
+Ctrl+F                Find
+F3 / Shift+F3         Find next / previous
+Ctrl+H                Replace
+Ctrl+J                Jump to line
+Ctrl+G                External grep
+Ctrl+1/2/3            Wrap: none / fixed width / window width
+Ctrl+I                Insert Unicode code point
+Ctrl+B                Go to matching brace
+
+Command Line
+------------
+greenpad [-l<line>] [-c<charset>] [-e<locale>] <file> ...
+
+Common charset codes:
+  -65001   UTF-8
+  -5       UTF-16 BE
+  -6       UTF-16 LE
+  -932     EUC-JP
+  -933     ISO-2022-JP
+
+Locale example:
+  -eja-JP

@@ -561,7 +561,7 @@ bool LangManager::AutoLoad(const wchar_t* langDir, const wchar_t* locale)
     if (!loc || !loc[0]) return false;
 
     // Normalize underscore separator to hyphen (ja_JP -> ja-JP) so that
-    // both forms work for -lang / ini Language= values.
+    // both forms work for -e / ini Language= values.
     wchar_t normalized[LOCALE_NAME_MAX_LENGTH];
     wcsncpy(normalized, loc, LOCALE_NAME_MAX_LENGTH - 1);
     normalized[LOCALE_NAME_MAX_LENGTH - 1] = L'\0';

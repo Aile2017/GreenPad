@@ -244,7 +244,7 @@ TODO:
 
   * Command Line Options ?
 
-      greenpad ([-l LineNumber] [-c CharacterSet] filename)*
+      greenpad ([-l LineNumber] [-c CharacterSet] [-eLocale] filename)*
 
     For example:
       greenpad -l543 -c932 aaaa.txt
