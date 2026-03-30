@@ -121,8 +121,12 @@ keyword2
 ### Command line
 
 ```
-greenpad [-l<line>] [-c<charset>] [-e<locale>] <file> ...
+greenpad [-r] [-l<line>] [-c<charset>] [-e<locale>] <file> ...
 ```
+
+Options:
+
+- `-r` Start in read-only mode
 
 Common charset codes: `-65001` (UTF-8), `-5`/`-6` (UTF-16 BE/LE), `-932` (EUC-JP), `-933` (ISO-2022-JP)
 

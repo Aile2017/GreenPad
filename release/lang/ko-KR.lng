@@ -92,6 +92,7 @@ ID_CMD_ZOOMUP = 확대(&U)
 ID_CMD_ZOOMDN = 축소(&W)
 ID_CMD_CONFIG = 설정(&S)...
 ID_CMD_STATUSBAR = 상태 표시줄(&B)
+ID_CMD_READONLY = 읽기 전용 모드(&O)
 ID_CMD_HELP = 도움말(&C)...\tF1
 ID_CMD_HELPABOUT = 정보(&A)
 

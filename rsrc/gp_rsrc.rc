@@ -251,6 +251,7 @@ BEGIN
         MENUITEM "&Settings...",                ID_CMD_CONFIG
         MENUITEM SEPARATOR
         MENUITEM "Status&Bar",                  ID_CMD_STATUSBAR
+        MENUITEM "Read &Only Mode",             ID_CMD_READONLY
     END
     POPUP "&Help"
     BEGIN

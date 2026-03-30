@@ -88,6 +88,9 @@ public:
 	//@{ Not Found Dialog //@}
 	void NotFound(bool GoingDown=false);
 
+	//@{ Set readonly mode //@}
+	void SetReadOnly(bool ro) { readonly_ = ro; }
+
 private:
 
 	//@{ [Replace] command //@}
@@ -187,6 +190,7 @@ private:
 
 	ki::String findHistoric_[16];
 	ki::String replHistoric_[16];
+	bool readonly_;  // Read-only mode flag
 
 private:
 	NOCOPY(SearchManager);

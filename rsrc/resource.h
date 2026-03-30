@@ -140,6 +140,7 @@
 #define ID_CMD_RECONV                   40036
 #define ID_CMD_TOGGLEIME                40037
 #define ID_CMD_HELPABOUT                40038
+#define ID_CMD_READONLY                 40039
 #define ID_CMD_MRU                      40200
 #define ID_CMD_DOCTYPE                  40300
 
@@ -178,7 +179,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        113
-#define _APS_NEXT_COMMAND_VALUE         40039
+#define _APS_NEXT_COMMAND_VALUE         40040
 #define _APS_NEXT_CONTROL_VALUE         1034
 #define _APS_NEXT_SYMED_VALUE           102
 #endif

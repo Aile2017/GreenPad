@@ -92,6 +92,7 @@ ID_CMD_ZOOMUP = ズームアップ(&U)
 ID_CMD_ZOOMDN = ズームダウン(&W)
 ID_CMD_CONFIG = 設定(&S)...
 ID_CMD_STATUSBAR = ステータス バー(&B)
+ID_CMD_READONLY = 読み取り専用(&O)
 ID_CMD_HELP = ヘルプ(&C)...\tF1
 ID_CMD_HELPABOUT = バージョン情報(&A)
 
