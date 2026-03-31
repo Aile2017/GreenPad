@@ -8,6 +8,7 @@ release/*.pch
 
 # IDE and editor files
 .claude/
+.github/
 .vscode/
 *.dsp
 *.dsw
