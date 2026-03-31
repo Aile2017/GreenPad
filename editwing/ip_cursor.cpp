@@ -378,6 +378,17 @@ void Cursor::on_keydown( int vk, LPARAM flag )
 {
 	bool sft = (::GetKeyState(VK_SHIFT)>>15)!=0;
 	bool ctl = (::GetKeyState(VK_CONTROL)>>15)!=0;
+	bool alt = (::GetKeyState(VK_MENU)>>15)!=0;
+
+	if( bRO_ && vk == VK_SPACE && !ctl && !alt )
+	{
+		if( sft )
+			PageUp( false );
+		else
+			PageDown( false );
+		return;
+	}
+
 	pEvHan_->on_key( *this, vk, sft, ctl );
 }
 
@@ -423,6 +434,8 @@ void Cursor::InputChar( unicode ch )
 
 void Cursor::Input( const unicode* str, size_t len )
 {
+	if( bRO_ )
+		return;
 	if( cur_==sel_ )
 		doc_.Execute( Insert( cur_, str, len ) );
 	else
@@ -456,6 +469,8 @@ void Cursor::Input( const char* str, size_t len )
 }
 void Cursor::InputAt( const unicode *str, size_t len, int x, int y )
 {
+	if( bRO_ )
+		return;
 	VPos np;
 	view_.GetVPos( x, y, &np );
 	const bool curbeforesel = cur_ < sel_;
@@ -533,6 +548,8 @@ void Cursor::InputAt( const char* str, size_t len, int x, int y )
 
 void Cursor::DelBack( bool wide )
 {
+	if( bRO_ )
+		return;
 	// If selected, BackSpace == Delete
 	// Otherwise, BackSpace == Left + Delete (cutting corners)
 	// Ctrl+BackSpace == Leftword + delete
@@ -547,6 +564,8 @@ void Cursor::DelBack( bool wide )
 
 void Cursor::Del( bool wide )
 {
+	if( bRO_ )
+		return;
 	// If selected, delete cur_ ~ sel_
 	// Otherwise, remove cur_ ~ rightOf(cur_)
 	// Ctrl+Del == Right + delete
@@ -562,6 +581,8 @@ void Cursor::Del( bool wide )
 // of the line and paste them after the \r.
 void Cursor::Return()
 {   // User pressed the Enter!
+	if( bRO_ )
+		return;
 	const unicode cr = L'\r';
 	DPos pos = Min(cur_, sel_);
 	Input(&cr, 1);
@@ -574,6 +595,8 @@ void Cursor::Return()
 
 void Cursor::DelToEndline( bool wide )
 {
+	if( bRO_ )
+		return;
 	if( cur_!=sel_ )
 		MoveCur( Min(cur_, sel_), false );
 	End( wide, true);
@@ -583,6 +606,8 @@ void Cursor::DelToEndline( bool wide )
 
 void Cursor::DelToStartline( bool wide )
 {
+	if( bRO_ )
+		return;
 	if( cur_!=sel_ )
 		MoveCur( Max(cur_, sel_), false );
 	Home( wide, true);
@@ -596,6 +621,8 @@ void Cursor::DelToStartline( bool wide )
 //-------------------------------------------------------------------------
 void Cursor::QuoteSelectionW(const unicode *qs, bool shi)
 {
+	if( bRO_ )
+		return;
 	DPos ocur=cur_, osel=sel_; // save original selection
 	DPos dm=cur_, dM=sel_;
 	if( cur_ > sel_ )
@@ -649,6 +676,8 @@ void Cursor::QuoteSelection(bool unquote)
 //-------------------------------------------------------------------------
 void Cursor::Tabulation(bool shi)
 {
+	if( bRO_ )
+		return;
 	if (cur_.tl == sel_.tl)
 	{
 		Input(TEXT("\t"), 1);
@@ -680,6 +709,8 @@ ki::aarr<unicode> Cursor::getSelectedStr() const
 
 void Cursor::Cut()
 {
+	if( bRO_ )
+		return;
 	if( cur_ != sel_ )
 	{
 		// copy and delete
@@ -722,6 +753,8 @@ void Cursor::Copy()
 
 void Cursor::Paste()
 {
+	if( bRO_ )
+		return;
 	Clipboard clp( caret_.hwnd(), true );
 	if( clp.isOpened() )
 	{

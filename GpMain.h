@@ -18,17 +18,19 @@
 class GpStBar A_FINAL: public ki::StatusBar
 {
 public:
-	enum { MAIN_PART=0, ZOOM_PART, UNI_PART, CS_PART, LB_PART };
+	enum { MAIN_PART=0, RO_PART, ZOOM_PART, UNI_PART, CS_PART, LB_PART };
 	GpStBar();
 	int AutoResize( bool maximized );
 	void SetCsText( const TCHAR* str );
 	void SetLbText( int lb );
 	void SetUnicode( const unicode *uni );
 	void SetZoom( short z );
+	void SetReadOnly( bool ro );
 private:
 	const TCHAR *str_;
 	int lb_;
 	short zoom_;
+	bool ro_;
 };
 
 
@@ -49,12 +51,14 @@ public:
 	GreenPadWnd();
 	bool StartUp( const ki::Path& fn, int cs, int ln );
 	void ShowUp2();
+	void SetReadOnly( bool ro );
 
 private:
 
 	void GetTitleText( TCHAR *name );
 	void UpdateWindowName();
 	void ReloadConfig( bool noSetDocType=false );
+	editwing::VConfig CurrentVConfig() const;
 
 	bool ShowOpenDlg( ki::Path* fn, int* cs );
 	bool Open( const ki::Path& fn, int cs, bool always=true );
@@ -71,6 +75,7 @@ private:
 	void JumpToLine( ulong ln );
 	void SetupSubMenu();
 	void SetupMRUMenu();
+	void LayoutEditArea( int width, int height );
 
 private:
 
@@ -94,6 +99,7 @@ private:
 	int              csi_;
 	short            lb_;
 	short            wrap_;
+	bool             readonly_;
 //	int              clickHT_;
 //	short            clickX_;
 //	short            clickY_;

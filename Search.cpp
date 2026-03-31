@@ -23,6 +23,7 @@ SearchManager::SearchManager( ki::Window& w, editwing::EwEdit& e )
 	, bDownSearch_( true )
 	, bChanged_ (false )
 	, inichanged_( false )
+	, readonly_( false )
 {
 }
 
@@ -95,6 +96,14 @@ void SearchManager::on_init()
 			::wsprintfW( newcap, L"%s (PCRE2 %s)", cap, ver );
 			SetItemText( IDC_REGEXP, newcap );
 		}
+	}
+
+	// Disable replace controls in readonly mode
+	if( readonly_ )
+	{
+		::EnableWindow( item(IDC_REPLACEBOX), FALSE );
+		::EnableWindow( item(ID_REPLACENEXT), FALSE );
+		::EnableWindow( item(ID_REPLACEALL), FALSE );
 	}
 
 	const VPos *stt, *end;

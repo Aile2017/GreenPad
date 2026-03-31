@@ -92,6 +92,7 @@ ID_CMD_ZOOMUP = Увеличить &масштаб
 ID_CMD_ZOOMDN = Уменьшить масшта&б
 ID_CMD_CONFIG = &Настройки...
 ID_CMD_STATUSBAR = Строка &состояния
+ID_CMD_READONLY = Режим т&олько чтения
 ID_CMD_HELP = &Контекстная справка...\tF1
 ID_CMD_HELPABOUT = &О программе
 

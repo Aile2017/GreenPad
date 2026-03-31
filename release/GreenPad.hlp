@@ -31,7 +31,10 @@ Ctrl+B                Go to matching brace
 
 Command Line
 ------------
-greenpad [-l<line>] [-c<charset>] [-e<locale>] <file> ...
+greenpad [-r] [-l<line>] [-c<charset>] [-e<locale>] <file> ...
+
+Options:
+  -r       Start in read-only mode
 
 Common charset codes:
   -65001   UTF-8

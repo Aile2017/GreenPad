@@ -92,6 +92,7 @@ ID_CMD_ZOOMUP = Zoom &Up
 ID_CMD_ZOOMDN = Zoom Do&wn
 ID_CMD_CONFIG = &Settings...
 ID_CMD_STATUSBAR = Status&Bar
+ID_CMD_READONLY = Read &Only Mode
 ID_CMD_HELP = &Context Help...\tF1
 ID_CMD_HELPABOUT = &About
 

@@ -193,6 +193,7 @@ static const NameIdPair kCommandNames[] = {
     {L"ID_CMD_RECONV",        40036},
     {L"ID_CMD_TOGGLEIME",     40037},
     {L"ID_CMD_HELPABOUT",     40038},
+    {L"ID_CMD_READONLY",      40039},
     {L"ID_CMD_UPPERCASE",     50001},
     {L"ID_CMD_LOWERCASE",     50002},
     {L"ID_CMD_INVERTCASE",    50003},

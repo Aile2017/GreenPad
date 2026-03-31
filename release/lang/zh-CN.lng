@@ -92,6 +92,7 @@ ID_CMD_ZOOMUP = 放大(&U)
 ID_CMD_ZOOMDN = 缩小(&W)
 ID_CMD_CONFIG = 设置(&S)...
 ID_CMD_STATUSBAR = 状态栏(&B)
+ID_CMD_READONLY = 只读模式(&O)
 ID_CMD_HELP = 关联帮助(&C)...\tF1
 ID_CMD_HELPABOUT = 关于(&A)
 

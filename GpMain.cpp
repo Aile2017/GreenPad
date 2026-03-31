@@ -48,7 +48,17 @@ inline GpStBar::GpStBar()
 	: str_(NULL)
 	, lb_(2)
 	, zoom_(100)
+	, ro_(false)
 {
+}
+
+inline void GpStBar::SetReadOnly( bool ro )
+{
+	ro_ = ro;
+	if( ro_ )
+		SendMsg( SB_SETTEXT, SBT_OWNERDRAW | RO_PART, reinterpret_cast<LPARAM>(TEXT("RO")) );
+	else
+		SetText( TEXT(""), RO_PART );
 }
 
 inline void GpStBar::SetCsText( const TCHAR* str )
@@ -92,24 +102,31 @@ int GpStBar::AutoResize( bool maximized )
 {
 	// Resize while ensuring character code display area
 	int h = StatusBar::AutoResize( maximized );
-	int w[] = { width()-150, width()-50, width()-50, width()-50, width() };
+	int w[] = { width()-190, width()-170, width()-150, width()-50, width()-50, width() };
 
 	HDC dc = ::GetDC( hwnd() );
 	SIZE s;
 	if( ::GetTextExtentPoint( dc, TEXT("CRLF1M"), 6, &s ) ) // Line Ending
-		w[3] = w[4] - s.cx;
+		w[4] = w[5] - s.cx;
 	if( ::GetTextExtentPoint( dc, TEXT("BBBWWW (100)"), 12, &s ) ) // Charset
-		w[1] = w[2] = w[3] - s.cx;
+		w[3] = w[4] - s.cx;
 	if( ::GetTextExtentPoint( dc, TEXT("U+100000"), 8, &s ) ) // Unicode disp.
-		w[1] = w[2] - s.cx;
+		w[2] = w[3] - s.cx;
 	if( ::GetTextExtentPoint( dc, TEXT("990 %"), 5, &s ) ) // Percentage disp.
-		w[0] = Max( w[1] - s.cx, (long)(width()/3) );
+		w[1] = w[2] - s.cx;
+	if( ::GetTextExtentPoint( dc, TEXT(" RO"), 3, &s ) )
+		w[0] = w[1] - s.cx;
+	if( w[0] < width()/3 )
+		w[0] = width()/3;
+	if( w[0] > w[1] - 12 )
+		w[0] = w[1] - 12;
 
 	::ReleaseDC( hwnd(), dc );
 
 	SetParts( countof(w), w );
 	SetCsText( str_ );
 	SetLbText( lb_ );
+	SetReadOnly( ro_ );
 	SetZoom( zoom_ );
 	return h;
 }
@@ -124,6 +141,44 @@ LRESULT GreenPadWnd::on_message( UINT msg, WPARAM wp, LPARAM lp )
 {
 	switch( msg )
 	{
+	case WM_DRAWITEM:
+		{
+			DRAWITEMSTRUCT *dis = reinterpret_cast<DRAWITEMSTRUCT*>(lp);
+			if( dis && dis->hwndItem == stb_.hwnd() && dis->itemID == GpStBar::RO_PART )
+			{
+				HBRUSH bg = ::CreateSolidBrush( RGB(255, 232, 232) );
+				if( bg )
+				{
+					::FillRect( dis->hDC, &dis->rcItem, bg );
+					::DeleteObject( bg );
+				}
+				else
+				{
+					::FillRect( dis->hDC, &dis->rcItem, reinterpret_cast<HBRUSH>(COLOR_BTNFACE+1) );
+				}
+				HPEN pen = ::CreatePen( PS_SOLID, 1, RGB(220, 120, 120) );
+				if( pen )
+				{
+					HPEN old = reinterpret_cast<HPEN>(::SelectObject(dis->hDC, pen));
+					::MoveToEx( dis->hDC, dis->rcItem.left, dis->rcItem.top, NULL );
+					::LineTo( dis->hDC, dis->rcItem.right-1, dis->rcItem.top );
+					::LineTo( dis->hDC, dis->rcItem.right-1, dis->rcItem.bottom-1 );
+					::LineTo( dis->hDC, dis->rcItem.left, dis->rcItem.bottom-1 );
+					::LineTo( dis->hDC, dis->rcItem.left, dis->rcItem.top );
+					::SelectObject( dis->hDC, old );
+					::DeleteObject( pen );
+				}
+				::SetTextColor( dis->hDC, RGB(140, 30, 30) );
+				::SetBkMode( dis->hDC, TRANSPARENT );
+				const TCHAR *txt = reinterpret_cast<const TCHAR*>( dis->itemData );
+				if( !txt || !*txt ) txt = TEXT("RO");
+				::DrawText( dis->hDC, txt, -1, const_cast<RECT*>(&dis->rcItem),
+					DT_CENTER | DT_VCENTER | DT_SINGLELINE );
+				return TRUE;
+			}
+		}
+		break;
+
 	// Activation. Focus on EditCtrl.
 	case WM_ACTIVATE:
 		if( LOWORD(wp) != WA_INACTIVE )
@@ -142,7 +197,9 @@ LRESULT GreenPadWnd::on_message( UINT msg, WPARAM wp, LPARAM lp )
 		if( wp==SIZE_MAXIMIZED || wp==SIZE_RESTORED )
 		{
 			int ht = stb_.AutoResize( wp==SIZE_MAXIMIZED );
-			edit_.MoveTo( 0, 0, LOWORD(lp), HIWORD(lp)-ht );
+			LayoutEditArea( LOWORD(lp), HIWORD(lp)-ht );
+			if( readonly_ )
+				InvalidateRect( hwnd(), NULL, TRUE );
 			cfg_.RememberWnd(this);
 		}
 		break;
@@ -163,7 +220,7 @@ LRESULT GreenPadWnd::on_message( UINT msg, WPARAM wp, LPARAM lp )
 		if( lp )
 		{	// We need to set the font again so that it scales to
 			// The new monitor DPI.
-			edit_.getView().SetFont( cfg_.vConfig(), cfg_.GetZoom() );
+			edit_.getView().SetFont( CurrentVConfig(), cfg_.GetZoom() );
 
 			// Resize the window to the advised RECT
 			RECT *rc = reinterpret_cast<RECT *>(lp);
@@ -315,51 +372,101 @@ bool GreenPadWnd::on_command( UINT id, HWND ctrl )
 	case ID_CMD_REOPENFILE: on_reopenfile();break;
 	case ID_CMD_OPENELEVATED: on_openelevated(filename_); break;
 	case ID_CMD_REFRESHFILE:on_refreshfile();break;
-	case ID_CMD_SAVEFILE:   on_savefile();  break;
-	case ID_CMD_SAVEFILEAS: on_savefileas();break;
+	case ID_CMD_SAVEFILE:
+		if( !readonly_ ) on_savefile();
+		break;
+	case ID_CMD_SAVEFILEAS:
+		if( !readonly_ ) on_savefileas();
+		break;
 	case ID_CMD_PRINT:      on_print();     break;
 	case ID_CMD_PAGESETUP:  on_pagesetup(); break;
-	case ID_CMD_SAVEEXIT:   if(Save_showDlgIfNeeded()) on_exit();  break;
+	case ID_CMD_SAVEEXIT:
+		if( readonly_ ) { on_exit(); } else if(Save_showDlgIfNeeded()) on_exit();
+		break;
 	case ID_CMD_DISCARDEXIT: Destroy();     break;
 	case ID_CMD_EXIT:       on_exit();      break;
 	case ID_CMD_QUICKEXIT:  if(cfg_.useQuickExit()) on_exit();      break;
 
 	// Edit
-	case ID_CMD_UNDO:       edit_.getDoc().Undo();              break;
-	case ID_CMD_REDO:       edit_.getDoc().Redo();              break;
-	case ID_CMD_CUT:        edit_.getCursor().Cut();            break;
+	case ID_CMD_UNDO:
+		if( !readonly_ ) edit_.getDoc().Undo();
+		break;
+	case ID_CMD_REDO:
+		if( !readonly_ ) edit_.getDoc().Redo();
+		break;
+	case ID_CMD_CUT:
+		if( !readonly_ ) edit_.getCursor().Cut();
+		break;
 	case ID_CMD_COPY:       edit_.getCursor().Copy();           break;
-	case ID_CMD_PASTE:      edit_.getCursor().Paste();          break;
-	case ID_CMD_DELETE: if( edit_.getCursor().isSelected() ){ edit_.getCursor().Del(false);} break;
+	case ID_CMD_PASTE:
+		if( !readonly_ ) edit_.getCursor().Paste();
+		break;
+	case ID_CMD_DELETE:
+		if( !readonly_ && edit_.getCursor().isSelected() ){ edit_.getCursor().Del(false);};
+		break;
 	case ID_CMD_SELECTALL:  edit_.getCursor().Home(true,false);
 	                        edit_.getCursor().End(true,true);   break;
-	case ID_CMD_DATETIME:   on_datetime();                      break;
-	case ID_CMD_INSERTUNI:  on_insertuni();                     break;
+	case ID_CMD_DATETIME:
+		if( !readonly_ ) on_datetime();
+		break;
+	case ID_CMD_INSERTUNI:
+		if( !readonly_ ) on_insertuni();
+		break;
 	case ID_CMD_ZOOMDLG:    on_zoom();                          break;
 	case ID_CMD_ZOOMRZ:     on_setzoom( 100 );                  break;
 	case ID_CMD_ZOOMUP:     on_setzoom( cfg_.GetZoom() + 10 );  break;
 	case ID_CMD_ZOOMDN:     on_setzoom( cfg_.GetZoom() - 10 );  break;
 #ifndef NO_IME
-	case ID_CMD_RECONV:     on_reconv();                        break;
-	case ID_CMD_TOGGLEIME:  on_toggleime();                     break;
+	case ID_CMD_RECONV:
+		if( !readonly_ ) on_reconv();
+		break;
+	case ID_CMD_TOGGLEIME:
+		if( !readonly_ ) on_toggleime();
+		break;
 #endif
     // More edit
-	case ID_CMD_UPPERCASE:  edit_.getCursor().UpperCaseSel();      break;
-	case ID_CMD_LOWERCASE:  edit_.getCursor().LowerCaseSel();      break;
-	case ID_CMD_INVERTCASE: edit_.getCursor().InvertCaseSel();     break;
-	case ID_CMD_TTSPACES:   edit_.getCursor().TTSpacesSel();       break;
-	case ID_CMD_SFCHAR:     edit_.getCursor().StripFirstChar();    break;
-	case ID_CMD_SLCHAR:     edit_.getCursor().StripLastChar();     break;
-	case ID_CMD_ASCIIFY:    edit_.getCursor().ASCIIFy();           break;
+	case ID_CMD_UPPERCASE:
+		if( !readonly_ ) edit_.getCursor().UpperCaseSel();
+		break;
+	case ID_CMD_LOWERCASE:
+		if( !readonly_ ) edit_.getCursor().LowerCaseSel();
+		break;
+	case ID_CMD_INVERTCASE:
+		if( !readonly_ ) edit_.getCursor().InvertCaseSel();
+		break;
+	case ID_CMD_TTSPACES:
+		if( !readonly_ ) edit_.getCursor().TTSpacesSel();
+		break;
+	case ID_CMD_SFCHAR:
+		if( !readonly_ ) edit_.getCursor().StripFirstChar();
+		break;
+	case ID_CMD_SLCHAR:
+		if( !readonly_ ) edit_.getCursor().StripLastChar();
+		break;
+	case ID_CMD_ASCIIFY:
+		if( !readonly_ ) edit_.getCursor().ASCIIFy();
+		break;
 
 	// Normalizations forms C=1, D=2, KC=5, KD=6.
-	case ID_CMD_UNINORMC:   edit_.getCursor().UnicodeNormalize(1); break;
-	case ID_CMD_UNINORMD:   edit_.getCursor().UnicodeNormalize(2); break;
-	case ID_CMD_UNINORMKC:  edit_.getCursor().UnicodeNormalize(5); break;
-	case ID_CMD_UNINORMKD:  edit_.getCursor().UnicodeNormalize(6); break;
+	case ID_CMD_UNINORMC:
+		if( !readonly_ ) edit_.getCursor().UnicodeNormalize(1);
+		break;
+	case ID_CMD_UNINORMD:
+		if( !readonly_ ) edit_.getCursor().UnicodeNormalize(2);
+		break;
+	case ID_CMD_UNINORMKC:
+		if( !readonly_ ) edit_.getCursor().UnicodeNormalize(5);
+		break;
+	case ID_CMD_UNINORMKD:
+		if( !readonly_ ) edit_.getCursor().UnicodeNormalize(6);
+		break;
 
-	case ID_CMD_QUOTE:      edit_.getCursor().QuoteSelection(false);break;
-	case ID_CMD_UNQUOTE:    edit_.getCursor().QuoteSelection(true); break;
+	case ID_CMD_QUOTE:
+		if( !readonly_ ) edit_.getCursor().QuoteSelection(false);
+		break;
+	case ID_CMD_UNQUOTE:
+		if( !readonly_ ) edit_.getCursor().QuoteSelection(true);
+		break;
 	case ID_CMD_DELENDLINE: edit_.getCursor().DelToEndline(false); break;
 	case ID_CMD_DELSTALINE: edit_.getCursor().DelToStartline(false); break;
 	case ID_CMD_DELENDFILE: edit_.getCursor().DelToEndline(true); break;
@@ -381,6 +488,7 @@ bool GreenPadWnd::on_command( UINT id, HWND ctrl )
 	case ID_CMD_WRAPWINDOW: edit_.getView().SetWrapType( wrap_=0 ); break;
 	case ID_CMD_CONFIG:     on_config();    break;
 	case ID_CMD_STATUSBAR:  on_statusBar(); break;
+	case ID_CMD_READONLY:   SetReadOnly( !readonly_ ); break;
 
 	// Help
 	case ID_CMD_HELPABOUT: on_helpabout(); break;
@@ -402,6 +510,43 @@ bool GreenPadWnd::on_command( UINT id, HWND ctrl )
 
 bool GreenPadWnd::PreTranslateMessage( MSG* msg )
 {
+	// Block text input in readonly mode
+	if( readonly_ && (msg->hwnd == edit_.hwnd() || msg->hwnd == edit_.getView().hwnd()) )
+	{
+		if( msg->message == WM_KEYDOWN )
+		{
+			WPARAM vk = msg->wParam;
+			if( vk == VK_ESCAPE || vk == 'Q' )
+			{
+				on_exit();
+				return true; // consume message
+			}
+			// Block deletion/modification keys in readonly mode
+			if( vk == VK_DELETE || vk == VK_BACK )
+				return true; // consume message
+			// Block Ctrl+X (cut), Ctrl+V (paste), Ctrl+Z (undo), etc.
+			if( (::GetKeyState(VK_CONTROL) & 0x8000) != 0 )
+			{
+				if( vk == 'X' || vk == 'V' || vk == 'Z' || vk == 'Y' )
+					return true; // consume message
+			}
+		}
+		else if( msg->message == WM_CHAR )
+		{
+			// Block regular character input in readonly mode (except control chars)
+			TCHAR ch = (TCHAR)msg->wParam;
+			// Allow only control characters (Ctrl+C, etc.)
+			if( ::GetKeyState(VK_CONTROL) & 0x8000 )
+			{
+				// Allow Ctrl+C (copy) and navigation
+				return false;
+			}
+			// Block normal text input
+			if( ch >= 32 && ch != 127 )
+				return true; // consume message
+		}
+	}
+
 	// A last resort ^^;
 	if( search_.TrapMsg(msg) )
 		return true;
@@ -816,42 +961,68 @@ void GreenPadWnd::on_exit()
 void GreenPadWnd::on_initmenu( HMENU menu, bool editmenu_only )
 {
 	UINT gray_when_unselected = MF_BYCOMMAND|(edit_.getCursor().isSelected()? MF_ENABLED: MF_GRAYED);
-	::EnableMenuItem( menu, ID_CMD_CUT,    gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_CUT,    readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
 	::EnableMenuItem( menu, ID_CMD_COPY,   gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_DELETE, gray_when_unselected);
-	::EnableMenuItem( menu, ID_CMD_UNDO,   MF_BYCOMMAND|(edit_.getDoc().isUndoAble()? MF_ENABLED: MF_GRAYED) );
-	::EnableMenuItem( menu, ID_CMD_REDO,   MF_BYCOMMAND|(edit_.getDoc().isRedoAble()? MF_ENABLED: MF_GRAYED) );
+	::EnableMenuItem( menu, ID_CMD_DELETE, readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected);
+	::EnableMenuItem( menu, ID_CMD_UNDO,   MF_BYCOMMAND|(readonly_ ? MF_GRAYED : (edit_.getDoc().isUndoAble()? MF_ENABLED: MF_GRAYED)) );
+	::EnableMenuItem( menu, ID_CMD_REDO,   MF_BYCOMMAND|(readonly_ ? MF_GRAYED : (edit_.getDoc().isRedoAble()? MF_ENABLED: MF_GRAYED)) );
+	::EnableMenuItem( menu, ID_CMD_PASTE,  MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
 
-	::EnableMenuItem( menu, ID_CMD_UPPERCASE, gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_LOWERCASE, gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_INVERTCASE,gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_TTSPACES,  gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_ASCIIFY,   gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_SFCHAR,    gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_SLCHAR,    gray_when_unselected );
-//	::EnableMenuItem( menu, ID_CMD_QUOTE,     gray_when_unselected );
-//	::EnableMenuItem( menu, ID_CMD_UNQUOTE,   gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_UPPERCASE, readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_LOWERCASE, readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_INVERTCASE,readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_TTSPACES,  readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_ASCIIFY,   readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_SFCHAR,    readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_SLCHAR,    readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_QUOTE,     readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_UNQUOTE,   readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_UNINORMC,  readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_UNINORMD,  readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_UNINORMKC, readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_UNINORMKD, readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
 
 #ifndef NO_IME
-	::EnableMenuItem( menu, ID_CMD_RECONV, MF_BYCOMMAND|(edit_.getCursor().isSelected() && ime().IsIME() && ime().CanReconv() ? MF_ENABLED : MF_GRAYED) );
-	::EnableMenuItem( menu, ID_CMD_TOGGLEIME, MF_BYCOMMAND|(ime().IsIME() ? MF_ENABLED : MF_GRAYED) );
+	::EnableMenuItem( menu, ID_CMD_RECONV, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : (edit_.getCursor().isSelected() && ime().IsIME() && ime().CanReconv() ? MF_ENABLED : MF_GRAYED)) );
+	::EnableMenuItem( menu, ID_CMD_TOGGLEIME, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : (ime().IsIME() ? MF_ENABLED : MF_GRAYED)) );
 #endif
 	if( editmenu_only )
 	{
+		HMENU hMain = ::GetMenu( hwnd() );
+		if( hMain && menu == ::GetSubMenu(hMain, 1) )
+		{
+			// Gray out parent popup items in Edit menu: Modify / Unicode NF.
+			// Detect popup positions dynamically to avoid index mismatch.
+			int cnt = ::GetMenuItemCount( menu );
+			for( int i=0; i<cnt; ++i )
+			{
+				HMENU sub = ::GetSubMenu( menu, i );
+				if( !sub )
+					continue;
+				UINT first_cmd = ::GetMenuItemID( sub, 0 );
+				if( first_cmd == ID_CMD_UPPERCASE || first_cmd == ID_CMD_UNINORMC )
+					::EnableMenuItem( menu, i, MF_BYPOSITION | (readonly_ ? MF_GRAYED : MF_ENABLED) );
+			}
+		}
 		LOGGER("GreenPadWnd::on_initmenu end (edit menu only)");
 		return;
 	}
 
-	::EnableMenuItem( menu, ID_CMD_SAVEFILE, MF_BYCOMMAND|(isUntitled() || edit_.getDoc().isModified() ? MF_ENABLED : MF_GRAYED) );
+	::EnableMenuItem( menu, ID_CMD_SAVEFILE, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : (isUntitled() || edit_.getDoc().isModified() ? MF_ENABLED : MF_GRAYED)) );
+	::EnableMenuItem( menu, ID_CMD_SAVEFILEAS, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
+	::EnableMenuItem( menu, ID_CMD_SAVEEXIT, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
 	// ::EnableMenuItem( menu, ID_CMD_REOPENFILE, MF_BYCOMMAND|(!isUntitled() ? MF_ENABLED : MF_GRAYED) );
 	::EnableMenuItem( menu, ID_CMD_OPENELEVATED, MF_BYCOMMAND|MF_ENABLED );
 	::EnableMenuItem( menu, ID_CMD_GREP, MF_BYCOMMAND|(cfg_.grepExe().len()>0 ? MF_ENABLED : MF_GRAYED) );
 	::EnableMenuItem( menu, ID_CMD_OPENSELECTION, gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_DATETIME, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
+	::EnableMenuItem( menu, ID_CMD_INSERTUNI, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
 
 	::CheckMenuItem( menu, ID_CMD_NOWRAP, MF_BYCOMMAND|(wrap_==-1?MF_CHECKED:MF_UNCHECKED));
 	::CheckMenuItem( menu, ID_CMD_WRAPWIDTH, MF_BYCOMMAND|(wrap_>0?MF_CHECKED:MF_UNCHECKED));
 	::CheckMenuItem( menu, ID_CMD_WRAPWINDOW, MF_BYCOMMAND|(wrap_==0?MF_CHECKED:MF_UNCHECKED));
 	::CheckMenuItem( menu, ID_CMD_STATUSBAR, cfg_.showStatusBar()?MF_CHECKED:MF_UNCHECKED );
+	::CheckMenuItem( menu, ID_CMD_READONLY, readonly_ ? MF_CHECKED : MF_UNCHECKED );
 
 	LOGGER("GreenPadWnd::on_initmenu end (full init)");
 }
@@ -1133,7 +1304,7 @@ void GreenPadWnd::on_zoom()
 void GreenPadWnd::on_setzoom( short zoom )
 {
 	zoom = Clamp((short)0, zoom, (short)990);
-	edit_.getView().SetFont( cfg_.vConfig(), zoom );
+	edit_.getView().SetFont( CurrentVConfig(), zoom );
 	cfg_.SetZoom( zoom );
 	stb_.SetZoom( zoom );
 }
@@ -1212,7 +1383,9 @@ void GreenPadWnd::on_statusBar()
 		const int ht = stb_.AutoResize( wp.showCmd == SW_MAXIMIZE );
 		RECT rc;
 		getClientRect(&rc);
-		edit_.MoveTo( 0, 0, rc.right, rc.bottom-ht );
+		LayoutEditArea( rc.right, rc.bottom-ht );
+		if( readonly_ )
+			InvalidateRect( hwnd(), NULL, TRUE );
 	}
 }
 
@@ -1399,6 +1572,13 @@ void GreenPadWnd::on_mru( int no )
 //-------------------------------------------------------------------------
 // Settings update process
 //-------------------------------------------------------------------------
+editwing::VConfig GreenPadWnd::CurrentVConfig() const
+{
+	editwing::VConfig vc = cfg_.vConfig();
+	if( readonly_ )
+		vc.color[BG] = cfg_.readOnlyBgColor();
+	return vc;
+}
 
 void GreenPadWnd::ReloadConfig( bool noSetDocType )
 {
@@ -1416,7 +1596,7 @@ void GreenPadWnd::ReloadConfig( bool noSetDocType )
 	edit_.getDoc().SetUndoLimit( cfg_.undoLimit() );
 
 	wrap_ = cfg_.wrapType(); //       wt,    smart wrap,      line number,    Font...
-	edit_.getView().SetWrapLNandFont( wrap_, cfg_.wrapSmart(), cfg_.showLN(), cfg_.vConfig(), cfg_.GetZoom() );
+	edit_.getView().SetWrapLNandFont( wrap_, cfg_.wrapSmart(), cfg_.showLN(), CurrentVConfig(), cfg_.GetZoom() );
 	LOGGER("GreenPadWnd::ReloadConfig ViewConfigLoaded");
 
 	// keyword file, keyword file
@@ -1785,6 +1965,7 @@ GreenPadWnd::GreenPadWnd()
 	, csi_     ( cfg_.GetNewfileCsi() )
 	, lb_      ( cfg_.GetNewfileLB() )
 	, wrap_    ( -1 )
+	, readonly_( false )
 {
 	LOGGER( "GreenPadWnd::Construct begin" );
 
@@ -1818,11 +1999,13 @@ void GreenPadWnd::on_create( CREATESTRUCT* cs )
 	accel_ = app().LoadAccel( IDR_MAIN );
 	edit_.Create( NULL, hwnd(), 0, 0, 100, 100 );
 	LOGGER("GreenPadWnd::on_create edit created");
+	edit_.SendMsg( EM_SETREADONLY, readonly_ ? TRUE : FALSE, 0 );
 	edit_.getDoc().AddHandler( this );
 	edit_.getCursor().AddHandler( this );
 	// Create status bar
 	stb_.SetParent(hwnd()); // Only if it must be shown
 	stb_.SetStatusBarVisible( cfg_.showStatusBar() );
+	stb_.SetReadOnly( readonly_ );
 
 	LOGGER("GreenPadWnd::on_create halfway");
 
@@ -1831,6 +2014,28 @@ void GreenPadWnd::on_create( CREATESTRUCT* cs )
 	SetupMRUMenu();
 
 	LOGGER("GreenPadWnd::on_create menu");
+}
+
+void GreenPadWnd::SetReadOnly( bool ro )
+{
+	readonly_ = ro;
+	search_.SetReadOnly( ro );
+	if( stb_.hwnd() )
+		stb_.SetReadOnly( ro );
+	if( edit_.hwnd() )
+	{
+		edit_.SendMsg( EM_SETREADONLY, ro ? TRUE : FALSE, 0 );
+		edit_.getView().SetFont( CurrentVConfig(), cfg_.GetZoom() );
+	}
+}
+
+void GreenPadWnd::LayoutEditArea( int width, int height )
+{
+	int w = width;
+	int h = height;
+	if( w < 0 ) w = 0;
+	if( h < 0 ) h = 0;
+	edit_.MoveTo( 0, 0, w, h );
 }
 
 bool GreenPadWnd::StartUp( const Path& fn, int cs, int ln )
@@ -1955,6 +2160,9 @@ int kmain()
 				break;
 			case TEXT('l'):
 				optL = String::GetInt( arg[i]+2 );
+				break;
+			case TEXT('r'):
+				wnd.SetReadOnly(true);
 				break;
 			}
 
