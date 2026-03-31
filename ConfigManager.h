@@ -71,6 +71,7 @@ public:
 
 	//@{Display color, font, etc. //@}
 	inline const editwing::VConfig& vConfig() const { return curDt_->vc; }
+	inline COLORREF readOnlyBgColor() const { return curDt_->readOnlyBgColor; }
 
 	//@{ keyword file name (full path) //@}
 	inline ki::Path kwdFile() const
@@ -192,6 +193,7 @@ private:
 
 		// Setting items
 		editwing::VConfig vc;
+		COLORREF          readOnlyBgColor;
 		short             wrapWidth;
 		signed char       wrapType;
 		bool              wrapSmart;

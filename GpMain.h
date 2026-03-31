@@ -58,6 +58,7 @@ private:
 	void GetTitleText( TCHAR *name );
 	void UpdateWindowName();
 	void ReloadConfig( bool noSetDocType=false );
+	editwing::VConfig CurrentVConfig() const;
 
 	bool ShowOpenDlg( ki::Path* fn, int* cs );
 	bool Open( const ki::Path& fn, int cs, bool always=true );
@@ -75,7 +76,6 @@ private:
 	void SetupSubMenu();
 	void SetupMRUMenu();
 	void LayoutEditArea( int width, int height );
-	void DrawReadOnlyFrame( HDC hdc );
 
 private:
 

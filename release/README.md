@@ -93,6 +93,7 @@ fx=Font width in points (0=default)
 ct=Text color (RGB)
 ck=Keyword color
 cb=Background color
+cr=Read-only background color
 cc=Control character color
 cn=Comment color
 cl=Line number color

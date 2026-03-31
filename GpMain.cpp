@@ -141,19 +141,6 @@ LRESULT GreenPadWnd::on_message( UINT msg, WPARAM wp, LPARAM lp )
 {
 	switch( msg )
 	{
-	case WM_PAINT:
-		{
-			PAINTSTRUCT ps;
-			HDC hdc = ::BeginPaint( hwnd(), &ps );
-			// Explicitly erase parent background so RO frame does not remain
-			// when switching back to normal mode.
-			::FillRect( hdc, &ps.rcPaint, reinterpret_cast<HBRUSH>(COLOR_BTNFACE+1) );
-			if( readonly_ )
-				DrawReadOnlyFrame( hdc );
-			::EndPaint( hwnd(), &ps );
-			return 0;
-		}
-
 	case WM_DRAWITEM:
 		{
 			DRAWITEMSTRUCT *dis = reinterpret_cast<DRAWITEMSTRUCT*>(lp);
@@ -233,7 +220,7 @@ LRESULT GreenPadWnd::on_message( UINT msg, WPARAM wp, LPARAM lp )
 		if( lp )
 		{	// We need to set the font again so that it scales to
 			// The new monitor DPI.
-			edit_.getView().SetFont( cfg_.vConfig(), cfg_.GetZoom() );
+			edit_.getView().SetFont( CurrentVConfig(), cfg_.GetZoom() );
 
 			// Resize the window to the advised RECT
 			RECT *rc = reinterpret_cast<RECT *>(lp);
@@ -524,11 +511,16 @@ bool GreenPadWnd::on_command( UINT id, HWND ctrl )
 bool GreenPadWnd::PreTranslateMessage( MSG* msg )
 {
 	// Block text input in readonly mode
-	if( readonly_ && msg->hwnd == edit_.hwnd() )
+	if( readonly_ && (msg->hwnd == edit_.hwnd() || msg->hwnd == edit_.getView().hwnd()) )
 	{
 		if( msg->message == WM_KEYDOWN )
 		{
 			WPARAM vk = msg->wParam;
+			if( vk == VK_ESCAPE || vk == 'Q' )
+			{
+				on_exit();
+				return true; // consume message
+			}
 			// Block deletion/modification keys in readonly mode
 			if( vk == VK_DELETE || vk == VK_BACK )
 				return true; // consume message
@@ -1312,7 +1304,7 @@ void GreenPadWnd::on_zoom()
 void GreenPadWnd::on_setzoom( short zoom )
 {
 	zoom = Clamp((short)0, zoom, (short)990);
-	edit_.getView().SetFont( cfg_.vConfig(), zoom );
+	edit_.getView().SetFont( CurrentVConfig(), zoom );
 	cfg_.SetZoom( zoom );
 	stb_.SetZoom( zoom );
 }
@@ -1580,6 +1572,13 @@ void GreenPadWnd::on_mru( int no )
 //-------------------------------------------------------------------------
 // Settings update process
 //-------------------------------------------------------------------------
+editwing::VConfig GreenPadWnd::CurrentVConfig() const
+{
+	editwing::VConfig vc = cfg_.vConfig();
+	if( readonly_ )
+		vc.color[BG] = cfg_.readOnlyBgColor();
+	return vc;
+}
 
 void GreenPadWnd::ReloadConfig( bool noSetDocType )
 {
@@ -1597,7 +1596,7 @@ void GreenPadWnd::ReloadConfig( bool noSetDocType )
 	edit_.getDoc().SetUndoLimit( cfg_.undoLimit() );
 
 	wrap_ = cfg_.wrapType(); //       wt,    smart wrap,      line number,    Font...
-	edit_.getView().SetWrapLNandFont( wrap_, cfg_.wrapSmart(), cfg_.showLN(), cfg_.vConfig(), cfg_.GetZoom() );
+	edit_.getView().SetWrapLNandFont( wrap_, cfg_.wrapSmart(), cfg_.showLN(), CurrentVConfig(), cfg_.GetZoom() );
 	LOGGER("GreenPadWnd::ReloadConfig ViewConfigLoaded");
 
 	// keyword file, keyword file
@@ -2026,53 +2025,17 @@ void GreenPadWnd::SetReadOnly( bool ro )
 	if( edit_.hwnd() )
 	{
 		edit_.SendMsg( EM_SETREADONLY, ro ? TRUE : FALSE, 0 );
-		RECT rc;
-		WINDOWPLACEMENT wp;
-		wp.length = sizeof(wp);
-		::GetWindowPlacement( hwnd(), &wp );
-		const int ht = stb_.isStatusBarVisible() ? stb_.AutoResize( wp.showCmd == SW_MAXIMIZE ) : 0;
-		getClientRect( &rc );
-		LayoutEditArea( rc.right, rc.bottom - ht );
-		InvalidateRect( hwnd(), NULL, TRUE );
+		edit_.getView().SetFont( CurrentVConfig(), cfg_.GetZoom() );
 	}
 }
 
 void GreenPadWnd::LayoutEditArea( int width, int height )
 {
-	int frame = readonly_ ? 2 : 0;
-	int x = frame;
-	int y = frame;
-	int w = width - frame * 2;
-	int h = height - frame * 2;
+	int w = width;
+	int h = height;
 	if( w < 0 ) w = 0;
 	if( h < 0 ) h = 0;
-	edit_.MoveTo( x, y, w, h );
-}
-
-void GreenPadWnd::DrawReadOnlyFrame( HDC hdc )
-{
-	if( !readonly_ || !edit_.hwnd() )
-		return;
-
-	RECT rc;
-	::GetWindowRect( edit_.hwnd(), &rc );
-	POINT pt1 = { rc.left, rc.top };
-	POINT pt2 = { rc.right, rc.bottom };
-	::ScreenToClient( hwnd(), &pt1 );
-	::ScreenToClient( hwnd(), &pt2 );
-	rc.left = pt1.x - 1;
-	rc.top = pt1.y - 1;
-	rc.right = pt2.x + 1;
-	rc.bottom = pt2.y + 1;
-
-	HBRUSH brush = ::CreateSolidBrush( RGB(220, 32, 32) );
-	if( brush )
-	{
-		::FrameRect( hdc, &rc, brush );
-		::InflateRect( &rc, -1, -1 );
-		::FrameRect( hdc, &rc, brush );
-		::DeleteObject( brush );
-	}
+	edit_.MoveTo( 0, 0, w, h );
 }
 
 bool GreenPadWnd::StartUp( const Path& fn, int cs, int ln )

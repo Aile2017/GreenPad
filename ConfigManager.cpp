@@ -465,6 +465,14 @@ namespace {
 }
 // Brightness approximation, that does not take gamma into account.
 #define COLBRIGHTNESS(x) ( (218*GetRValue(x) + 732*GetGValue(x) + 74*GetBValue(x))>>10 )
+
+namespace {
+	static COLORREF DefaultReadOnlyBgColor()
+	{
+		return RGB(255,240,240);
+	}
+}
+
 void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 {
   // 1. As a default value...
@@ -474,6 +482,7 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 	{
 		// If default.lay is loaded, use it
 		dt->vc        = ref->vc;
+		dt->readOnlyBgColor = ref->readOnlyBgColor;
 		dt->wrapWidth = ref->wrapWidth;
 		dt->wrapType  = ref->wrapType;
 		dt->wrapSmart = ref->wrapSmart;
@@ -493,6 +502,7 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 		dt->vc.color[KWD] = brightmode? RGB(0,0,128): RGB(128,255,255);
 		dt->vc.color[BG]  = bgcol;
 		dt->vc.color[CTL] = brightmode? RGB(192,160,192) : RGB(80,64,80);
+		dt->readOnlyBgColor = DefaultReadOnlyBgColor();
 
 		// EOF=0, EOL=1, TAB=2, HSP=3, ZSP=4
 		dt->vc.sc = 027 ; //010 111 b
@@ -552,6 +562,9 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 				break;
 			case 0x6362: // cb: COLOR-BACKGROUND
 				dt->vc.color[BG ] = GetColor(ptr);
+				break;
+			case 0x6372: // cr: COLOR-READONLY-BACKGROUND
+				dt->readOnlyBgColor = GetColor(ptr);
 				break;
 			case 0x6363: // cc: COLOR-COMMENT
 				dt->vc.color[CMT] = GetColor(ptr);
