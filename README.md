@@ -100,6 +100,8 @@ ws=Word wrap (1=word boundaries  0=character)
 ln=Show line numbers
 ```
 
+Color behavior: normal mode uses `cb`, read-only mode uses `cr`.
+
 ### Syntax highlighting (`.kwd`)
 
 Place `.kwd` files in `release/type/`. Format:

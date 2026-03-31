@@ -38,7 +38,7 @@ static HMENU LoadLocalizedMainMenu(HINSTANCE hInst)
 	return hMenu;
 }
 
-static HMENU getDocTypeSubMenu(HWND hwnd) { return GetSubMenu( ::GetSubMenu(::GetMenu(hwnd),3),9 ); }
+static HMENU getDocTypeSubMenu(HWND hwnd) { return GetSubMenu( ::GetSubMenu(::GetMenu(hwnd),3),6 ); }
 
 //-------------------------------------------------------------------------
 // status bar control
