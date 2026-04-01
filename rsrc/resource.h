@@ -28,8 +28,6 @@
 #define IDS_CANTOPENDIR                 15
 #define IDS_INVALIDCP                   16
 #define IDS_MODIFIEDOUT                 17
-#define IDS_INSERTUNI                   18
-#define IDS_INSSERT                     19
 #define IDS_ZOOMPC                      20
 #define IDS_UNTITLED                    21
 #define IDS_CHARSET_CAPTION             22
@@ -137,8 +135,6 @@
 #define ID_CMD_SAVEEXIT                 40033
 #define ID_CMD_DISCARDEXIT              40034
 #define ID_CMD_PRINT                    40035
-#define ID_CMD_RECONV                   40036
-#define ID_CMD_TOGGLEIME                40037
 #define ID_CMD_HELPABOUT                40038
 #define ID_CMD_READONLY                 40039
 #define ID_CMD_MRU                      40200
@@ -163,17 +159,11 @@
 #define ID_CMD_OPENSELECTION            50017
 #define ID_CMD_SELECTIONLEN             50018
 #define ID_CMD_ASCIIFY                  50019
-#define ID_CMD_INSERTUNI                50020
 
 #define ID_CMD_ZOOMDLG                  50021
 #define ID_CMD_ZOOMRZ                   50022
 #define ID_CMD_ZOOMUP                   50023
 #define ID_CMD_ZOOMDN                   50024
-
-#define ID_CMD_UNINORMC                 50025
-#define ID_CMD_UNINORMD                 50026
-#define ID_CMD_UNINORMKC                50027
-#define ID_CMD_UNINORMKD                50028
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED

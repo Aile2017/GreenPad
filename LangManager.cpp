@@ -150,8 +150,6 @@ static const NameIdPair kStringNames[] = {
     {L"IDS_CANTOPENDIR",     15},
     {L"IDS_INVALIDCP",       16},
     {L"IDS_MODIFIEDOUT",     17},
-    {L"IDS_INSERTUNI",       18},
-    {L"IDS_INSSERT",         19},
     {L"IDS_ZOOMPC",          20},
     {L"IDS_UNTITLED",        21},
     {L"IDS_CHARSET_CAPTION", 22},
@@ -191,8 +189,6 @@ static const NameIdPair kCommandNames[] = {
     {L"ID_CMD_SAVEEXIT",      40033},
     {L"ID_CMD_DISCARDEXIT",   40034},
     {L"ID_CMD_PRINT",         40035},
-    {L"ID_CMD_RECONV",        40036},
-    {L"ID_CMD_TOGGLEIME",     40037},
     {L"ID_CMD_HELPABOUT",     40038},
     {L"ID_CMD_READONLY",      40039},
     {L"ID_CMD_UPPERCASE",     50001},
@@ -208,15 +204,10 @@ static const NameIdPair kCommandNames[] = {
     {L"ID_CMD_HELP",          50016},
     {L"ID_CMD_OPENSELECTION", 50017},
     {L"ID_CMD_ASCIIFY",       50019},
-    {L"ID_CMD_INSERTUNI",     50020},
     {L"ID_CMD_ZOOMDLG",       50021},
     {L"ID_CMD_ZOOMRZ",        50022},
     {L"ID_CMD_ZOOMUP",        50023},
     {L"ID_CMD_ZOOMDN",        50024},
-    {L"ID_CMD_UNINORMC",      50025},
-    {L"ID_CMD_UNINORMD",      50026},
-    {L"ID_CMD_UNINORMKC",     50027},
-    {L"ID_CMD_UNINORMKD",     50028},
 };
 
 static const NameIdPair kDialogNames[] = {

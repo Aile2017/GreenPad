@@ -319,11 +319,8 @@ LRESULT GreenPadWnd::on_message( UINT msg, WPARAM wp, LPARAM lp )
 			if( stb_.SendMsg( SB_GETRECT, 0, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
 				on_jump();
 			else if( stb_.SendMsg( SB_GETRECT, 1, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
-				//stb_.SetZoom(100), cfg_.SetZoom( 100 ), edit_.getView().SetFont( cfg_.vConfig(), 100 );
 				on_zoom();
-			else if( stb_.SendMsg( SB_GETRECT, 2, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
-				on_insertuni();
-			else/* if( stb_.SendMsg( SB_GETRECT, 3, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) ) */
+			else if( stb_.SendMsg( SB_GETRECT, 3, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
 				on_reopenfile();
 		}
 		break;
@@ -409,21 +406,10 @@ bool GreenPadWnd::on_command( UINT id, HWND ctrl )
 	case ID_CMD_DATETIME:
 		if( !readonly_ ) on_datetime();
 		break;
-	case ID_CMD_INSERTUNI:
-		if( !readonly_ ) on_insertuni();
-		break;
 	case ID_CMD_ZOOMDLG:    on_zoom();                          break;
 	case ID_CMD_ZOOMRZ:     on_setzoom( 100 );                  break;
 	case ID_CMD_ZOOMUP:     on_setzoom( cfg_.GetZoom() + 10 );  break;
 	case ID_CMD_ZOOMDN:     on_setzoom( cfg_.GetZoom() - 10 );  break;
-#ifndef NO_IME
-	case ID_CMD_RECONV:
-		if( !readonly_ ) on_reconv();
-		break;
-	case ID_CMD_TOGGLEIME:
-		if( !readonly_ ) on_toggleime();
-		break;
-#endif
     // More edit
 	case ID_CMD_UPPERCASE:
 		if( !readonly_ ) edit_.getCursor().UpperCaseSel();
@@ -445,20 +431,6 @@ bool GreenPadWnd::on_command( UINT id, HWND ctrl )
 		break;
 	case ID_CMD_ASCIIFY:
 		if( !readonly_ ) edit_.getCursor().ASCIIFy();
-		break;
-
-	// Normalizations forms C=1, D=2, KC=5, KD=6.
-	case ID_CMD_UNINORMC:
-		if( !readonly_ ) edit_.getCursor().UnicodeNormalize(1);
-		break;
-	case ID_CMD_UNINORMD:
-		if( !readonly_ ) edit_.getCursor().UnicodeNormalize(2);
-		break;
-	case ID_CMD_UNINORMKC:
-		if( !readonly_ ) edit_.getCursor().UnicodeNormalize(5);
-		break;
-	case ID_CMD_UNINORMKD:
-		if( !readonly_ ) edit_.getCursor().UnicodeNormalize(6);
 		break;
 
 	case ID_CMD_QUOTE:
@@ -977,15 +949,6 @@ void GreenPadWnd::on_initmenu( HMENU menu, bool editmenu_only )
 	::EnableMenuItem( menu, ID_CMD_SLCHAR,    readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
 	::EnableMenuItem( menu, ID_CMD_QUOTE,     readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
 	::EnableMenuItem( menu, ID_CMD_UNQUOTE,   readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_UNINORMC,  readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_UNINORMD,  readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_UNINORMKC, readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_UNINORMKD, readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
-
-#ifndef NO_IME
-	::EnableMenuItem( menu, ID_CMD_RECONV, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : (edit_.getCursor().isSelected() && ime().IsIME() && ime().CanReconv() ? MF_ENABLED : MF_GRAYED)) );
-	::EnableMenuItem( menu, ID_CMD_TOGGLEIME, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : (ime().IsIME() ? MF_ENABLED : MF_GRAYED)) );
-#endif
 	if( editmenu_only )
 	{
 		HMENU hMain = ::GetMenu( hwnd() );
@@ -1000,7 +963,7 @@ void GreenPadWnd::on_initmenu( HMENU menu, bool editmenu_only )
 				if( !sub )
 					continue;
 				UINT first_cmd = ::GetMenuItemID( sub, 0 );
-				if( first_cmd == ID_CMD_UPPERCASE || first_cmd == ID_CMD_UNINORMC )
+				if( first_cmd == ID_CMD_UPPERCASE )
 					::EnableMenuItem( menu, i, MF_BYPOSITION | (readonly_ ? MF_GRAYED : MF_ENABLED) );
 			}
 		}
@@ -1016,7 +979,6 @@ void GreenPadWnd::on_initmenu( HMENU menu, bool editmenu_only )
 	::EnableMenuItem( menu, ID_CMD_GREP, MF_BYCOMMAND|(cfg_.grepExe().len()>0 ? MF_ENABLED : MF_GRAYED) );
 	::EnableMenuItem( menu, ID_CMD_OPENSELECTION, gray_when_unselected );
 	::EnableMenuItem( menu, ID_CMD_DATETIME, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
-	::EnableMenuItem( menu, ID_CMD_INSERTUNI, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
 
 	::CheckMenuItem( menu, ID_CMD_NOWRAP, MF_BYCOMMAND|(wrap_==-1?MF_CHECKED:MF_UNCHECKED));
 	::CheckMenuItem( menu, ID_CMD_WRAPWIDTH, MF_BYCOMMAND|(wrap_>0?MF_CHECKED:MF_UNCHECKED));
@@ -1223,46 +1185,6 @@ void GreenPadWnd::on_datetime()
 
 	edit_.getCursor().Input( tmp, my_lstrlen(tmp) );
 }
-void GreenPadWnd::on_insertuni()
-{
-	struct InsertUnicode A_FINAL: public DlgImpl {
-		InsertUnicode(HWND w) : DlgImpl(IDD_JUMP), utf32_(0xffffffff), w_(w) { GoModal(w); }
-		void on_init() override
-		{
-			SetCenter( hwnd(), w_ );
-			SetItemText( IDC_LINLABEL, TEXT("&U+") );
-			SetItemText( IDOK, RzsString(IDS_INSSERT).c_str() );
-			SetText( RzsString(IDS_INSERTUNI).c_str() );
-
-			::SetFocus(item(IDC_LINEBOX));
-		}
-		bool on_ok() override
-		{
-			TCHAR str[32]; str[0] = TEXT('\0');
-			::GetWindowText( item(IDC_LINEBOX), str, countof(str) );
-			if( !*str )
-				return true;
-			if( str[0] == TEXT('.') )
-				// .decimal
-				utf32_ = String::GetInt(str+1);
-			else if( str[0] == TEXT('o') || str[0] == TEXT('O') )
-				// Octal
-				utf32_ = Octal2Ulong(str+1);
-			else
-				// heXadecimal (default)
-				utf32_ = Hex2Ulong( str + (str[0] == TEXT('x') || str[0] == TEXT('X')) );
-
-			return true;
-		}
-		qbyte utf32_;
-		HWND w_;
-	} dlg(hwnd());
-
-	if( IDOK == dlg.endcode() && dlg.utf32_ != 0xffffffff )
-	{
-		edit_.getCursor().InputUTF32( dlg.utf32_ );
-	}
-}
 
 // Show zoom dialog
 void GreenPadWnd::on_zoom()
@@ -1461,15 +1383,6 @@ void GreenPadWnd::on_move( const DPos& c, const DPos& s )
 		*end = TEXT('\0');
 	}
 	stb_.SetText( str );
-}
-
-void GreenPadWnd::on_reconv()
-{
-	edit_.getCursor().Reconv();
-}
-void GreenPadWnd::on_toggleime()
-{
-	edit_.getCursor().ToggleIME();
 }
 
 //-------------------------------------------------------------------------

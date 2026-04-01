@@ -135,7 +135,6 @@ private:
 	void    on_external_exe_start(const ki::Path& g);
 	void    on_config();
 	void    on_datetime();
-	void    on_insertuni();
 	void    on_zoom();
 	void    on_setzoom( short zoom );
 	void    on_doctype( int no );
@@ -143,8 +142,6 @@ private:
 	void    on_prevwnd();
 	void    on_mru( int no );
 	void    on_statusBar();
-	void    on_reconv();
-	void    on_toggleime();
 
 	void    on_dirtyflag_change( bool ) override;
 	bool    PreTranslateMessage( MSG* msg ) override;
