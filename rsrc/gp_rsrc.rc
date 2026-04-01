@@ -71,7 +71,7 @@ END
 IDR_MAIN                ICON                    "exefile.ico"
 
 // Non-English language resources have been moved to external .lng files.
-// See lang/ja_JP.lng, lang/zh_CN.lng, lang/zh_TW.lng, lang/ko_KR.lng
+// See release/lang/ja-JP.lng, release/lang/zh-CN.lng, release/lang/zh-TW.lng, release/lang/ko-KR.lng
 
 
 /////////////////////////////////////////////////////////////////////////////
