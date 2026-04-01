@@ -101,6 +101,9 @@ void SearchManager::on_init()
 	// Disable replace controls in readonly mode
 	if( readonly_ )
 	{
+		HWND replaceLabel = ::GetWindow( item(IDC_REPLACEBOX), GW_HWNDPREV );
+		if( replaceLabel )
+			::EnableWindow( replaceLabel, FALSE );
 		::EnableWindow( item(IDC_REPLACEBOX), FALSE );
 		::EnableWindow( item(ID_REPLACENEXT), FALSE );
 		::EnableWindow( item(ID_REPLACEALL), FALSE );

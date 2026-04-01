@@ -478,8 +478,10 @@ RzsString::RzsString( UINT rsrcID )
 	str_[0] = TEXT('\0');
 	const wchar_t* lng = LangManager::Get().GetString(rsrcID);
 	if (lng) {
-		wcsncpy(str_, lng, countof(str_) - 1);
-		str_[countof(str_) - 1] = TEXT('\0');
+		size_t i = 0;
+		for( ; i + 1 < countof(str_) && lng[i] != L'\0'; ++i )
+			str_[i] = lng[i];
+		str_[i] = L'\0';
 	} else {
 		app().LoadString( rsrcID, str_, countof(str_) );
 	}

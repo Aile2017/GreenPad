@@ -11,7 +11,8 @@ static wchar_t* wstrdup(const wchar_t* s, int len = -1)
     if (!s) return nullptr;
     if (len < 0) len = (int)wcslen(s);
     wchar_t* p = new wchar_t[len + 1];
-    wcsncpy(p, s, (size_t)len);
+    if (len > 0)
+        memcpy(p, s, sizeof(wchar_t) * (size_t)len);
     p[len] = L'\0';
     return p;
 }
@@ -395,9 +396,19 @@ bool LangManager::Load(const wchar_t* path)
         switch (section) {
         case INFO:
             if      (wcscmp(key, L"Language") == 0)
-                wcsncpy(pImpl_->langName_, parsedVal, 63), pImpl_->langName_[63] = L'\0';
+            {
+                size_t i = 0;
+                for (; i < 63 && parsedVal[i] != L'\0'; ++i)
+                    pImpl_->langName_[i] = parsedVal[i];
+                pImpl_->langName_[i] = L'\0';
+            }
             else if (wcscmp(key, L"LangCode") == 0)
-                wcsncpy(pImpl_->langCode_, parsedVal, 31), pImpl_->langCode_[31] = L'\0';
+            {
+                size_t i = 0;
+                for (; i < 31 && parsedVal[i] != L'\0'; ++i)
+                    pImpl_->langCode_[i] = parsedVal[i];
+                pImpl_->langCode_[i] = L'\0';
+            }
             break;
 
         case STRINGS: {
@@ -564,8 +575,12 @@ bool LangManager::AutoLoad(const wchar_t* langDir, const wchar_t* locale)
     // Normalize underscore separator to hyphen (ja_JP -> ja-JP) so that
     // both forms work for -e / ini Language= values.
     wchar_t normalized[LOCALE_NAME_MAX_LENGTH];
-    wcsncpy(normalized, loc, LOCALE_NAME_MAX_LENGTH - 1);
-    normalized[LOCALE_NAME_MAX_LENGTH - 1] = L'\0';
+    {
+        size_t i = 0;
+        for (; i + 1 < LOCALE_NAME_MAX_LENGTH && loc[i] != L'\0'; ++i)
+            normalized[i] = loc[i];
+        normalized[i] = L'\0';
+    }
     for (wchar_t* p = normalized; *p; ++p)
         if (*p == L'_') *p = L'-';
     loc = normalized;
@@ -583,15 +598,20 @@ bool LangManager::AutoLoad(const wchar_t* langDir, const wchar_t* locale)
         if (second) {
             wchar_t reduced[LOCALE_NAME_MAX_LENGTH];
             int langLen = (int)(first - loc);
-            wcsncpy(reduced, loc, (size_t)langLen);
-            wcscpy(reduced + langLen, second); // e.g. "-CN"
+            if (langLen > 0)
+                memcpy(reduced, loc, sizeof(wchar_t) * (size_t)langLen);
+            {
+                size_t tailLen = wcslen(second) + 1; // include null-terminator
+                memcpy(reduced + langLen, second, sizeof(wchar_t) * tailLen); // e.g. "-CN"
+            }
             wsprintfW(path, L"%s\\%s.lng", langDir, reduced);
             if (Get().Load(path)) return true;
         }
         // Language-only fallback: lang\ja.lng
         wchar_t langOnly[LOCALE_NAME_MAX_LENGTH];
         int len = (int)(first - loc);
-        wcsncpy(langOnly, loc, (size_t)len);
+        if (len > 0)
+            memcpy(langOnly, loc, sizeof(wchar_t) * (size_t)len);
         langOnly[len] = L'\0';
         wsprintfW(path, L"%s\\%s.lng", langDir, langOnly);
         if (Get().Load(path)) return true;
