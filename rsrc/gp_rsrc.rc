@@ -134,10 +134,9 @@ BEGIN
     "X",            ID_CMD_CUT,             VIRTKEY, CONTROL, NOINVERT
     "Y",            ID_CMD_REDO,            VIRTKEY, CONTROL, NOINVERT
     "Z",            ID_CMD_UNDO,            VIRTKEY, CONTROL, NOINVERT
-    VK_HOME,        ID_CMD_ZOOMDLG,         VIRTKEY, ALT, NOINVERT
-    VK_END,         ID_CMD_ZOOMRZ,          VIRTKEY, ALT, NOINVERT
-    VK_UP,          ID_CMD_ZOOMUP,          VIRTKEY, ALT, NOINVERT
-    VK_DOWN,        ID_CMD_ZOOMDN,          VIRTKEY, ALT, NOINVERT
+    "0",            ID_CMD_ZOOMRZ,          VIRTKEY, CONTROL, NOINVERT
+    VK_UP,          ID_CMD_ZOOMUP,          VIRTKEY, CONTROL, NOINVERT
+    VK_DOWN,        ID_CMD_ZOOMDN,          VIRTKEY, CONTROL, NOINVERT
 END
 
 /////////////////////////////////////////////////////////////////////////////
@@ -227,10 +226,10 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "&Zoom"
         BEGIN
-            MENUITEM "&Set Zoom...\tAlt+Home",      ID_CMD_ZOOMDLG
-            MENUITEM "R&eset Zoom\tAlt+End",        ID_CMD_ZOOMRZ
-            MENUITEM "Zoom &Up\tAlt+Up",            ID_CMD_ZOOMUP
-            MENUITEM "Zoom Do&wn\tAlt+Down",        ID_CMD_ZOOMDN
+            MENUITEM "&Set Zoom...",                ID_CMD_ZOOMDLG
+            MENUITEM "R&eset Zoom\tCtrl+0",         ID_CMD_ZOOMRZ
+            MENUITEM "Zoom &Up\tCtrl+Up",          ID_CMD_ZOOMUP
+            MENUITEM "Zoom Do&wn\tCtrl+Down",      ID_CMD_ZOOMDN
         END
         MENUITEM SEPARATOR
         POPUP "&Document Type"
