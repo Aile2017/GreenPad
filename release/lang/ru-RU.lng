@@ -88,63 +88,63 @@ ID_CMD_HELP = &Контекстная справка...\tF1
 ID_CMD_HELPABOUT = &О программе
 
 [Dialog.IDD_REOPENDLG]
-Caption = Переоткрыть файл
+Caption = Переоткр.
 IDOK = OK
 IDCANCEL = Отмена
 static.0 = &Кодировка:
 
 [Dialog.IDD_JUMP]
-Caption = Перейти к строке
-IDOK = &Перейти!
-IDC_LINLABEL = &Строка
+Caption = К строке
+IDOK = &К строке
+IDC_LINLABEL = &Стр.
 
 [Dialog.IDD_FINDREPLACE]
-Caption = Найти и заменить
+Caption = Поиск и замена
 ID_FINDNEXT = &Найти
-ID_FINDPREV = Найти &назад
+ID_FINDPREV = &Назад
 ID_REPLACENEXT = &Заменить
-ID_REPLACEALL = Заменить &всё
-IDCANCEL = Закрыть
-IDC_IGNORECASE = &Игнорировать регистр
-IDC_REGEXP = &Регулярное выражение
+ID_REPLACEALL = Все &замены
+IDCANCEL = Закр.
+IDC_IGNORECASE = &Игнор. регистр
+IDC_REGEXP = &Регэксп
 static.0 = &Найти:
-static.1 = &Заменить на:
+static.1 = &На:
 static.2 = &Параметры
 
 [Dialog.IDD_ABOUTDLG]
-Caption = О программе GreenPad
-IDCANCEL = Закрыть
+Caption = О GreenPad
+IDCANCEL = Закр.
 
 [Dialog.IDD_ADDDOCTYPE]
-Caption = Новый тип документа
+Caption = Тип файла
 IDOK = OK
 IDCANCEL = Отмена
 static.0 = &Имя:
-static.1 = &Расширение:
+static.1 = &Расш.:
 
 [Dialog.IDD_CONFIG]
-Caption = Настройки
+Caption = Опции
 IDOK = OK
 IDCANCEL = Отмена
-IDC_UNDOLIM1 = Не ограничено
+IDC_UNDOLIM1 = Без лим.
 IDC_COUNTBYLETTER = Символы
 IDC_COUNTBYLETTER2 = Позиции
-IDC_OPENSAME = Открывать в том же &окне
-IDC_REMSIZE = Запомнить &размер окна
-IDC_REMPLACE = Запомнить по&ложение окна
-IDC_NEWDOCTYPE = Добавить
-IDC_DELDOCTYPE = Удалить
-IDC_EDITKWD = изменить
-IDC_EDITLAY = изменить
+IDC_OPENSAME = В том же &окне
+IDC_REMSIZE = Запомнить &размер
+IDC_REMPLACE = Запомнить &позицию
+IDC_NEWDOCTYPE = Доб.
+IDC_DELDOCTYPE = Удл.
+IDC_EDITKWD = изм.
+IDC_EDITLAY = изм.
 static.0 = Общие
 static.1 = &Отмена:
 static.2 = раз
 static.3 = &Столбец по:
-static.4 = Число &недавних файлов:
-static.5 = &Фильтр текстовых файлов:
-static.6 = Внешняя программа &Grep:
-static.7 = Режим &нового файла:
+static.4 = &Недавние:
+static.5 = &Текст фильтр:
+static.6 = Внешний &Grep:
+static.7 = Режим &нового:
 static.8 = &Типы документов
 static.9 = &Шаблон:
-static.10 = &Ключевые слова:
-static.11 = &Разметка:
+static.10 = &Ключи:
+static.11 = &Стиль:
