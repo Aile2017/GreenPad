@@ -34,22 +34,86 @@ Place these DLLs in the same directory as `GreenPad.exe` to enable additional fe
 
 ## Building
 
+### Using Top-level Makefile
+
+The top-level `Makefile` provides convenient targets for all toolchains:
+
+```bash
+make vcc      # Build with MSVC
+make gcc64    # Build with MSYS2 mingw64
+make clang64  # Build with MSYS2 CLANG64
+```
+
 ### Visual C++ (x64)
 
+**Preparation:**
+- Use Developer Command Prompt for Native Tools (x64) from Visual Studio 2026
+- Verify `nmake`, `cl`, and `link` are available in PATH
+
+#### Build
+
 ```bat
-nmake -f Makefiles/vcc.mak
+nmake /f Makefiles/vcc.mak
 ```
 
-### MinGW64 (ucrt64)
+#### Clean
 
-```bash
-make gcc64
+```bat
+nmake /f Makefiles/vcc.mak clean
 ```
 
-### Clang64
+### MSYS2 mingw64
+
+**Preparation:**
+- `C:\usr\msys64` must be installed
+- Set `PATH` to `/mingw64/bin:/usr/bin` before building
+
+#### Build
 
 ```bash
-make clang64
+C:/usr/msys64/usr/bin/bash.exe -c "export PATH=/mingw64/bin:/usr/bin:$PATH; /usr/bin/make -f Makefiles/gcc64.mak"
+```
+
+#### Clean
+
+```bash
+C:/usr/msys64/usr/bin/bash.exe -c "export PATH=/mingw64/bin:/usr/bin:$PATH; /usr/bin/make -f Makefiles/gcc64.mak clean"
+```
+
+### MSYS2 UCRT64
+
+**Preparation:**
+- `C:\usr\msys64` must be installed
+- Set `PATH` to `/ucrt64/bin:/usr/bin` before building
+
+#### Build
+
+```bash
+C:/usr/msys64/usr/bin/bash.exe -c "export PATH=/ucrt64/bin:/usr/bin:$PATH; /usr/bin/make -f Makefiles/gcc64.mak"
+```
+
+#### Clean
+
+```bash
+C:/usr/msys64/usr/bin/bash.exe -c "export PATH=/ucrt64/bin:/usr/bin:$PATH; /usr/bin/make -f Makefiles/gcc64.mak clean"
+```
+
+### MSYS2 CLANG64
+
+**Preparation:**
+- `C:\usr\msys64` must be installed
+- Set `PATH` to `/clang64/bin:/usr/bin` before building
+
+#### Build
+
+```bash
+C:/usr/msys64/usr/bin/bash.exe -c "export PATH=/clang64/bin:/usr/bin:$PATH; /usr/bin/make -f Makefiles/clang64.mak"
+```
+
+#### Clean
+
+```bash
+C:/usr/msys64/usr/bin/bash.exe -c "export PATH=/clang64/bin:/usr/bin:$PATH; /usr/bin/make -f Makefiles/clang64.mak clean"
 ```
 
 ## Keyboard Shortcuts

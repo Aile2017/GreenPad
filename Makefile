@@ -7,10 +7,6 @@ message:
 	-@echo  the one from the toolset.
 	-@echo  (GNU make for gcc64/clang64, nmake for vcc)
 
-clean:
-	-@rmdir /Q /S obj        2> /dev/null
-	-@del   /Q release\*.exe 2> /dev/null
-
 ############################################################################
 
 vcc:
