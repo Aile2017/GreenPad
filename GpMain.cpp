@@ -2299,6 +2299,7 @@ bool GreenPadWnd::StartUp( const Path& fn, int cs, int ln )
 void GreenPadWnd::ShowUp2()
 {
 	Window::ShowUp( cfg_.GetWndM() ? SW_MAXIMIZE : SW_SHOW );
+	Window::SetFront();
 }
 
 
