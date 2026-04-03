@@ -354,7 +354,7 @@ LRESULT GreenPadWnd::on_message( UINT msg, WPARAM wp, LPARAM lp )
 				on_jump();
 			else if( stb_.SendMsg( SB_GETRECT, GpStBar::RO_PART, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
 				on_zoom();
-			else if( stb_.SendMsg( SB_GETRECT, GpStBar::UNI_PART, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
+			else if( stb_.SendMsg( SB_GETRECT, GpStBar::CS_PART, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
 				on_reopenfile();
 		}
 		break;
