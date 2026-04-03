@@ -28,6 +28,7 @@ public:
 	void SetReadOnly( bool ro );
 	void SetDocTypeText( const TCHAR* str );
 private:
+	void ApplyUniText() { SetText( uni_buf_, UNI_PART ); }
 	TCHAR cs_buf_[32];
 	TCHAR dt_buf_[64];
 	TCHAR uni_buf_[16];

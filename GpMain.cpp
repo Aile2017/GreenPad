@@ -107,7 +107,7 @@ void GpStBar::SetUnicode( const unicode *uni )
 	}
 	buf[2+digits] = TEXT('\0');
 	my_lstrkpy( uni_buf_, buf );
-	SetText( uni_buf_, UNI_PART );
+	ApplyUniText();
 }
 
 void GpStBar::SetZoom( short z )
@@ -161,7 +161,7 @@ int GpStBar::AutoResize( bool maximized )
 	SetReadOnly( ro_ );
 	SetZoom( zoom_ );
 	SetDocTypeText( dt_buf_ );
-	SetText( uni_buf_, UNI_PART );
+	ApplyUniText();
 	return h;
 }
 
