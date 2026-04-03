@@ -28,6 +28,7 @@ IDS_ZOOMPC = ズーム
 IDS_UNTITLED = 無題
 IDS_CHARSET_CAPTION = 文字コード:
 IDS_CRLF_CAPTION = 改行コード:
+IDS_EXFILTER_FAILED = 外部フィルタが失敗しました (終了コード: %d)
 
 [Menu]
 popup.0 = ファイル(&F)
@@ -68,6 +69,7 @@ ID_CMD_SFCHAR = 行頭1文字削除(&F)\tAlt+Z
 ID_CMD_SLCHAR = 行末1文字削除(&A)\tAlt+A
 ID_CMD_QUOTE = 引用符付加(&Q)\tAlt+Q
 ID_CMD_UNQUOTE = 引用符削除(&n)\tAlt+N
+ID_CMD_EXFILTER = 外部フィルタ(&X)...\tCtrl+\
 ID_CMD_FIND = 検索・置換(&F)\tCtrl+F
 ID_CMD_FINDNEXT = 次を検索(&N)\tF3
 ID_CMD_FINDPREV = 前を検索(&P)\tShift+F3
@@ -110,6 +112,12 @@ IDC_REGEXP = 正規表現(&X)
 static.0 = 検索文字列(&T):
 static.1 = 置換文字列(&W):
 static.2 = オプション(&O)
+
+[Dialog.IDD_EXFILTER]
+Caption = 外部フィルタ
+static.0 = コマンド(&C):
+IDOK = 実行(&R)
+IDCANCEL = キャンセル
 
 [Dialog.IDD_ABOUTDLG]
 Caption = バージョン情報

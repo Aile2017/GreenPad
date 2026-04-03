@@ -27,6 +27,7 @@ IDS_MODIFIEDOUT = 文件已在GreenPad外部被修改！\n重新载入？
 IDS_ZOOMPC = 缩放
 IDS_UNTITLED = 无标题
 IDS_CHARSET_CAPTION = 字符编码:
+IDS_EXFILTER_FAILED = 外部过滤器失败（退出代码：%d）
 IDS_CRLF_CAPTION = 换行符:
 
 [Menu]
@@ -68,6 +69,7 @@ ID_CMD_SFCHAR = 移除首个字符(&F)\tAlt+Z
 ID_CMD_SLCHAR = 移除末尾字符(&A)\tAlt+A
 ID_CMD_QUOTE = 插入引用符号(&Q)\tAlt+Q
 ID_CMD_UNQUOTE = 移除引用符号(&N)\tAlt+N
+ID_CMD_EXFILTER = 外部过滤器(&X)...\tCtrl+\
 ID_CMD_FIND = 查找和替换(&F)\tCtrl+F
 ID_CMD_FINDNEXT = 查找下一个(&N)\tF3
 ID_CMD_FINDPREV = 查找上一个(&P)\tShift+F3
@@ -110,6 +112,12 @@ IDC_REGEXP = 正则表达式(&X)
 static.0 = 搜索字符串(&T):
 static.1 = 替换字符串(&W):
 static.2 = 选项(&O)
+
+[Dialog.IDD_EXFILTER]
+Caption = 外部过滤器
+static.0 = 命令(&C):
+IDOK = 运行(&R)
+IDCANCEL = 取消
 
 [Dialog.IDD_ABOUTDLG]
 Caption = 关于

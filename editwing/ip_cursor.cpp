@@ -215,7 +215,7 @@ bool Cursor::getCurPosUnordered( const VPos** cur, const VPos** sel ) const
 {
 	*cur =  &cur_;
 	*sel = &sel_;
-	return cur != sel;
+	return cur_ != sel_;
 }
 
 

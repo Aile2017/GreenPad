@@ -27,6 +27,7 @@ IDS_MODIFIEDOUT = 파일이 GreenPad 외부에서 변경되었습니다!\n다시
 IDS_ZOOMPC = 확대/축소
 IDS_UNTITLED = 제목 없음
 IDS_CHARSET_CAPTION = 문자 인코딩:
+IDS_EXFILTER_FAILED = 외부 필터가 실패했습니다 (종료 코드: %d)
 IDS_CRLF_CAPTION = 줄 끝:
 
 [Menu]
@@ -68,6 +69,7 @@ ID_CMD_SFCHAR = 첫 글자 제거(&F)\tAlt+Z
 ID_CMD_SLCHAR = 마지막 글자 제거(&A)\tAlt+A
 ID_CMD_QUOTE = 따옴표 추가(&Q)\tAlt+Q
 ID_CMD_UNQUOTE = 따옴표 제거(&N)\tAlt+N
+ID_CMD_EXFILTER = 외부 필터(&X)...\tCtrl+\
 ID_CMD_FIND = 찾기 및 바꾸기(&F)\tCtrl+F
 ID_CMD_FINDNEXT = 다음 찾기(&N)\tF3
 ID_CMD_FINDPREV = 이전 찾기(&P)\tShift+F3
@@ -110,6 +112,12 @@ IDC_REGEXP = 정규식(&X)
 static.0 = 검색 문자열(&T):
 static.1 = 바꿀 문자열(&W):
 static.2 = 옵션(&O)
+
+[Dialog.IDD_EXFILTER]
+Caption = 외부 필터
+static.0 = 명령(&C):
+IDOK = 실행(&R)
+IDCANCEL = 취소
 
 [Dialog.IDD_ABOUTDLG]
 Caption = 정보

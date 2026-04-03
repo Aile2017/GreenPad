@@ -164,6 +164,11 @@
 #define ID_CMD_ZOOMRZ                   50022
 #define ID_CMD_ZOOMUP                   50023
 #define ID_CMD_ZOOMDN                   50024
+#define ID_CMD_EXFILTER                 50025
+
+#define IDS_EXFILTER_FAILED             25
+#define IDD_EXFILTER                    114
+#define IDC_FILTERCMDBOX                1035
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED

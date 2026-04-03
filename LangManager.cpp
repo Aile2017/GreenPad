@@ -154,6 +154,7 @@ static const NameIdPair kStringNames[] = {
     {L"IDS_UNTITLED",        21},
     {L"IDS_CHARSET_CAPTION", 22},
     {L"IDS_CRLF_CAPTION",    23},
+    {L"IDS_EXFILTER_FAILED", 25},
 };
 
 static const NameIdPair kCommandNames[] = {
@@ -208,6 +209,7 @@ static const NameIdPair kCommandNames[] = {
     {L"ID_CMD_ZOOMRZ",        50022},
     {L"ID_CMD_ZOOMUP",        50023},
     {L"ID_CMD_ZOOMDN",        50024},
+    {L"ID_CMD_EXFILTER",      50025},
 };
 
 static const NameIdPair kDialogNames[] = {
@@ -218,6 +220,7 @@ static const NameIdPair kDialogNames[] = {
     {L"IDD_ADDDOCTYPE",  111},
     {L"IDD_ABOUTDLG",    112},
     {L"IDD_EDITLAYOUT",  113},
+    {L"IDD_EXFILTER",    114},
 };
 
 static const NameIdPair kControlNames[] = {

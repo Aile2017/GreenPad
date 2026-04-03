@@ -137,6 +137,7 @@ BEGIN
     "0",            ID_CMD_ZOOMRZ,          VIRTKEY, CONTROL, NOINVERT
     VK_UP,          ID_CMD_ZOOMUP,          VIRTKEY, CONTROL, NOINVERT
     VK_DOWN,        ID_CMD_ZOOMDN,          VIRTKEY, CONTROL, NOINVERT
+    VK_OEM_5,       ID_CMD_EXFILTER,        VIRTKEY, CONTROL, NOINVERT
 END
 
 /////////////////////////////////////////////////////////////////////////////
@@ -204,6 +205,8 @@ BEGIN
             MENUITEM "Strip L&ast Characters\tAlt+A",ID_CMD_SLCHAR
             MENUITEM "&Quote\tAlt+Q",               ID_CMD_QUOTE
             MENUITEM "U&nquote\tAlt+N",             ID_CMD_UNQUOTE
+            MENUITEM SEPARATOR
+            MENUITEM "E&xternal Filter...\tCtrl+\\",ID_CMD_EXFILTER
         END
 
     END
@@ -324,6 +327,17 @@ BEGIN
     EDITTEXT        IDC_EXT,46,24,69,12,ES_AUTOHSCROLL
     DEFPUSHBUTTON   "OK",IDOK,33,43,34,14
     PUSHBUTTON      "Cancel",IDCANCEL,71,43,33,14
+END
+
+IDD_EXFILTER DIALOG 0, 0, 316, 36
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "External Filter"
+FONT 9, MYDIALOGFONT
+BEGIN
+    LTEXT           "&Command:",IDC_STATIC,7,12,52,8
+    COMBOBOX        IDC_FILTERCMDBOX,62,10,123,120,CBS_AUTOHSCROLL | CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON   "&Run",IDOK,191,9,60,14
+    PUSHBUTTON      "Cancel",IDCANCEL,254,9,55,14
 END
 
 IDD_CONFIG DIALOG DISCARDABLE 0, 0, 287, 236

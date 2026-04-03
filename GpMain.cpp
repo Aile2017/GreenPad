@@ -439,6 +439,9 @@ bool GreenPadWnd::on_command( UINT id, HWND ctrl )
 	case ID_CMD_UNQUOTE:
 		if( !readonly_ ) edit_.getCursor().QuoteSelection(true);
 		break;
+	case ID_CMD_EXFILTER:
+		if( !readonly_ ) on_exfilter();
+		break;
 	case ID_CMD_DELENDLINE: edit_.getCursor().DelToEndline(false); break;
 	case ID_CMD_DELSTALINE: edit_.getCursor().DelToStartline(false); break;
 	case ID_CMD_DELENDFILE: edit_.getCursor().DelToEndline(true); break;
@@ -949,6 +952,7 @@ void GreenPadWnd::on_initmenu( HMENU menu, bool editmenu_only )
 	::EnableMenuItem( menu, ID_CMD_SLCHAR,    readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
 	::EnableMenuItem( menu, ID_CMD_QUOTE,     readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
 	::EnableMenuItem( menu, ID_CMD_UNQUOTE,   readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_EXFILTER,  MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
 	if( editmenu_only )
 	{
 		HMENU hMain = ::GetMenu( hwnd() );
@@ -1119,6 +1123,318 @@ void GreenPadWnd::on_showselectionlen()
 	else
 		MsgBox( Ulong2lStr(buf, len), TEXT("Length in UTF-16 chars") );
 }
+//-------------------------------------------------------------------------
+// External filter helper types (file-scope, used only by on_exfilter)
+//-------------------------------------------------------------------------
+
+namespace {
+
+struct ExfStdinArgs {
+	HANDLE hSrc; // temp file to read
+	HANDLE hDst; // stdin pipe write-end
+};
+
+static DWORD WINAPI ExfStdinThread(void* arg)
+{
+	ExfStdinArgs* a = static_cast<ExfStdinArgs*>(arg);
+	BYTE buf[8192];
+	DWORD n;
+	while (ReadFile(a->hSrc, buf, sizeof(buf), &n, NULL) && n > 0)
+		WriteFile(a->hDst, buf, n, &n, NULL);
+	CloseHandle(a->hSrc);
+	CloseHandle(a->hDst); // signals EOF to child
+	return 0;
+}
+
+struct ExfStderrArgs {
+	HANDLE hSrc; // stderr pipe read-end
+	BYTE*  buf;
+	DWORD  size;
+	DWORD  cap;
+};
+
+static DWORD WINAPI ExfStderrThread(void* arg)
+{
+	ExfStderrArgs* a = static_cast<ExfStderrArgs*>(arg);
+	BYTE tmp[4096];
+	DWORD n;
+	while (ReadFile(a->hSrc, tmp, sizeof(tmp), &n, NULL) && n > 0) {
+		if (a->size + n > a->cap) {
+			DWORD newCap = (a->cap ? a->cap * 2 : 4096) + n;
+			BYTE* nb = a->buf
+				? (BYTE*)HeapReAlloc(GetProcessHeap(), 0, a->buf, newCap)
+				: (BYTE*)HeapAlloc(GetProcessHeap(), 0, newCap);
+			if (!nb) break;
+			a->buf = nb; a->cap = newCap;
+		}
+		if (!a->buf) break;
+		memcpy(a->buf + a->size, tmp, n);
+		a->size += n;
+	}
+	CloseHandle(a->hSrc);
+	return 0;
+}
+
+} // namespace
+
+//-------------------------------------------------------------------------
+
+void GreenPadWnd::on_exfilter()
+{
+	// --- Show command-input dialog ---
+	struct ExFilterDlg A_FINAL : public DlgImpl {
+		ExFilterDlg(HWND parent, const ki::String* hist, int histLen)
+			: DlgImpl(IDD_EXFILTER)
+			, hist_(hist), histLen_(histLen), parent_(parent)
+		{ GoModal(parent_); }
+
+		void on_init() override {
+			LangManager::Get().ApplyToDialog(hwnd(), IDD_EXFILTER);
+			SetCenter(hwnd(), parent_);
+			for (int i = 0; i < histLen_; ++i)
+				if (hist_[i].len() > 0)
+					SendMsgToItem(IDC_FILTERCMDBOX, CB_ADDSTRING, 0, (LPARAM)hist_[i].c_str());
+			if (hist_[0].len() > 0)
+				SendMsgToItem(IDC_FILTERCMDBOX, CB_SETCURSEL, 0, 0);
+			::SetFocus(item(IDC_FILTERCMDBOX));
+		}
+		bool on_ok() override {
+			TCHAR buf[2048];
+			GetItemText(IDC_FILTERCMDBOX, countof(buf), buf);
+			cmd_ = buf;
+			return true;
+		}
+		const ki::String* hist_;
+		int histLen_;
+		HWND parent_;
+		ki::String cmd_;
+	} dlg(hwnd(), &cfg_.filterHistory(0), ConfigManager::kFilterHistoryMax);
+
+	if (dlg.endcode() != IDOK || dlg.cmd_.len() == 0)
+		return;
+
+	const ki::String& userCmd = dlg.cmd_;
+
+	// --- Prepare: save cursor, select target text ---
+	const view::VPos *vCur, *vSel;
+	bool hadSelection = edit_.getCursor().getCurPosUnordered(&vCur, &vSel);
+	DPos origCurPos(vCur->tl, vCur->ad);
+
+	if (!hadSelection) {
+		// No selection: operate on whole file
+		edit_.getCursor().Home(true, false);
+		edit_.getCursor().End(true, true);
+	}
+	aarr<unicode> selText = edit_.getCursor().getSelectedStr();
+
+	// --- Write selected text to temp input file ---
+	TCHAR tmpDir[MAX_PATH], tmpIn[MAX_PATH], tmpOut[MAX_PATH];
+	GetTempPath(MAX_PATH, tmpDir);
+	if (GetTempFileName(tmpDir, TEXT("gpf"), 0, tmpIn) == 0 ||
+	    GetTempFileName(tmpDir, TEXT("gpf"), 0, tmpOut) == 0) {
+		if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
+		return;
+	}
+
+	{
+		TextFileW tf(resolveCSI(csi_), lb_);
+		if (!tf.Open(tmpIn)) {
+			DeleteFile(tmpIn); DeleteFile(tmpOut);
+			if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
+			return;
+		}
+		const unicode* p = selText.get();
+		const unicode* start = p;
+		while (*p) {
+			if (*p == L'\n') {
+				size_t len = p - start;
+				if (len > 0 && start[len-1] == L'\r') --len;
+				tf.WriteLine(start, len, false);
+				start = p + 1;
+			}
+			++p;
+		}
+		if (p > start)
+			tf.WriteLine(start, p - start, true);
+		tf.Close();
+	}
+
+	// --- Create pipes ---
+	SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
+	HANDLE hStdinR, hStdinW, hStdoutR, hStdoutW, hStderrR, hStderrW;
+	if (!CreatePipe(&hStdinR, &hStdinW, &sa, 0) ||
+	    !CreatePipe(&hStdoutR, &hStdoutW, &sa, 0) ||
+	    !CreatePipe(&hStderrR, &hStderrW, &sa, 0)) {
+		DeleteFile(tmpIn); DeleteFile(tmpOut);
+		if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
+		return;
+	}
+	SetHandleInformation(hStdinW,  HANDLE_FLAG_INHERIT, 0);
+	SetHandleInformation(hStdoutR, HANDLE_FLAG_INHERIT, 0);
+	SetHandleInformation(hStderrR, HANDLE_FLAG_INHERIT, 0);
+
+	// --- Launch: cmd.exe /c <userCmd> ---
+	String cmdLine = TEXT("cmd.exe /c ");
+	cmdLine += userCmd;
+
+	STARTUPINFO sti = { sizeof(STARTUPINFO) };
+	sti.dwFlags    = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+	sti.hStdInput  = hStdinR;
+	sti.hStdOutput = hStdoutW;
+	sti.hStdError  = hStderrW;
+	sti.wShowWindow = SW_HIDE;
+
+	PROCESS_INFORMATION psi;
+	bool launched = ::CreateProcess(NULL, const_cast<TCHAR*>(cmdLine.c_str()),
+		NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &sti, &psi) != FALSE;
+
+	CloseHandle(hStdinR);
+	CloseHandle(hStdoutW);
+	CloseHandle(hStderrW);
+
+	if (!launched) {
+		CloseHandle(hStdinW); CloseHandle(hStdoutR); CloseHandle(hStderrR);
+		DeleteFile(tmpIn); DeleteFile(tmpOut);
+		if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
+		return;
+	}
+	CloseHandle(psi.hThread);
+
+	// Add to history (process launched)
+	cfg_.AddFilterHistory(userCmd);
+
+	// --- Stdin writer thread ---
+	HANDLE hTmpIn = CreateFile(tmpIn, GENERIC_READ, FILE_SHARE_READ,
+	                           NULL, OPEN_EXISTING, 0, NULL);
+	if (hTmpIn == INVALID_HANDLE_VALUE) {
+		// Cannot open temp file; close remaining handles and terminate child
+		CloseHandle(hStdinW);
+		CloseHandle(hStdoutR);
+		CloseHandle(hStderrR);
+		TerminateProcess(psi.hProcess, 1);
+		CloseHandle(psi.hProcess);
+		DeleteFile(tmpIn); DeleteFile(tmpOut);
+		if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
+		return;
+	}
+	ExfStdinArgs stdinArgs = { hTmpIn, hStdinW };
+	HANDLE hWriteThread = CreateThread(NULL, 0, ExfStdinThread, &stdinArgs, 0, NULL);
+
+	// --- Stderr reader thread ---
+	ExfStderrArgs stderrArgs;
+	stderrArgs.hSrc = hStderrR;
+	stderrArgs.size = 0;
+	stderrArgs.cap  = 4096;
+	stderrArgs.buf  = (BYTE*)HeapAlloc(GetProcessHeap(), 0, stderrArgs.cap);
+	HANDLE hStderrThread = CreateThread(NULL, 0, ExfStderrThread, &stderrArgs, 0, NULL);
+
+	// --- Main thread: read stdout ---
+	DWORD stdoutCap  = 256 * 1024;
+	BYTE* stdoutBuf  = (BYTE*)HeapAlloc(GetProcessHeap(), 0, stdoutCap);
+	DWORD stdoutSize = 0;
+	if (stdoutBuf) {
+		BYTE tmp[8192]; DWORD n;
+		while (ReadFile(hStdoutR, tmp, sizeof(tmp), &n, NULL) && n > 0) {
+			if (stdoutSize + n > stdoutCap) {
+				DWORD newCap = stdoutCap * 2 + n;
+				BYTE* nb = (BYTE*)HeapReAlloc(GetProcessHeap(), 0, stdoutBuf, newCap);
+				if (!nb) break;
+				stdoutBuf = nb; stdoutCap = newCap;
+			}
+			memcpy(stdoutBuf + stdoutSize, tmp, n);
+			stdoutSize += n;
+		}
+	}
+	CloseHandle(hStdoutR);
+
+	// --- Wait for everything ---
+	WaitForSingleObject(hWriteThread, INFINITE);
+	CloseHandle(hWriteThread);
+	WaitForSingleObject(hStderrThread, INFINITE);
+	CloseHandle(hStderrThread);
+	WaitForSingleObject(psi.hProcess, INFINITE);
+	DWORD exitCode = 1;
+	GetExitCodeProcess(psi.hProcess, &exitCode);
+	CloseHandle(psi.hProcess);
+
+	if (exitCode == 0 && !stdoutBuf) {
+		// stdout buffer allocation failed; leave text unchanged silently
+		if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
+	} else if (exitCode == 0) {
+		// Write stdout bytes to temp output file
+		HANDLE hOut = CreateFile(tmpOut, GENERIC_WRITE, 0,
+		                         NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (hOut != INVALID_HANDLE_VALUE) {
+			DWORD written;
+			WriteFile(hOut, stdoutBuf, stdoutSize, &written, NULL);
+			CloseHandle(hOut);
+		}
+
+		// Read output file as unicode using file's charset
+		TextFileR tfr(resolveCSI(csi_));
+		if (tfr.Open(tmpOut)) {
+			const size_t READ_CHUNK = 4096;
+			size_t resCap = READ_CHUNK * 2;
+			unicode* resBuf = (unicode*)HeapAlloc(GetProcessHeap(), 0, resCap * sizeof(unicode));
+			size_t resLen = 0;
+			if (resBuf) {
+				size_t n;
+				while ((n = tfr.ReadBuf(resBuf + resLen,
+				        (resCap - resLen - 1) < READ_CHUNK ? resCap - resLen - 1 : READ_CHUNK)) > 0) {
+					resLen += n;
+					if (resLen + READ_CHUNK + 1 >= resCap) {
+						size_t newCap = resCap * 2;
+						unicode* nb = (unicode*)HeapReAlloc(GetProcessHeap(), 0,
+						                                    resBuf, newCap * sizeof(unicode));
+						if (!nb) break;
+						resBuf = nb; resCap = newCap;
+					}
+				}
+				resBuf[resLen] = 0;
+				edit_.getCursor().Input(resBuf, resLen);
+				HeapFree(GetProcessHeap(), 0, resBuf);
+			}
+		}
+	} else {
+		// Restore cursor when whole-file mode failed
+		if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
+
+		// Build error message
+		String errMsg;
+		const wchar_t* fmt = LangManager::Get().GetString(IDS_EXFILTER_FAILED);
+		TCHAR header[512];
+		if (fmt)
+			wsprintf(header, fmt, (int)exitCode);
+		else
+			wsprintf(header, TEXT("External filter failed (exit code: %d)"), (int)exitCode);
+		errMsg = header;
+
+		// Append stderr (interpret with system ANSI codepage)
+		if (stderrArgs.buf && stderrArgs.size > 0) {
+			int wlen = MultiByteToWideChar(CP_ACP, 0,
+			    (LPCSTR)stderrArgs.buf, (int)stderrArgs.size, NULL, 0);
+			if (wlen > 0) {
+				unicode* wbuf = new unicode[wlen + 1];
+				if (wbuf) {
+					MultiByteToWideChar(CP_ACP, 0,
+					    (LPCSTR)stderrArgs.buf, (int)stderrArgs.size, wbuf, wlen);
+					wbuf[wlen] = 0;
+					errMsg += TEXT("\n");
+					errMsg += wbuf;
+					delete[] wbuf;
+				}
+			}
+		}
+		MsgBox(errMsg.c_str(), RzsString(IDS_APPNAME).c_str(), MB_OK | MB_ICONWARNING);
+	}
+
+	// Cleanup
+	if (stdoutBuf)      HeapFree(GetProcessHeap(), 0, stdoutBuf);
+	if (stderrArgs.buf) HeapFree(GetProcessHeap(), 0, stderrArgs.buf);
+	DeleteFile(tmpIn);
+	DeleteFile(tmpOut);
+}
+
 void GreenPadWnd::on_grep()
 {
 	on_external_exe_start( cfg_.grepExe() );

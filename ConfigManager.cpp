@@ -735,6 +735,13 @@ void ConfigManager::LoadIni()
 	mrus_ = ini_.GetInt( TEXT("MRU"), 0 );
 	mrus_ = Min(Max(0, mrus_), 20);
 
+	// External filter history
+	for (int i = 0; i < kFilterHistoryMax; ++i) {
+		TCHAR key[20];
+		wsprintf(key, TEXT("FilterCmd%d"), i + 1);
+		filterHistory_[i] = ini_.GetStr(key, TEXT(""));
+	}
+
 	language_ = ini_.GetStr( TEXT("Language"), TEXT("") );
 
 	// New file related
@@ -920,6 +927,13 @@ void ConfigManager::SaveIni()
 
 	// MRU
 	ini_.PutInt( TEXT("MRU"), mrus_ );
+
+	// External filter history
+	for (int i = 0; i < kFilterHistoryMax; ++i) {
+		TCHAR key[20];
+		wsprintf(key, TEXT("FilterCmd%d"), i + 1);
+		ini_.PutStr(key, filterHistory_[i].c_str());
+	}
 }
 
 
@@ -966,6 +980,28 @@ bool ConfigManager::AddMRU( const ki::Path& fname )
 	}
 
 	return true;
+}
+
+void ConfigManager::AddFilterHistory( const ki::String& cmd )
+{
+	// Find existing entry
+	int found = -1;
+	for (int i = 0; i < kFilterHistoryMax; ++i) {
+		if (lstrcmp(filterHistory_[i].c_str(), cmd.c_str()) == 0) {
+			found = i;
+			break;
+		}
+	}
+	if (found == 0) return; // Already at top
+
+	// Shift down
+	int limit = (found >= 0) ? found : kFilterHistoryMax - 1;
+	for (int i = limit; i > 0; --i)
+		filterHistory_[i] = filterHistory_[i-1];
+	filterHistory_[0] = cmd;
+
+	inichanged_ = 1;
+	SaveIni();
 }
 
 int ConfigManager::SetUpMRUMenu( HMENU m, UINT id )

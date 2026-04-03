@@ -132,6 +132,7 @@ private:
 	void    on_showselectionlen();
 	void    on_grep();
 	void    on_help();
+	void    on_exfilter();
 	void    on_external_exe_start(const ki::Path& g);
 	void    on_config();
 	void    on_datetime();

@@ -115,6 +115,11 @@ public:
 	//@{ Get [recently used files] //@}
 	ki::Path GetMRU( int no ) const A_COLD;
 
+	//@{ External filter command history //@}
+	enum { kFilterHistoryMax = 10 };
+	inline const ki::String& filterHistory(int i) const { return filterHistory_[i]; }
+	void AddFilterHistory( const ki::String& cmd ) A_COLD;
+
 	//@{ Get list of supported character sets //@}
 	inline CharSetList& GetCharSetList() { return charSets_; }
 
@@ -212,6 +217,9 @@ private:
 	// list of recently used files
 	int mrus_;
 	ki::Path mru_[20];
+
+	// external filter command history
+	ki::String filterHistory_[kFilterHistoryMax];
 
 	// New file related
 	int        newfileCharset_;
