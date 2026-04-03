@@ -18,7 +18,7 @@
 class GpStBar A_FINAL: public ki::StatusBar
 {
 public:
-	enum { MAIN_PART=0, RO_PART, ZOOM_PART, UNI_PART, CS_PART, LB_PART };
+	enum { MAIN_PART=0, RO_PART, DT_PART, ZOOM_PART, UNI_PART, CS_PART, LB_PART };
 	GpStBar();
 	int AutoResize( bool maximized );
 	void SetCsText( const TCHAR* str );
@@ -26,8 +26,11 @@ public:
 	void SetUnicode( const unicode *uni );
 	void SetZoom( short z );
 	void SetReadOnly( bool ro );
+	void SetDocTypeText( const TCHAR* str );
 private:
-	const TCHAR *str_;
+	TCHAR cs_buf_[32];
+	TCHAR dt_buf_[64];
+	TCHAR uni_buf_[16];
 	int lb_;
 	short zoom_;
 	bool ro_;

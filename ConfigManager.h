@@ -82,6 +82,9 @@ public:
 		return p;
 		}
 
+	//@{ Current document type name //@}
+	inline const ki::String& GetDocTypeName() const { return curDt_->name; }
+
 	//@{ External executable file name for Grep //@}
 	inline const ki::Path& grepExe() const { return grepExe_; }
 

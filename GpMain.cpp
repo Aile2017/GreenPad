@@ -45,11 +45,13 @@ static HMENU getDocTypeSubMenu(HWND hwnd) { return GetSubMenu( ::GetSubMenu(::Ge
 //-------------------------------------------------------------------------
 
 inline GpStBar::GpStBar()
-	: str_(NULL)
-	, lb_(2)
+	: lb_(2)
 	, zoom_(100)
 	, ro_(false)
 {
+	cs_buf_[0] = TEXT('\0');
+	dt_buf_[0] = TEXT('\0');
+	uni_buf_[0] = TEXT('\0');
 }
 
 inline void GpStBar::SetReadOnly( bool ro )
@@ -63,8 +65,20 @@ inline void GpStBar::SetReadOnly( bool ro )
 
 inline void GpStBar::SetCsText( const TCHAR* str )
 {
-	// SetText to character code display area
-	SetText( str_=str, CS_PART );
+	if( str )
+		my_lstrkpy( cs_buf_, str );
+	else
+		cs_buf_[0] = TEXT('\0');
+	SetText( cs_buf_, CS_PART );
+}
+
+inline void GpStBar::SetDocTypeText( const TCHAR* str )
+{
+	if( str )
+		my_lstrkpy( dt_buf_, str );
+	else
+		dt_buf_[0] = TEXT('\0');
+	SetText( dt_buf_, DT_PART );
 }
 
 inline void GpStBar::SetLbText( int lb )
@@ -76,15 +90,24 @@ inline void GpStBar::SetLbText( int lb )
 
 void GpStBar::SetUnicode( const unicode *uni )
 {
-	TCHAR buf[ULONG_DIGITS+2+1];
-
-	ulong  cc = uni[0];
+	ulong cc = uni[0];
 	if( isHighSurrogate(uni[0]) )
 		cc = 0x10000 + ( ((uni[0]-0xD800)&0x3ff)<<10 ) + ( (uni[1]-0xDC00)&0x3ff );
 
-	TCHAR *t = const_cast<TCHAR*>(LPTR2Hex( buf+2, cc ));
-	*--t = TEXT('+'); *--t = TEXT('U');
-	SetText( t, UNI_PART );
+	// Determine minimum even number of hex digits: 2, 4, or 6
+	int digits = (cc <= 0xff) ? 2 : (cc <= 0xffff) ? 4 : 6;
+
+	TCHAR buf[2+6+1]; // "U+" + up to 6 hex digits + NUL
+	buf[0] = TEXT('U'); buf[1] = TEXT('+');
+	for( int i = digits-1; i >= 0; --i )
+	{
+		TCHAR rem = (TCHAR)(cc & 15);
+		buf[2+i] = (rem > 9) ? (rem-10) + TEXT('A') : rem + TEXT('0');
+		cc >>= 4;
+	}
+	buf[2+digits] = TEXT('\0');
+	my_lstrkpy( uni_buf_, buf );
+	SetText( uni_buf_, UNI_PART );
 }
 
 void GpStBar::SetZoom( short z )
@@ -102,20 +125,29 @@ int GpStBar::AutoResize( bool maximized )
 {
 	// Resize while ensuring character code display area
 	int h = StatusBar::AutoResize( maximized );
-	int w[] = { width()-190, width()-170, width()-150, width()-50, width()-50, width() };
+	int w[7];
+	w[6] = width();
 
 	HDC dc = ::GetDC( hwnd() );
 	SIZE s;
-	if( ::GetTextExtentPoint( dc, TEXT("CRLF1M"), 6, &s ) ) // Line Ending
+	if( ::GetTextExtentPoint( dc, TEXT("CRLF1M"), 6, &s ) )        // LB_PART
+		w[5] = w[6] - s.cx;
+	else w[5] = w[6] - 50;
+	if( ::GetTextExtentPoint( dc, TEXT("BBBWWW (100)"), 12, &s ) ) // CS_PART
 		w[4] = w[5] - s.cx;
-	if( ::GetTextExtentPoint( dc, TEXT("BBBWWW (100)"), 12, &s ) ) // Charset
+	else w[4] = w[5] - 90;
+	if( ::GetTextExtentPoint( dc, TEXT("U+100000"), 8, &s ) )      // UNI_PART
 		w[3] = w[4] - s.cx;
-	if( ::GetTextExtentPoint( dc, TEXT("U+100000"), 8, &s ) ) // Unicode disp.
+	else w[3] = w[4] - 60;
+	if( ::GetTextExtentPoint( dc, TEXT("990 %"), 5, &s ) )         // ZOOM_PART
 		w[2] = w[3] - s.cx;
-	if( ::GetTextExtentPoint( dc, TEXT("990 %"), 5, &s ) ) // Percentage disp.
+	else w[2] = w[3] - 45;
+	if( ::GetTextExtentPoint( dc, TEXT("Plain Text XX"), 13, &s ) ) // DT_PART
 		w[1] = w[2] - s.cx;
-	if( ::GetTextExtentPoint( dc, TEXT(" RO"), 3, &s ) )
+	else w[1] = w[2] - 90;
+	if( ::GetTextExtentPoint( dc, TEXT(" RO"), 3, &s ) )            // RO_PART
 		w[0] = w[1] - s.cx;
+	else w[0] = w[1] - 30;
 	if( w[0] < width()/3 )
 		w[0] = width()/3;
 	if( w[0] > w[1] - 12 )
@@ -124,10 +156,12 @@ int GpStBar::AutoResize( bool maximized )
 	::ReleaseDC( hwnd(), dc );
 
 	SetParts( countof(w), w );
-	SetCsText( str_ );
+	SetCsText( cs_buf_ );
 	SetLbText( lb_ );
 	SetReadOnly( ro_ );
 	SetZoom( zoom_ );
+	SetDocTypeText( dt_buf_ );
+	SetText( uni_buf_, UNI_PART );
 	return h;
 }
 
@@ -316,11 +350,11 @@ LRESULT GreenPadWnd::on_message( UINT msg, WPARAM wp, LPARAM lp )
 			DWORD msgpos = GetMessagePos();
 			POINT pt = { (short)LOWORD(msgpos), (short)HIWORD(msgpos) };
 			ScreenToClient(stb_.hwnd(), &pt);
-			if( stb_.SendMsg( SB_GETRECT, 0, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
+			if( stb_.SendMsg( SB_GETRECT, GpStBar::MAIN_PART, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
 				on_jump();
-			else if( stb_.SendMsg( SB_GETRECT, 1, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
+			else if( stb_.SendMsg( SB_GETRECT, GpStBar::RO_PART, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
 				on_zoom();
-			else if( stb_.SendMsg( SB_GETRECT, 3, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
+			else if( stb_.SendMsg( SB_GETRECT, GpStBar::UNI_PART, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
 				on_reopenfile();
 		}
 		break;
@@ -1642,7 +1676,26 @@ void GreenPadWnd::on_move( const DPos& c, const DPos& s )
 	{
 		// Update U+XXXXh text in the StatusBar.
 		const unicode* su = edit_.getDoc().tl(c.tl);
-		stb_.SetUnicode( su+c.ad /*- (c.ad!=0 && c.ad==edit_.getDoc().len(c.tl) ) */);
+		if( c.ad == edit_.getDoc().len(c.tl) )
+		{
+			if( c.tl + 1 < edit_.getDoc().tln() )
+			{
+				// End of line: show the line break character code.
+				// CR=U+000D, LF=U+000A, CRLF shows U+000D
+				static const unicode lb_chars[] = { 0x000D, 0x000A, 0x000D };
+				unicode lb_uni[2] = { lb_chars[lb_], 0 };
+				stb_.SetUnicode( lb_uni );
+			}
+			else
+			{
+				// End of file: clear the unicode display
+				stb_.SetText( TEXT(""), GpStBar::UNI_PART );
+			}
+		}
+		else
+		{
+			stb_.SetUnicode( su+c.ad );
+		}
 	}
 	else
 	{
@@ -1674,11 +1727,9 @@ void GreenPadWnd::on_move( const DPos& c, const DPos& s )
 
 	TCHAR str[ULONG_DIGITS*4 + 10], *end = str;
 	TCHAR tmp[ULONG_DIGITS+1];
-	*end++ = TEXT('(');
-	end = my_lstrkpy( str+1, Ulong2lStr(tmp, c.tl+1) );
+	end = my_lstrkpy( str, Ulong2lStr(tmp, c.tl+1) );
 	*end++ = TEXT(',');
 	end = my_lstrkpy( end, Ulong2lStr(tmp, cad+1) );
-	*end++ = TEXT(')');
 	*end = TEXT('\0');
 	if( c != s )
 	{
@@ -1691,11 +1742,10 @@ void GreenPadWnd::on_move( const DPos& c, const DPos& s )
 			for( ulong i=0; i<s.ad; ++i )
 				sad += su[i]<0x80 || (0xff60<=su[i] && su[i]<=0xff9f) ? 1 : 2;
 		}
-		end = my_lstrkpy( end, TEXT(" - (") );
+		end = my_lstrkpy( end, TEXT(" - ") );
 		end = my_lstrkpy( end, Ulong2lStr(tmp, s.tl+1) );
 		*end++ = TEXT(',');
 		end = my_lstrkpy( end, Ulong2lStr(tmp, sad+1) );
-		*end++ = TEXT(')');
 		*end = TEXT('\0');
 	}
 	stb_.SetText( str );
@@ -1820,6 +1870,9 @@ void GreenPadWnd::ReloadConfig( bool noSetDocType )
 			cfg_.CheckMenu( m, t );
 	}
 	LOGGER("GreenPadWnd::ReloadConfig DocTypeLoaded");
+
+	// Update document type display in status bar
+	stb_.SetDocTypeText( cfg_.GetDocTypeName().c_str() );
 
 	// Undo count limit, limit undo
 	edit_.getDoc().SetUndoLimit( cfg_.undoLimit() );
@@ -2044,7 +2097,13 @@ bool GreenPadWnd::OpenByMyself( const ki::Path& fn, int cs, bool needReConf, boo
 	//::EnableWindow(edit_.hwnd(), FALSE);
 	edit_.getDoc().OpenFile( tf );
 	//::EnableWindow(edit_.hwnd(), TRUE);
-	stb_.SetText( TEXT("(1,1)") );
+	stb_.SetText( TEXT("1,1") );
+	{
+		// Show U+XXXX for the character at initial cursor position (line 0, col 0)
+		const unicode* line0 = edit_.getDoc().tl(0);
+		if( line0 )
+			stb_.SetUnicode( line0 );
+	}
 
 	// Title bar update
 	UpdateWindowName();
@@ -2280,7 +2339,12 @@ bool GreenPadWnd::StartUp( const Path& fn, int cs, int ln )
 		ReloadConfig( fn.len()==0 );
 		LOGGER( "GreenPadWnd::StartUp reloadconfig end" );
 		UpdateWindowName();
-		stb_.SetText( TEXT("(1,1)") );
+		stb_.SetText( TEXT("1,1") );
+		{
+			const unicode* line0 = edit_.getDoc().tl(0);
+			if( line0 )
+				stb_.SetUnicode( line0 );
+		}
 		LOGGER( "GreenPadWnd::StartUp updatewindowname end" );
 	}
 	stb_.SetZoom( cfg_.GetZoom() );
@@ -2291,6 +2355,10 @@ bool GreenPadWnd::StartUp( const Path& fn, int cs, int ln )
 
 	ShowUp2();
 	LOGGER( "showup!" );
+
+	// Refresh status bar after ShowWindow triggers WM_SIZE/AutoResize
+	// (AutoResize resets part text; UpdateWindowName restores CS/LB fields)
+	UpdateWindowName();
 
 	LOGGER( "GreenPadWnd::StartUp end" );
 	return true;
