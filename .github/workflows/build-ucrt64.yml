@@ -1,0 +1,45 @@
+name: Build (ucrt64 / MinGW)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSYS2 (ucrt64)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            make
+
+      - name: Build
+        shell: msys2 {0}
+        run: make gcc64
+
+      - name: Stage artifact
+        shell: msys2 {0}
+        run: |
+          mkdir -p dist
+          mv release/GreenPad.exe dist/GreenPad_ucrt64.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GreenPad_ucrt64
+          path: dist\GreenPad_ucrt64.exe
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          tag_name: build-ucrt64-${{ github.run_number }}
+          name: "[ucrt64] Build ${{ github.run_number }} (${{ github.ref_name }})"
+          body: |
+            Built from commit ${{ github.sha }} (`${{ github.ref_name }}`)
+          files: dist\GreenPad_ucrt64.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,197 @@
+name: Package Release
+
+# Creates a tagged release with a ZIP of the full release/ folder.
+# Tag format: GreenPad_[version]_[yyyymmdd]
+# ZIP contents: GreenPad.exe (=clang64), GreenPad_vcc.exe, GreenPad_ucrt64.exe, GreenPad_clang64.exe,
+#               pcre2-16.dll, type/, lang/, GreenPad.hlp, README.md, etc.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version string (e.g. 1.23). Leave empty to read from rsrc/resource.h'
+        required: false
+        default: ''
+      date:
+        description: 'Date for tag (yyyymmdd). Leave empty to use today'
+        required: false
+        default: ''
+      prerelease:
+        description: 'Mark as pre-release'
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  # ── MSVC ────────────────────────────────────────────────────────────────────
+  build-vcc:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSVC x64 environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Build (MSVC)
+        run: nmake -f Makefiles/vcc.mak
+
+      - name: Rename artifact
+        shell: pwsh
+        run: Copy-Item release\GreenPad.exe release\GreenPad_vcc.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exe-vcc
+          path: release\GreenPad_vcc.exe
+
+  # ── MinGW / ucrt64 ──────────────────────────────────────────────────────────
+  build-ucrt64:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSYS2 (ucrt64)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-pcre2
+            make
+
+      - name: Build (ucrt64 / MinGW)
+        shell: msys2 {0}
+        run: make gcc64
+
+      - name: Rename artifact and copy pcre2-16.dll
+        shell: msys2 {0}
+        run: |
+          cp release/GreenPad.exe release/GreenPad_ucrt64.exe
+          cp /ucrt64/bin/pcre2-16.dll release/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exe-ucrt64
+          path: |
+            release\GreenPad_ucrt64.exe
+            release\pcre2-16.dll
+
+  # ── Clang64 ─────────────────────────────────────────────────────────────────
+  build-clang64:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSYS2 (clang64)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANG64
+          install: >-
+            mingw-w64-clang-x86_64-clang
+            mingw-w64-clang-x86_64-binutils
+            make
+
+      - name: Build (clang64)
+        shell: msys2 {0}
+        run: make clang64
+
+      - name: Rename artifact
+        shell: msys2 {0}
+        run: cp release/GreenPad.exe release/GreenPad_clang64.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exe-clang64
+          path: |
+            release\GreenPad_clang64.exe
+            release\GreenPad.exe
+
+  # ── Assemble ZIP and publish release ─────────────────────────────────────────
+  package-and-release:
+    needs: [build-vcc, build-ucrt64, build-clang64]
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        shell: pwsh
+        run: |
+          $input_ver = "${{ inputs.version }}"
+          if ($input_ver -ne "") {
+            $ver = $input_ver
+          } else {
+            $content = Get-Content rsrc/resource.h -Encoding UTF8
+            $match = $content | Select-String 'VER_FILEVERSIONSTR\s+"([^"]+)"'
+            $ver = $match.Matches[0].Groups[1].Value
+          }
+          Write-Output "ver=$ver" | Out-File $env:GITHUB_OUTPUT -Append
+          Write-Host "Version: $ver"
+
+      - name: Determine tag name
+        id: tag
+        shell: pwsh
+        run: |
+          $input_date = "${{ inputs.date }}"
+          if ($input_date -ne "") {
+            $d = $input_date
+          } else {
+            $d = (Get-Date).ToString("yyyyMMdd")
+          }
+          $ver = "${{ steps.version.outputs.ver }}"
+          $tag = "GreenPad_${ver}_${d}"
+          Write-Output "tag=$tag"   | Out-File $env:GITHUB_OUTPUT -Append
+          Write-Output "zipname=${tag}.zip" | Out-File $env:GITHUB_OUTPUT -Append
+          Write-Host "Tag: $tag"
+
+      - name: Download built EXEs and DLLs
+        uses: actions/download-artifact@v4
+        with:
+          path: built
+          merge-multiple: true
+
+      - name: Assemble release folder
+        shell: pwsh
+        run: |
+          # Copy built binaries into the release/ folder from the checkout.
+          # GreenPad.exe = clang64 build (primary executable)
+          Copy-Item built\* release\
+          Write-Host "release/ contents:"
+          Get-ChildItem release | Format-Table Name, Length
+
+      - name: Create ZIP
+        shell: pwsh
+        run: |
+          $zip = "${{ steps.tag.outputs.zipname }}"
+          Compress-Archive -Path release\* -DestinationPath $zip
+          Write-Host "Created: $zip ($([Math]::Round((Get-Item $zip).Length/1KB)) KB)"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          prerelease: ${{ inputs.prerelease }}
+          generate_release_notes: true
+          body: |
+            ## GreenPad ${{ steps.version.outputs.ver }}
+
+            Built from commit ${{ github.sha }} (`${{ github.ref_name }}`)
+
+            ### Package contents (`${{ steps.tag.outputs.zipname }}`)
+
+            | File | Description |
+            |------|-------------|
+            | `GreenPad.exe`         | Primary executable (LLVM Clang / clang64) |
+            | `GreenPad_vcc.exe`     | Visual C++ (MSVC x64) build |
+            | `GreenPad_ucrt64.exe`  | MinGW-w64 / ucrt64 (GCC) build |
+            | `GreenPad_clang64.exe` | LLVM Clang (clang64) build |
+            | `pcre2-16.dll`         | PCRE2 regex engine (optional) |
+            | `type/`                | Syntax highlight / layout files |
+            | `lang/`                | UI language files |
+            | `GreenPad.hlp`         | Help file |
+          files: ${{ steps.tag.outputs.zipname }}

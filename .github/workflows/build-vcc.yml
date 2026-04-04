@@ -1,0 +1,41 @@
+name: Build (MSVC)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSVC x64 environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Build
+        run: nmake -f Makefiles/vcc.mak
+
+      - name: Stage artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Move-Item release\GreenPad.exe dist\GreenPad_vcc.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GreenPad_vcc
+          path: dist\GreenPad_vcc.exe
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          tag_name: build-vcc-${{ github.run_number }}
+          name: "[MSVC] Build ${{ github.run_number }} (${{ github.ref_name }})"
+          body: |
+            Built from commit ${{ github.sha }} (`${{ github.ref_name }}`)
+          files: dist\GreenPad_vcc.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

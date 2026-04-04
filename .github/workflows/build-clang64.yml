@@ -1,0 +1,46 @@
+name: Build (clang64)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSYS2 (clang64)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANG64
+          install: >-
+            mingw-w64-clang-x86_64-clang
+            mingw-w64-clang-x86_64-binutils
+            make
+
+      - name: Build
+        shell: msys2 {0}
+        run: make clang64
+
+      - name: Stage artifact
+        shell: msys2 {0}
+        run: |
+          mkdir -p dist
+          mv release/GreenPad.exe dist/GreenPad_clang64.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GreenPad_clang64
+          path: dist\GreenPad_clang64.exe
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          tag_name: build-clang64-${{ github.run_number }}
+          name: "[clang64] Build ${{ github.run_number }} (${{ github.ref_name }})"
+          body: |
+            Built from commit ${{ github.sha }} (`${{ github.ref_name }}`)
+          files: dist\GreenPad_clang64.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

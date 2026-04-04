@@ -8,7 +8,8 @@ release/*.pch
 
 # IDE and editor files
 .claude/
-.github/
+.github/*
+!.github/workflows/
 .vs/
 .vscode/
 *.dsp
