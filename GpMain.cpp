@@ -354,6 +354,10 @@ LRESULT GreenPadWnd::on_message( UINT msg, WPARAM wp, LPARAM lp )
 				on_jump();
 			else if( stb_.SendMsg( SB_GETRECT, GpStBar::RO_PART, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
 				on_zoom();
+			else if( stb_.SendMsg( SB_GETRECT, GpStBar::ZOOM_PART, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
+				on_zoom();
+			else if( stb_.SendMsg( SB_GETRECT, GpStBar::UNI_PART, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
+				on_insertuni();
 			else if( stb_.SendMsg( SB_GETRECT, GpStBar::CS_PART, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
 				on_reopenfile();
 		}
@@ -439,6 +443,9 @@ bool GreenPadWnd::on_command( UINT id, HWND ctrl )
 	                        edit_.getCursor().End(true,true);   break;
 	case ID_CMD_DATETIME:
 		if( !readonly_ ) on_datetime();
+		break;
+	case ID_CMD_INSERTUNI:
+		if( !readonly_ ) on_insertuni();
 		break;
 	case ID_CMD_ZOOMDLG:    on_zoom();                          break;
 	case ID_CMD_ZOOMRZ:     on_setzoom( 100 );                  break;
@@ -701,8 +708,7 @@ void GreenPadWnd::on_helpabout()
 
 void GreenPadWnd::on_reopenfile()
 {
-	ReopenDlg dlg( charSets_, csi_ );
-	dlg.GoModal( hwnd() );
+	ReopenDlg dlg( charSets_, csi_, hwnd() );
 	if( dlg.endcode() == IDOK )
 	{	// User pressed OK
 		csi_ = dlg.csi(); // Change current csi_
@@ -1017,6 +1023,7 @@ void GreenPadWnd::on_initmenu( HMENU menu, bool editmenu_only )
 	::EnableMenuItem( menu, ID_CMD_GREP, MF_BYCOMMAND|(cfg_.grepExe().len()>0 ? MF_ENABLED : MF_GRAYED) );
 	::EnableMenuItem( menu, ID_CMD_OPENSELECTION, gray_when_unselected );
 	::EnableMenuItem( menu, ID_CMD_DATETIME, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
+	::EnableMenuItem( menu, ID_CMD_INSERTUNI, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
 
 	::CheckMenuItem( menu, ID_CMD_NOWRAP, MF_BYCOMMAND|(wrap_==-1?MF_CHECKED:MF_UNCHECKED));
 	::CheckMenuItem( menu, ID_CMD_WRAPWIDTH, MF_BYCOMMAND|(wrap_>0?MF_CHECKED:MF_UNCHECKED));
@@ -1536,6 +1543,47 @@ void GreenPadWnd::on_datetime()
 	edit_.getCursor().Input( tmp, my_lstrlen(tmp) );
 }
 
+void GreenPadWnd::on_insertuni()
+{
+	struct InsertUnicode A_FINAL: public DlgImpl {
+		InsertUnicode(HWND w) : DlgImpl(IDD_JUMP), utf32_(0xffffffff), w_(w) { GoModal(w); }
+		void on_init() override
+		{
+			SetCenter( hwnd(), w_ );
+			SetItemText( IDC_LINLABEL, TEXT("&U+") );
+			SetItemText( IDOK, RzsString(IDS_INSSERT).c_str() );
+			SetText( RzsString(IDS_INSERTUNI).c_str() );
+
+			::SetFocus(item(IDC_LINEBOX));
+		}
+		bool on_ok() override
+		{
+			TCHAR str[32]; str[0] = TEXT('\0');
+			::GetWindowText( item(IDC_LINEBOX), str, countof(str) );
+			if( !*str )
+				return true;
+			if( str[0] == TEXT('.') )
+				// .decimal
+				utf32_ = String::GetInt(str+1);
+			else if( str[0] == TEXT('o') || str[0] == TEXT('O') )
+				// Octal
+				utf32_ = Octal2Ulong(str+1);
+			else
+				// heXadecimal (default)
+				utf32_ = Hex2Ulong( str + (str[0] == TEXT('x') || str[0] == TEXT('X')) );
+
+			return true;
+		}
+		qbyte utf32_;
+		HWND w_;
+	} dlg(hwnd());
+
+	if( IDOK == dlg.endcode() && dlg.utf32_ != 0xffffffff )
+	{
+		edit_.getCursor().InputUTF32( dlg.utf32_ );
+	}
+}
+
 // Show zoom dialog
 void GreenPadWnd::on_zoom()
 {
@@ -1544,7 +1592,7 @@ void GreenPadWnd::on_zoom()
 		void on_init() override
 		{
 			SetCenter( hwnd(), w_ );
-			SetItemText( IDC_LINLABEL, TEXT("%") );
+			SetItemText( IDC_LINLABEL, TEXT("") );
 			SetItemText( IDOK, /**/ TEXT("OK") );
 			SetText( RzsString(IDS_ZOOMPC).c_str() );
 			SetItemText( IDC_LINEBOX, SInt2Str(zoom_).c_str() );

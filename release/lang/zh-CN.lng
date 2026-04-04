@@ -24,6 +24,8 @@ IDS_ERRORNUM = \n\n错误 #
 IDS_CANTOPENDIR = \n无法打开目录！
 IDS_INVALIDCP = 选择的代码页无效！
 IDS_MODIFIEDOUT = 文件已在GreenPad外部被修改！\n重新载入？
+IDS_INSERTUNI = 插入Unicode字符
+IDS_INSSERT = 插入(&I)
 IDS_ZOOMPC = 缩放
 IDS_UNTITLED = 无标题
 IDS_CHARSET_CAPTION = 字符编码:
@@ -38,7 +40,7 @@ popup.3 = 查看(&V)
 popup.4 = 帮助(&H)
 popup.3.4 = 缩放(&Z)
 popup.0.13 = 最近打开的文件(&M)
-popup.1.11 = 修改(&M)
+popup.1.13 = 修改(&M)
 popup.3.6 = 文档类型(&T)
 ID_CMD_NEWFILE = 新建(&N)\tCtrl+N
 ID_CMD_OPENFILE = 打开(&O)...\tCtrl+O
@@ -60,6 +62,7 @@ ID_CMD_PASTE = 粘贴(&P)\tCtrl+V
 ID_CMD_DELETE = 删除(&D)\tDel
 ID_CMD_SELECTALL = 全选(&A)\tCtrl+A
 ID_CMD_DATETIME = 插入日期/时间(&T)\tF6
+ID_CMD_INSERTUNI = 插入Unicode(&N)...\tCtrl+I
 ID_CMD_UPPERCASE = 全部大写(&U)\tAlt+U
 ID_CMD_LOWERCASE = 全部小写(&L)\tAlt+L
 ID_CMD_INVERTCASE = 反转大小写(&I)\tAlt+I
@@ -98,7 +101,7 @@ static.0 = 字符编码(&C):
 [Dialog.IDD_JUMP]
 Caption = 跳到指定行
 IDOK = 确定(&G)
-IDC_LINLABEL = 行号
+IDC_LINLABEL = 行:
 
 [Dialog.IDD_FINDREPLACE]
 Caption = 查找和替换

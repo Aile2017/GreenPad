@@ -24,6 +24,8 @@ IDS_ERRORNUM = \n\nОшибка №
 IDS_CANTOPENDIR = \nНе удалось открыть папку!
 IDS_INVALIDCP = Выбрана недопустимая кодировка!
 IDS_MODIFIEDOUT = Файл был изменён вне GreenPad!\nПерезагрузить его?
+IDS_INSERTUNI = Вставить символ Unicode
+IDS_INSSERT = &Вставить
 IDS_ZOOMPC = Масштаб
 IDS_UNTITLED = без имени
 IDS_CHARSET_CAPTION = Кодировка:
@@ -38,7 +40,7 @@ popup.3 = &Вид
 popup.4 = &Справка
 popup.3.4 = &Масштаб
 popup.0.13 = Недавние файлы
-popup.1.11 = &Изменить
+popup.1.13 = &Изменить
 popup.3.6 = &Тип документа
 ID_CMD_NEWFILE = &Новый файл\tCtrl+N
 ID_CMD_OPENFILE = &Открыть...\tCtrl+O
@@ -60,6 +62,7 @@ ID_CMD_PASTE = В&ставить\tCtrl+V
 ID_CMD_DELETE = &Удалить\tDel
 ID_CMD_SELECTALL = Выделить всё\tCtrl+A
 ID_CMD_DATETIME = Вставить дату и время\tF6
+ID_CMD_INSERTUNI = Вставить &Unicode...\tCtrl+I
 ID_CMD_UPPERCASE = &Верхний регистр\tAlt+U
 ID_CMD_LOWERCASE = &Нижний регистр\tAlt+L
 ID_CMD_INVERTCASE = &Инвертировать регистр\tAlt+I
@@ -98,7 +101,7 @@ static.0 = &Кодировка:
 [Dialog.IDD_JUMP]
 Caption = К строке
 IDOK = &К строке
-IDC_LINLABEL = &Стр.
+IDC_LINLABEL = &Строка:
 
 [Dialog.IDD_FINDREPLACE]
 Caption = Поиск и замена

@@ -128,7 +128,7 @@ private:
 class ReopenDlg A_FINAL: public ki::DlgImpl
 {
 public:
-	ReopenDlg( const CharSetList& csl, int csi );
+	ReopenDlg( const CharSetList& csl, int csi, HWND parent );
 	inline int csi() const { return csIndex_; }
 
 private:
@@ -138,6 +138,7 @@ private:
 private:
 	const CharSetList& csl_;
 	int   csIndex_;
+	HWND  parent_;
 };
 
 //========================================================================

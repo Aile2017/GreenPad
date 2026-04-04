@@ -125,6 +125,7 @@ BEGIN
     VK_F4,          ID_CMD_EXIT,            VIRTKEY, CONTROL, NOINVERT
     VK_F5,          ID_CMD_REFRESHFILE,     VIRTKEY, NOINVERT
     VK_F6,          ID_CMD_DATETIME,        VIRTKEY, NOINVERT
+    "I",            ID_CMD_INSERTUNI,       VIRTKEY, CONTROL, NOINVERT
     VK_F12,         ID_CMD_SAVEFILEAS,      VIRTKEY, NOINVERT
     VK_INSERT,      ID_CMD_COPY,            VIRTKEY, CONTROL, NOINVERT
     VK_INSERT,      ID_CMD_PASTE,           VIRTKEY, SHIFT, NOINVERT
@@ -194,6 +195,8 @@ BEGIN
         MENUITEM "Select &All\tCtrl+A",         ID_CMD_SELECTALL
         MENUITEM SEPARATOR
         MENUITEM "Insert Date&&&Time\tF6",      ID_CMD_DATETIME
+        MENUITEM "Insert U&nicode...\tCtrl+I",  ID_CMD_INSERTUNI
+        MENUITEM SEPARATOR
         POPUP "&Modify"
         BEGIN
             MENUITEM "&Upper Case\tAlt+U",          ID_CMD_UPPERCASE
@@ -256,7 +259,7 @@ END
 //
 // Dialog
 IDD_REOPENDLG DIALOG  0, 0, 187, 54
-STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_CENTER | WS_VISIBLE |
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | WS_VISIBLE |
     WS_CLIPSIBLINGS | WS_CAPTION | WS_SYSMENU
 CAPTION "ReOpen File"
 FONT 9, MYDIALOGFONT
@@ -273,9 +276,9 @@ STYLE DS_ABSALIGN | DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP |
 CAPTION "Jump To"
 FONT 9, MYDIALOGFONT
 BEGIN
-    DEFPUSHBUTTON   "&Go!",IDOK,87,12,25,14
-    EDITTEXT        IDC_LINEBOX,14,13,40,12,ES_AUTOHSCROLL
-    LTEXT           "&Line",IDC_LINLABEL,61,15,22,8
+    RTEXT           "&Line:",IDC_LINLABEL,6,15,22,8
+    EDITTEXT        IDC_LINEBOX,30,13,42,12,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "&Go!",IDOK,78,12,46,14
 END
 
 
@@ -410,6 +413,8 @@ BEGIN
     IDS_CANTOPENDIR         "\nCan not open directory!"
     IDS_INVALIDCP           "Invalid codepage selected!"
     IDS_MODIFIEDOUT         "File was modified outside of GreenPad!\nRelaod it?"
+    IDS_INSERTUNI           "Insert Unicode"
+    IDS_INSSERT             "&Insert"
     IDS_ZOOMPC              "Zoom"
     IDS_UNTITLED            "untitled"
     IDS_CHARSET_CAPTION     "Character Encoding:"

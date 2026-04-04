@@ -28,6 +28,8 @@
 #define IDS_CANTOPENDIR                 15
 #define IDS_INVALIDCP                   16
 #define IDS_MODIFIEDOUT                 17
+#define IDS_INSERTUNI                   18
+#define IDS_INSSERT                     19
 #define IDS_ZOOMPC                      20
 #define IDS_UNTITLED                    21
 #define IDS_CHARSET_CAPTION             22
@@ -159,6 +161,7 @@
 #define ID_CMD_OPENSELECTION            50017
 #define ID_CMD_SELECTIONLEN             50018
 #define ID_CMD_ASCIIFY                  50019
+#define ID_CMD_INSERTUNI                50020
 
 #define ID_CMD_ZOOMDLG                  50021
 #define ID_CMD_ZOOMRZ                   50022

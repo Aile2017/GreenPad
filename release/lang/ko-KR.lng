@@ -24,6 +24,8 @@ IDS_ERRORNUM = \n\n오류 #
 IDS_CANTOPENDIR = \n디렉터리를 열 수 없습니다!
 IDS_INVALIDCP = 잘못된 코드 페이지가 선택되었습니다!
 IDS_MODIFIEDOUT = 파일이 GreenPad 외부에서 변경되었습니다!\n다시 로드하시겠습니까?
+IDS_INSERTUNI = 유니코드 삽입
+IDS_INSSERT = 삽입(&I)
 IDS_ZOOMPC = 확대/축소
 IDS_UNTITLED = 제목 없음
 IDS_CHARSET_CAPTION = 문자 인코딩:
@@ -38,7 +40,7 @@ popup.3 = 보기(&V)
 popup.4 = 도움말(&H)
 popup.3.4 = 확대/축소(&Z)
 popup.0.13 = 최근 파일(&M)
-popup.1.11 = 변경(&M)
+popup.1.13 = 변경(&M)
 popup.3.6 = 파일 형식(&T)
 ID_CMD_NEWFILE = 새 파일(&N)\tCtrl+N
 ID_CMD_OPENFILE = 열기(&O)...\tCtrl+O
@@ -60,6 +62,7 @@ ID_CMD_PASTE = 붙여넣기(&P)\tCtrl+V
 ID_CMD_DELETE = 삭제(&D)\tDel
 ID_CMD_SELECTALL = 모두 선택(&A)\tCtrl+A
 ID_CMD_DATETIME = 날짜/시간 삽입(&T)\tF6
+ID_CMD_INSERTUNI = 유니코드 삽입(&N)...\tCtrl+I
 ID_CMD_UPPERCASE = 대문자(&U)\tAlt+U
 ID_CMD_LOWERCASE = 소문자(&L)\tAlt+L
 ID_CMD_INVERTCASE = 대소문자 반전(&I)\tAlt+I
@@ -98,7 +101,7 @@ static.0 = 문자 인코딩(&C):
 [Dialog.IDD_JUMP]
 Caption = 줄로 이동
 IDOK = 이동(&G)
-IDC_LINLABEL = 줄 번호
+IDC_LINLABEL = 줄:
 
 [Dialog.IDD_FINDREPLACE]
 Caption = 찾기 및 바꾸기

@@ -550,13 +550,15 @@ ki::aarr<TCHAR> OpenFileDlg::ConnectWithNull( const TCHAR *lst[], size_t num )
 // "Reopen" dialog
 //------------------------------------------------------------------------
 
-ReopenDlg::ReopenDlg( const CharSetList& csl, int csi )
-	: DlgImpl(IDD_REOPENDLG), csl_(csl), csIndex_(csi)
+ReopenDlg::ReopenDlg( const CharSetList& csl, int csi, HWND parent )
+	: DlgImpl(IDD_REOPENDLG), csl_(csl), csIndex_(csi), parent_(parent)
 {
+	GoModal(parent_);
 }
 
 void ReopenDlg::on_init()
 {
+	SetCenter( hwnd(), parent_ );
 	// Fill in the combo box and select "Auto select"
 	ComboBox cb( hwnd(), IDC_CODELIST );
 	for( size_t i=0; i<csl_.size(); ++i )

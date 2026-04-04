@@ -77,7 +77,7 @@ CXXFLAGS = \
  -fno-access-control -fno-enforce-eh-specs -fno-nonansi-builtins -fnothrow-opt -fno-optional-diags -fno-use-cxa-atexit \
  -fno-exceptions -fno-dwarf2-cfi-asm -fno-asynchronous-unwind-tables -fno-extern-tls-init -fno-rtti -fno-ident \
  -Wno-narrowing -Wno-int-to-pointer-cast -Wstack-usage=4096 \
- -idirafter kilib -D_UNICODE -DUNICODE -UDEBUG -U_DEBUG -DUSEGLOBALIME -DUSE_ORIGINAL_MEMMAN \
+ -idirafter kilib -D_UNICODE -DUNICODE -UDEBUG -U_DEBUG -DUSE_ORIGINAL_MEMMAN \
  $(PCRE2_INC)
 
 LOPT = -m64 -mwindows
