@@ -21,7 +21,9 @@ jobs:
 
       - name: Build
         shell: msys2 {0}
-        run: make gcc64
+        run: |
+          mkdir -p obj release
+          make gcc64
 
       - name: Stage artifact
         shell: msys2 {0}

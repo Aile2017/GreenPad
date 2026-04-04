@@ -22,7 +22,9 @@ jobs:
 
       - name: Build
         shell: msys2 {0}
-        run: make clang64
+        run: |
+          mkdir -p obj release
+          make clang64
 
       - name: Stage artifact
         shell: msys2 {0}
