@@ -37,7 +37,6 @@ jobs:
           install: >-
             mingw-w64-clang-x86_64-clang
             mingw-w64-clang-x86_64-binutils
-            mingw-w64-clang-x86_64-pcre2
             make
 
       - name: Build (clang64)
@@ -46,19 +45,10 @@ jobs:
           mkdir -p obj release
           make clang64
 
-      - name: Stage artifacts
-        shell: msys2 {0}
-        run: |
-          find /clang64/bin -name 'pcre2-16*.dll' | head -5
-          cp /clang64/bin/libpcre2-16-0.dll release/pcre2-16.dll || \
-          cp /clang64/bin/pcre2-16.dll      release/pcre2-16.dll
-
       - uses: actions/upload-artifact@v4
         with:
           name: exe-clang64
-          path: |
-            release\GreenPad.exe
-            release\pcre2-16.dll
+          path: release\GreenPad.exe
 
   # ── Assemble ZIP and publish release ─────────────────────────────────────────
   package-and-release:
@@ -109,7 +99,7 @@ jobs:
       - name: Assemble release folder
         shell: pwsh
         run: |
-          # GreenPad.exe and pcre2-16.dll from clang64 build
+          # GreenPad.exe from clang64 build; pcre2-16.dll and chardet.dll come from the repo
           Copy-Item built\* release\
           Write-Host "release/ contents:"
           Get-ChildItem release -Recurse | Format-Table FullName, Length
