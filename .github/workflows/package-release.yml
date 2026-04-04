@@ -139,6 +139,7 @@ jobs:
             |------|-------------|
             | `GreenPad.exe`   | Executable (LLVM Clang / clang64) |
             | `pcre2-16.dll`   | PCRE2 regex engine (optional) |
+            | `chardet.dll`    | Charset auto-detection (optional) |
             | `type/`          | Syntax highlight / layout files |
             | `lang/`          | UI language files |
             | `GreenPad.hlp`   | Help file |
