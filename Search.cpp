@@ -24,6 +24,7 @@ SearchManager::SearchManager( ki::Window& w, editwing::EwEdit& e )
 	, bChanged_ (false )
 	, inichanged_( false )
 	, readonly_( false )
+	, selActive_( false )
 {
 }
 
@@ -214,6 +215,7 @@ bool SearchManager::on_cancel()
 
 void SearchManager::on_findnext()
 {
+	DetectSelectionRange();
 	UpdateData();
 	ConstructSearcher();
 	if( isReady() )
@@ -225,6 +227,7 @@ void SearchManager::on_findnext()
 
 void SearchManager::on_findprev()
 {
+	DetectSelectionRange();
 	UpdateData();
 	ConstructSearcher( false );
 	if( isReady() )
@@ -326,6 +329,7 @@ void SearchManager::ConstructSearcher( bool down )
 
 void SearchManager::FindNext()
 {
+	DetectSelectionRange();
 	if( !isReady() )
 	{
 		ShowDlg();
@@ -340,6 +344,7 @@ void SearchManager::FindNext()
 
 void SearchManager::FindPrev()
 {
+	DetectSelectionRange();
 	if( !isReady() )
 	{
 		ShowDlg();
@@ -358,14 +363,40 @@ void SearchManager::FindPrev()
 // Implementation of actual processing
 //-------------------------------------------------------------------------
 
-void SearchManager::FindNextImpl(bool redo)
+void SearchManager::DetectSelectionRange()
 {
-	// Get cursor position
 	const VPos *stt, *end;
 	edit_.getCursor().getCurPos( &stt, &end );
 
-	// If there is a selection range, search from the first character of the selection range
-	// Otherwise search from cursor position
+	if( selActive_ )
+	{
+		// Keep the saved range if the cursor is still within it
+		// (i.e. it was moved there by a previous Find Next/Prev hit).
+		DPos curStt( stt->tl, stt->ad );
+		DPos curEnd( end->tl, end->ad );
+		if( selStart_ <= curStt && curEnd <= selEnd_ )
+			return;
+		selActive_ = false;
+	}
+
+	// Fresh detection: only multi-line selections define a search range.
+	// Single-line selections are treated as the current cursor position.
+	selActive_ = (stt->tl != end->tl);
+	if( selActive_ )
+	{
+		if( *stt < *end ) { selStart_ = *stt; selEnd_ = *end; }
+		else              { selStart_ = *end; selEnd_ = *stt; }
+	}
+}
+
+void SearchManager::FindNextImpl(bool redo)
+{
+
+	// Get current cursor position
+	const VPos *stt, *end;
+	edit_.getCursor().getCurPos( &stt, &end );
+
+	// Search start: just past the start of current selection
 	DPos s = *stt;
 	if( *stt != *end )
 	{
@@ -374,18 +405,31 @@ void SearchManager::FindNextImpl(bool redo)
 		else
 			s = DPos( stt->tl, stt->ad+1 );
 	}
-	// search
+
+	// Search (stop at selection end when in range mode)
 	DPos b, e;
-	if( FindNextFromImpl( s, &b, &e ) )
+	if( FindNextFromImpl( s, &b, &e ) && (!selActive_ || e <= selEnd_) )
 	{
-		// Select if found
 		edit_.getCursor().MoveCur( b, false );
 		edit_.getCursor().MoveCur( e, true );
 		return;
 	}
 
-	// If not found
-	NotFound(!redo);
+	// Not found — offer wrap-around
+	if( !redo )
+	{
+		UINT msgId = selActive_ ? IDS_NOTFOUND_SELDOWN : IDS_NOTFOUNDDOWN;
+		if( IDOK == MsgBox( RzsString(msgId).c_str(), NULL, MB_OKCANCEL ) )
+		{
+			DPos wrapStart = selActive_ ? selStart_ : DPos(0, 0);
+			edit_.getCursor().MoveCur( wrapStart, false );
+			FindNextImpl(true);
+		}
+	}
+	else
+	{
+		MsgBox( RzsString(IDS_NOTFOUND).c_str(), NULL, MB_OK );
+	}
 }
 
 void SearchManager::NotFound(bool GoingDown)
@@ -401,34 +445,49 @@ void SearchManager::NotFound(bool GoingDown)
 	}
 }
 
-void SearchManager::FindPrevImpl()
+void SearchManager::FindPrevImpl(bool redo)
 {
-	// Get cursor position
+
+	// Get current cursor position
 	const VPos *stt, *end;
 	edit_.getCursor().getCurPos( &stt, &end );
 
 	if( stt->ad!=0 || stt->tl!=0 )
 	{
-		// Search from 1 character before the beginning of the selected range
+		// Search start: one character before current selection start
 		DPos s;
 		if( stt->ad == 0 )
 			s = DPos( stt->tl-1, edit_.getDoc().len(stt->tl-1) );
 		else
 			s = DPos( stt->tl, stt->ad-1 );
 
-		// search
+		// Search (stop at selection start when in range mode)
 		DPos b, e;
-		if( FindPrevFromImpl( s, &b, &e ) )
+		if( FindPrevFromImpl( s, &b, &e ) && (!selActive_ || selStart_ <= b) )
 		{
-			// Select if found
 			edit_.getCursor().MoveCur( b, false );
 			edit_.getCursor().MoveCur( e, true );
 			return;
 		}
 	}
 
-	// If not found
-	NotFound();
+	// Not found — offer wrap-around
+	if( !redo )
+	{
+		UINT msgId = selActive_ ? IDS_NOTFOUND_SELUP : IDS_NOTFOUNDUP;
+		if( IDOK == MsgBox( RzsString(msgId).c_str(), NULL, MB_OKCANCEL ) )
+		{
+			const doc::Document& d = edit_.getDoc();
+			DPos wrapEnd = selActive_ ? selEnd_
+			                          : DPos( d.tln()-1, d.len(d.tln()-1) );
+			edit_.getCursor().MoveCur( wrapEnd, false );
+			FindPrevImpl(true);
+		}
+	}
+	else
+	{
+		MsgBox( RzsString(IDS_NOTFOUND).c_str(), NULL, MB_OK );
+	}
 }
 
 bool SearchManager::FindNextFromImpl( DPos s, DPos* beg, DPos* end )

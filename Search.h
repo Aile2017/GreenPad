@@ -113,7 +113,8 @@ private:
 	void UpdateData();
 	void ConstructSearcher( bool down=true );
 	void FindNextImpl( bool redo=false );
-	void FindPrevImpl();
+	void FindPrevImpl( bool redo=false );
+	void DetectSelectionRange();
 	bool FindNextFromImpl( DPos s, DPos* beg, DPos* end );
 	bool FindPrevFromImpl( DPos s, DPos* beg, DPos* end );
 
@@ -191,6 +192,9 @@ private:
 	ki::String findHistoric_[16];
 	ki::String replHistoric_[16];
 	bool readonly_;  // Read-only mode flag
+	bool selActive_; // Searching within a selection range
+	DPos selStart_;  // Selection range start (valid when selActive_)
+	DPos selEnd_;    // Selection range end   (valid when selActive_)
 
 private:
 	NOCOPY(SearchManager);
