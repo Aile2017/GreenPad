@@ -408,7 +408,19 @@ void SearchManager::FindNextImpl(bool redo)
 
 	// Search (stop at selection end when in range mode)
 	DPos b, e;
-	if( FindNextFromImpl( s, &b, &e ) && (!selActive_ || e <= selEnd_) )
+	bool found = FindNextFromImpl( s, &b, &e ) && (!selActive_ || e <= selEnd_);
+	// If a zero-width match landed exactly on the search start (e.g. ^ when
+	// cursor is already at column 0), advance by one and retry so Find Next
+	// moves forward instead of re-selecting the same invisible match.
+	if( found && b.tl == e.tl && b.ad == e.ad && b.tl == s.tl && b.ad == s.ad )
+	{
+		const doc::Document& d = edit_.getDoc();
+		DPos s2 = (s.ad < d.len(s.tl))
+			? DPos(s.tl, s.ad + 1)
+			: DPos(s.tl + 1, 0);
+		found = FindNextFromImpl( s2, &b, &e ) && (!selActive_ || e <= selEnd_);
+	}
+	if( found )
 	{
 		edit_.getCursor().MoveCur( b, false );
 		edit_.getCursor().MoveCur( e, true );
@@ -670,6 +682,7 @@ void SearchManager::ReplaceAllImpl()
 	while( FindNextFromImpl( s, &b, &e ) && (noselection || e <= dend) )
 	{ // search until the end of selection if any
 		if( s.tl != b.tl ) dif = 0;
+		bool zeroWidth = (b.tl == e.tl && b.ad == e.ad);
 		s = e;
 
 		// Register replacement command
@@ -691,6 +704,13 @@ void SearchManager::ReplaceAllImpl()
 			mcr.Add( new doc::Replace(b, e, replPat, replPatLen) );
 			dif -= e.ad - b.ad - (int)replPatLen;
 			lastExpandedLen = replPatLen;
+		}
+		// Zero-width match (e.g. ^): advance s by one to avoid infinite loop.
+		if( zeroWidth )
+		{
+			if( s.ad < edit_.getDoc().len(s.tl) )
+				s.ad++;
+			else { s.tl++; s.ad = 0; }
 		}
 	}
 

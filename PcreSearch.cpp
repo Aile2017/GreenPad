@@ -140,9 +140,6 @@ bool PcreSearch::Search(
 			return false;
 
 		PCRE2_SIZE* ov = s_ovector( mdata );
-		if( ov[0] == ov[1] )
-			return false;
-
 		last_rc_ = (ulong)rc;
 		*mbg = (ulong)ov[0];
 		*med = (ulong)ov[1];
@@ -172,12 +169,9 @@ bool PcreSearch::Search(
 		if( ov[0] > (PCRE2_SIZE)stt )
 			break;
 
-		if( ov[0] != ov[1] )
-		{
-			last_mbg = (ulong)ov[0];
-			last_med = (ulong)ov[1];
-			found    = true;
-		}
+		last_mbg = (ulong)ov[0];
+		last_med = (ulong)ov[1];
+		found    = true;
 
 		// Keep overlaps for reverse search, like forward search does.
 		// Move from the previous match start by one code unit.

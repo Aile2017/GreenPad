@@ -742,7 +742,7 @@ bool RSearch::Search(
 	for( ; s!=e; s+=d )
 	{
 		const int L = re_->match( str+s, len-s, caseS_ );
-		if( L > 0 )
+		if( L >= 0 )
 		{
 			if( re_->isTailType() && L!=static_cast<int>(len-s) )
 				continue;
