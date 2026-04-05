@@ -1,6 +1,4 @@
-# GreenPad TODO
-
-## External Filter Feature
+# External Filter Feature
 
 ### Overview
 
@@ -98,6 +96,166 @@ If stderr has output, it is appended after a newline following this string.
 | zh-TW | `外部篩選器失敗（結束代碼：%d）` |
 | ko-KR | `외부 필터가 실패했습니다 (종료 코드: %d)` |
 | ru-RU | `Внешний фильтр завершился с ошибкой (код завершения: %d)` |
+
+### Usage Examples
+
+Commands are entered as-is in the dialog; they are executed as `cmd.exe /c <command>`.
+
+#### Using MSYS2 Tools (sort, sed, awk)
+
+MSYS2 Unix tools (`sort`, `sed`, `awk`, etc.) are not on the Windows PATH by default.
+Prepend `c:\usr\msys2\usr\bin` inline using `set PATH=...` so the tools are found without
+permanently modifying system settings.
+
+```
+set PATH=c:\usr\msys2\usr\bin;%PATH% & sort
+```
+
+Sort lines in reverse order:
+
+```
+set PATH=c:\usr\msys2\usr\bin;%PATH% & sort -r
+```
+
+Remove duplicate lines (input must be sorted first):
+
+```
+set PATH=c:\usr\msys2\usr\bin;%PATH% & sort -u
+```
+
+Delete trailing whitespace with `sed`:
+
+```
+set PATH=c:\usr\msys2\usr\bin;%PATH% & sed "s/[[:space:]]*$//"
+```
+
+Extract only non-empty lines:
+
+```
+set PATH=c:\usr\msys2\usr\bin;%PATH% & sed "/^$/d"
+```
+
+Number each line with `awk`:
+
+```
+set PATH=c:\usr\msys2\usr\bin;%PATH% & awk "{print NR\": \"$0}"
+```
+
+Sum a column of numbers (first field) with `awk`:
+
+```
+set PATH=c:\usr\msys2\usr\bin;%PATH% & awk "{s+=$1} END{print s}"
+```
+
+#### Perl One-liners
+
+Sort lines:
+
+```
+perl -e "print sort <STDIN>"
+```
+
+Sort lines in reverse order:
+
+```
+perl -e "print reverse sort <STDIN>"
+```
+
+Remove duplicate lines (preserving order):
+
+```
+perl -ne "print unless $seen{$_}++"
+```
+
+Delete trailing whitespace:
+
+```
+perl -pe "s/\s+$/\n/"
+```
+
+Convert to uppercase:
+
+```
+perl -pe "$_ = uc"
+```
+
+#### Python One-liners
+
+Sort lines:
+
+```
+python -c "import sys; print(''.join(sorted(sys.stdin.readlines())), end='')"
+```
+
+Sort lines in reverse order:
+
+```
+python -c "import sys; print(''.join(sorted(sys.stdin.readlines(), reverse=True)), end='')"
+```
+
+Remove duplicate lines (preserving order):
+
+```
+python -c "import sys; seen=set(); [print(l, end='') for l in sys.stdin if not (l in seen or seen.add(l))]"
+```
+
+#### Ruby One-liners
+
+Sort lines:
+
+```
+ruby -e "puts $stdin.readlines.sort"
+```
+
+Sort lines in reverse order:
+
+```
+ruby -e "puts $stdin.readlines.sort.reverse"
+```
+
+Remove duplicate lines (preserving order):
+
+```
+ruby -e "puts $stdin.readlines.uniq"
+```
+
+Delete trailing whitespace:
+
+```
+ruby -pe "$_.rstrip!; $_ += $/"
+```
+
+#### Pipeline Examples
+
+Sort, remove duplicates, then number each line:
+
+```
+set PATH=c:\usr\msys2\usr\bin;%PATH% & sort -u | awk "{print NR\". \"$0}"
+```
+
+Filter lines matching a pattern, then sort:
+
+```
+set PATH=c:\usr\msys2\usr\bin;%PATH% & grep "TODO" | sort
+```
+
+Extract the second field (space-separated), sort, and remove duplicates:
+
+```
+set PATH=c:\usr\msys2\usr\bin;%PATH% & awk "{print $2}" | sort -u
+```
+
+Delete blank lines, trim trailing spaces, then sort:
+
+```
+set PATH=c:\usr\msys2\usr\bin;%PATH% & sed "/^$/d" | sed "s/[[:space:]]*$//" | sort
+```
+
+Reverse line order using `tac` (tail-to-head):
+
+```
+set PATH=c:\usr\msys2\usr\bin;%PATH% & tac
+```
 
 ### Implementation Notes (not yet started)
 

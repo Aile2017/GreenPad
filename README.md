@@ -137,6 +137,8 @@ C:/usr/msys64/usr/bin/bash.exe -c "export PATH=/clang64/bin:/usr/bin:$PATH; /usr
 | `Ctrl+I` | Insert Unicode code point |
 | `Ctrl+B` | Go to matching brace |
 
+For a complete list of all keyboard shortcuts, see [docs/keybindings.md](docs/keybindings.md).
+
 ## Configuration
 
 ### Layout files (`.lay`)
