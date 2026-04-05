@@ -6,6 +6,9 @@ Original author: [k.inaba](http://www.kmonos.net/lib/gp.en.html)
 Extended by: roytam1, [RamonUnch](https://github.com/RamonUnch/GreenPad)
 This build: modernized 64-bit fork with PCRE2 and chardet support.
 
+The original GreenPad supported a wide range of Windows versions down to Windows XP (x86/x64).
+This fork targets 64-bit Windows only and drops all legacy compatibility code, requiring Windows Vista or later.
+
 ## Features
 
 - Unicode 14.0 support
@@ -13,11 +16,12 @@ This build: modernized 64-bit fork with PCRE2 and chardet support.
 - Syntax highlighting (customizable via `.kwd` files)
 - Regular expression search powered by PCRE2 (via `pcre2-16.dll`)
 - Charset auto-detection via `chardet.dll` (optional, based on libchardet)
-- Wide encoding support: UTF-8/16/32, EUC-JP, Shift-JIS, GB18030, and many more
+- Wide encoding support: UTF-8/16/32, EUC-JP, Shift-JIS, GB18030, and many more (see [docs/encodings.md](docs/encodings.md))
 - Word wrap (character or word boundary)
 - Smart indentation
 - UAC elevation support
-- UI languages: English, Japanese, Simplified Chinese, Traditional Chinese, Korean
+- UI languages: English, Japanese, Simplified Chinese, Traditional Chinese, Korean, Russian — extensible via `.lng` files (see [Command line](#command-line))
+- External filter (`Ctrl+\`): pipe selected text (or the whole file) through any command-line program and replace it with the output — enables on-the-fly text transformation via `sort`, `sed`, `awk`, Perl, Python, Ruby, and more (see [docs/external-filter-spec.md](docs/external-filter-spec.md))
 
 ## System Requirements
 
@@ -191,6 +195,22 @@ greenpad [-r] [-l<line>] [-c<charset>] [-e<locale>] <file> ...
 Options:
 
 - `-r` Start in read-only mode
+- `-l<line>` Open at the specified line number (e.g. `-l42`)
+- `-c<charset>` Specify encoding (e.g. `-c65001` for UTF-8N). See [docs/encodings.md](docs/encodings.md) for the full list.
+- `-e<locale>` Override UI language. The argument is a BCP 47 locale name corresponding to a `.lng` file placed in the same directory as `GreenPad.exe`.
+
+Available locales (bundled):
+
+| Locale | Language |
+|---|---|
+| `en-US` | English |
+| `ja-JP` | Japanese |
+| `zh-CN` | Simplified Chinese |
+| `zh-TW` | Traditional Chinese |
+| `ko-KR` | Korean |
+| `ru-RU` | Russian |
+
+Additional languages can be added by placing a `<locale>.lng` file alongside the executable. If `-e` is omitted, the UI language is detected automatically from the Windows display language setting.
 
 Common charset codes: `-65001` (UTF-8), `-5`/`-6` (UTF-16 BE/LE), `-932` (EUC-JP), `-933` (ISO-2022-JP)
 
