@@ -1,0 +1,23 @@
+# Normalize line endings to LF in the repository and on checkout.
+* text=auto eol=lf
+
+# Binary files: no line-ending conversion.
+*.exe binary
+*.dll binary
+*.hlp binary
+*.png binary
+*.ico binary
+
+# Explicit text files (redundant with the wildcard rule, but self-documenting).
+*.cpp    text eol=lf
+*.h      text eol=lf
+*.rc     text eol=lf
+*.mak    text eol=lf
+*.mk     text eol=lf
+*.md     text eol=lf
+*.txt    text eol=lf
+*.yml    text eol=lf
+*.kwd    text eol=lf
+*.lay    text eol=lf
+*.lng    text eol=lf
+*.ini    text eol=lf
