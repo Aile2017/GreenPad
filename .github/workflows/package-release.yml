@@ -101,6 +101,9 @@ jobs:
         run: |
           # GreenPad.exe from clang64 build; pcre2-16.dll and chardet.dll come from the repo
           Copy-Item built\* release\
+          # README.md and docs/ are not kept in release/ in the repo; copy them here
+          Copy-Item README.md release\README.md
+          Copy-Item docs release\docs -Recurse
           Write-Host "release/ contents:"
           Get-ChildItem release -Recurse | Format-Table FullName, Length
 
@@ -133,4 +136,6 @@ jobs:
             | `type/`          | Syntax highlight / layout files |
             | `lang/`          | UI language files |
             | `GreenPad.hlp`   | Help file |
+            | `README.md`      | Overview and usage |
+            | `docs/`          | Additional documentation |
           files: ${{ steps.tag.outputs.zipname }}
