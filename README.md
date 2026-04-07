@@ -231,4 +231,4 @@ Enable=1
 
 ## License
 
-NYSL Version 0.9982 — essentially public domain. See [readme.en.txt](docs/readme.en.txt) for the full text.
+[CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) — public domain dedication.
