@@ -71,6 +71,9 @@ public:
 
 	//@{Display color, font, etc. //@}
 	inline const editwing::VConfig& vConfig() const { return curDt_->vc; }
+	inline void SetTempFont( const TCHAR* name, short size, uchar charset,
+	                         LONG weight=FW_DONTCARE, BYTE flags=0, int quality=DEFAULT_QUALITY )
+	                         { curDt_->vc.SetFont( name, size, charset, weight, flags, 0, quality ); }
 	inline COLORREF readOnlyBgColor() const { return curDt_->readOnlyBgColor; }
 
 	//@{ keyword file name (full path) //@}

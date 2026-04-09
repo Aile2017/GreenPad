@@ -451,6 +451,7 @@ bool GreenPadWnd::on_command( UINT id, HWND ctrl )
 	case ID_CMD_ZOOMRZ:     on_setzoom( 100 );                  break;
 	case ID_CMD_ZOOMUP:     on_setzoom( cfg_.GetZoom() + 10 );  break;
 	case ID_CMD_ZOOMDN:     on_setzoom( cfg_.GetZoom() - 10 );  break;
+	case ID_CMD_CHOOSEFONT: on_choosefont();                    break;
     // More edit
 	case ID_CMD_UPPERCASE:
 		if( !readonly_ ) edit_.getCursor().UpperCaseSel();
@@ -1627,6 +1628,33 @@ void GreenPadWnd::on_setzoom( short zoom )
 	edit_.getView().SetFont( CurrentVConfig(), zoom );
 	cfg_.SetZoom( zoom );
 	stb_.SetZoom( zoom );
+}
+
+void GreenPadWnd::on_choosefont()
+{
+	LOGFONT lf = cfg_.vConfig().font;
+	short sz = cfg_.vConfig().fontsize;
+
+	// lfHeight must be set so ChooseFont can initialize the size selector
+	HDC hdc = ::GetDC( hwnd() );
+	lf.lfHeight = -MulDiv( sz, ::GetDeviceCaps(hdc, LOGPIXELSY), 72 );
+	::ReleaseDC( hwnd(), hdc );
+
+	CHOOSEFONT cf = {};
+	cf.lStructSize = sizeof(cf);
+	cf.hwndOwner   = hwnd();
+	cf.lpLogFont   = &lf;
+	cf.Flags       = CF_SCREENFONTS | CF_INITTOLOGFONTSTRUCT;
+
+	if( !ChooseFont(&cf) ) return;
+
+	BYTE flags = static_cast<BYTE>(
+		  (lf.lfItalic    ? 1 : 0)
+		| (lf.lfUnderline ? 2 : 0)
+		| (lf.lfStrikeOut ? 4 : 0) );
+	cfg_.SetTempFont( lf.lfFaceName, static_cast<short>(cf.iPointSize / 10),
+	                  lf.lfCharSet, lf.lfWeight, flags, lf.lfQuality );
+	edit_.getView().SetFont( CurrentVConfig(), cfg_.GetZoom() );
 }
 
 void GreenPadWnd::on_doctype( int no )
