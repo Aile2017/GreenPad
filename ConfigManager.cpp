@@ -257,6 +257,9 @@ private:
 	{
 		TCHAR readFontName[LF_FACESIZE] = {};
 		int   readFontSize = 0;
+		LONG  readFontWeight = FW_DONTCARE;
+		BYTE  readFontFlags  = 0;
+		bool  fwFound = false, ffFound = false;
 		bool  clfound = false;
 
 		unicode* nptr = buf;
@@ -294,9 +297,9 @@ private:
 				WideCharToMultiByte(CP_ACP, 0, ptr, -1, readFontName, LF_FACESIZE, NULL, NULL);
 #endif
 				break;
-			case 0x737A: readFontSize = GetInt(ptr); break;  // sz: font size
-			case 0x6677: fontWeight_  = GetInt(ptr); break;  // fw: font weight
-			case 0x6666: fontFlags_   = (BYTE)GetInt(ptr); break; // ff: font flags
+			case 0x737A: readFontSize   = GetInt(ptr); break;             // sz: font size
+			case 0x6677: readFontWeight = GetInt(ptr); fwFound = true; break; // fw: font weight
+			case 0x6666: readFontFlags  = (BYTE)GetInt(ptr); ffFound = true; break; // ff: font flags
 			case 0x7462: tabSize_     = GetInt(ptr); break;  // tb: tab width
 			case 0x7363:                                     // sc: special char bits
 				if(ptr + 4 <= buf + len)
@@ -314,8 +317,19 @@ private:
 			colors_[6] = colors_[0];
 		if(readFontName[0] != TEXT('\0') && readFontSize > 0)
 		{
+			// Font name+size found in file: apply them along with weight/flags.
+			// Reset weight/flags to defaults if not explicitly set in the file,
+			// so the default font's style does not bleed into the saved lay file.
 			my_lstrcpys(fontName_, LF_FACESIZE, readFontName);
-			fontSize_ = readFontSize;
+			fontSize_   = readFontSize;
+			fontWeight_ = fwFound ? readFontWeight : FW_DONTCARE;
+			fontFlags_  = ffFound ? readFontFlags  : 0;
+		}
+		else
+		{
+			// No font in file: apply only explicitly-specified weight/flags.
+			if(fwFound) fontWeight_ = readFontWeight;
+			if(ffFound) fontFlags_  = readFontFlags;
 		}
 	}
 
@@ -942,6 +956,7 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 		BYTE   fontflags   = (BYTE)( (dt->vc.font.lfItalic    ? 1 : 0)
 		                           | (dt->vc.font.lfUnderline  ? 2 : 0)
 		                           | (dt->vc.font.lfStrikeOut  ? 4 : 0) );
+		bool   fwFound = false, ffFound = false;
 		bool   clfound = false;
 		dt->fontCS = DEFAULT_CHARSET;
 
@@ -989,6 +1004,7 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 				break;
 			case 0x6666: // ff: FONT FLAGS
 				fontflags = GetInt(ptr);
+				ffFound = true;
 				break;
 			case 0x6674: // ft: FONT
 				#ifdef UNICODE
@@ -999,6 +1015,7 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 				break;
 			case 0x6677: // fw: FONT WEIGHT
 				fontweight = GetInt(ptr);
+				fwFound = true;
 				break;
 			case 0x6678: // fw: FONT X Width
 				fontxwidth = GetInt(ptr);
@@ -1041,8 +1058,14 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 		if( !clfound )
 			dt->vc.color[LN] = dt->vc.color[TXT];
 		if( fontname[0]!=TEXT('\0') && fontsize!=0 )
+		{
+			// Font name+size found: reset weight/flags to defaults if not
+			// explicitly set, so the inherited font's style does not bleed in.
+			if( !fwFound ) fontweight = FW_DONTCARE;
+			if( !ffFound ) fontflags  = 0;
 			dt->vc.SetFont( fontname, fontsize, dt->fontCS
 						, fontweight, fontflags, fontxwidth, dt->fontQual );
+		}
 	}
 }
 
