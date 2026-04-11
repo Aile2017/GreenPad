@@ -4,6 +4,7 @@
 #include "ConfigManager.h"
 #include "rsrc/resource.h"
 #include "RSearch.h"
+#include "LangManager.h"
 using namespace ki;
 using namespace editwing;
 
@@ -19,6 +20,17 @@ void BootNewProcess( const TCHAR* cmd ); // in GpMain.cpp
 
 ConfigManager::ConfigManager()
 {
+	// Initialize built-in default font (may be overridden by ini below)
+	my_lstrcpys( defaultFontName_, countof(defaultFontName_), TEXT("FixedSys") );
+	defaultFontSize_   = 12;
+	defaultFontWeight_ = FW_DONTCARE;
+	defaultFontFlags_  = 0;
+	defaultFontCS_     = DEFAULT_CHARSET;
+
+	// Load saved default font from ini before loading any layout,
+	// so the layout can override it if it specifies its own font.
+	LoadDefaultFontFromIni();
+
 	// Read the default layout settings before anything else.
 	DocType d;
 	d.name    = RzsString(IDS_DEFAULT).c_str();
@@ -96,6 +108,446 @@ bool ConfigManager::MatchDocType
 }
 
 
+
+
+
+//-------------------------------------------------------------------------
+// Helpers for reading/writing *.lay files
+//-------------------------------------------------------------------------
+
+namespace {
+#ifndef UNICODE
+	static ulong ToByte( const unicode str[2] )
+	{
+		ulong c = str[0];
+		if     ( L'a' <= str[0] ) c -= (L'a' - 10);
+		else if( L'A' <= str[0] ) c -= (L'A' - 10);
+		else                      c -=  L'0';
+		c = c*16 + str[1];
+		if     ( L'a' <= str[1] ) c -= (L'a' - 10);
+		else if( L'A' <= str[1] ) c -= (L'A' - 10);
+		else                      c -=  L'0';
+		return c;
+	}
+	static ulong GetColor( const unicode* str )
+	{
+		ulong val = 0;
+		for(int i=0; i<=2 && str && str[1]; ++i,str+=2 )
+			val |= ToByte(str) << (i*8);
+		return val;
+	}
+	static int GetInt( const unicode* str )
+	{
+		int c = 0;
+		int s = 1;
+		if( *str == L'-' )
+			s=-1, ++str;
+		for( ; *str!=L'\0'; ++str )
+			c = c * 10 + *str - L'0';
+		return c*s;
+	}
+#else
+	static inline int GetInt( const unicode* str )
+		{ return String::GetInt( str ); }
+	static inline ulong GetColor( const unicode* str )
+		{ ulong v = Hex2Ulong( str ); return ((v&0x0000FF)<<16) | ((v&0x00FF00)<<0) | ((v&0xFF0000)>>16); }
+#endif
+}
+// Brightness approximation, that does not take gamma into account.
+#define COLBRIGHTNESS(x) ( (218*GetRValue(x) + 732*GetGValue(x) + 74*GetBValue(x))>>10 )
+
+namespace {
+	static COLORREF DefaultReadOnlyBgColor()
+	{
+		return RGB(255,240,240);
+	}
+}
+
+//-------------------------------------------------------------------------
+// Layout file editor dialog
+//-------------------------------------------------------------------------
+
+struct LayEditDlg A_FINAL: public ki::DlgImpl
+{
+private:
+	ki::String layFileName_;
+	COLORREF   colors_[7]; // [0]=TXT [1]=KWD [2]=BG [3]=RO [4]=CMT [5]=CTL [6]=LN
+	TCHAR      fontName_[LF_FACESIZE];
+	int        fontSize_;
+	LONG       fontWeight_;
+	BYTE       fontFlags_;
+	int        tabSize_;
+	int        scBits_;    // bit0=EOF bit1=EOL bit2=TAB bit3=HSP bit4=ZSP
+	int        wrapType_;  // -1=none 0=right-edge 1=fixed-width
+	int        wrapWidth_;
+	bool       wrapSmart_; // true=word false=char
+	bool       showLN_;
+
+	static const UINT kColorIds_[7];
+
+	void PickColor(int idx)
+	{
+		CHOOSECOLOR cc = {};
+		static COLORREF custColors_[16] = {};
+		cc.lStructSize  = sizeof(cc);
+		cc.hwndOwner    = hwnd();
+		cc.lpCustColors = custColors_;
+		cc.rgbResult    = colors_[idx];
+		cc.Flags        = CC_FULLOPEN | CC_RGBINIT;
+		if(ChooseColor(&cc))
+		{
+			colors_[idx] = cc.rgbResult;
+			::InvalidateRect(item(kColorIds_[idx]), NULL, TRUE);
+		}
+	}
+
+	void DrawColorButton(DRAWITEMSTRUCT* dis)
+	{
+		int idx = -1;
+		for(int i = 0; i < 7; ++i)
+			if(kColorIds_[i] == dis->CtlID) { idx = i; break; }
+		if(idx < 0) return;
+
+		COLORREF col = colors_[idx];
+		HBRUSH hbr = ::CreateSolidBrush(col);
+		::FillRect(dis->hDC, &dis->rcItem, hbr);
+		::DeleteObject(hbr);
+
+		HPEN hpen = ::CreatePen(PS_SOLID, 1,
+			(dis->itemState & ODS_FOCUS) ? RGB(0, 120, 215) : RGB(100, 100, 100));
+		HGDIOBJ hold = ::SelectObject(dis->hDC, hpen);
+		RECT rc = dis->rcItem;
+		::MoveToEx(dis->hDC, rc.left,     rc.top,        NULL);
+		::LineTo  (dis->hDC, rc.right - 1, rc.top);
+		::LineTo  (dis->hDC, rc.right - 1, rc.bottom - 1);
+		::LineTo  (dis->hDC, rc.left,      rc.bottom - 1);
+		::LineTo  (dis->hDC, rc.left,      rc.top);
+		::SelectObject(dis->hDC, hold);
+		::DeleteObject(hpen);
+
+		TCHAR txt[8];
+		wsprintf(txt, TEXT("%02X%02X%02X"),
+			GetRValue(col), GetGValue(col), GetBValue(col));
+		::SetTextColor(dis->hDC, COLBRIGHTNESS(col) > 128 ? RGB(0,0,0) : RGB(255,255,255));
+		::SetBkMode(dis->hDC, TRANSPARENT);
+		::DrawText(dis->hDC, txt, 6, &dis->rcItem,
+			DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+	}
+
+	void UpdateFontDisplay()
+	{
+		bool bold   = (fontWeight_ >= FW_BOLD);
+		bool italic = (fontFlags_ & 1) != 0;
+		const TCHAR* style = bold ? (italic ? TEXT("Bold Italic") : TEXT("Bold"))
+		                          : (italic ? TEXT("Italic")      : TEXT("Regular"));
+		TCHAR buf[LF_FACESIZE + 32];
+		wsprintf(buf, TEXT("%s %s %d"), fontName_, style, fontSize_);
+		SetItemText(IDC_LAY_FONTNAME, buf);
+	}
+
+	void UpdateWrapControls()
+	{
+		bool isWidth = (isItemChecked(IDC_LAY_WRAP_WIDTH) != 0);
+		::EnableWindow(item(IDC_LAY_WRAPWIDTH), isWidth);
+		::EnableWindow(item(IDC_LAY_SMARTWRAP), isWidth);
+		::EnableWindow(item(IDC_LAY_WRAP_CHAR), isWidth);
+	}
+
+	void ParseLayData(unicode* buf, size_t len)
+	{
+		TCHAR readFontName[LF_FACESIZE] = {};
+		int   readFontSize = 0;
+		bool  clfound = false;
+
+		unicode* nptr = buf;
+		for(unicode* ptr = buf; ptr < buf + len; ptr = nptr)
+		{
+			while(*nptr != L'\0' && *nptr != L'\r' && *nptr != L'\n' && *nptr != L'|')
+				nptr++;
+			if(nptr < buf + len)
+			{
+				*nptr++ = L'\0';
+				nptr += (*nptr == L'\n');
+			}
+			if(nptr - ptr < 3 || ptr[0] == L';' || ptr[2] != L'=')
+				continue;
+
+			unicode XXoption = (ptr[0] << 8) | ptr[1];
+			ptr += 3;
+
+			switch(XXoption)
+			{
+			case 0x6374: colors_[0] = GetColor(ptr); break; // ct: text
+			case 0x636B: colors_[1] = GetColor(ptr); break; // ck: keyword
+			case 0x6362: colors_[2] = GetColor(ptr); break; // cb: background
+			case 0x6372: colors_[3] = GetColor(ptr); break; // cr: RO background
+			case 0x6363: colors_[4] = GetColor(ptr); break; // cc: comment
+			case 0x636E: colors_[5] = GetColor(ptr); break; // cn: special char
+			case 0x636C:                                     // cl: line number
+				clfound = true;
+				colors_[6] = GetColor(ptr);
+				break;
+			case 0x6674:                                     // ft: font name
+#ifdef UNICODE
+				my_lstrcpysW(readFontName, LF_FACESIZE, ptr);
+#else
+				WideCharToMultiByte(CP_ACP, 0, ptr, -1, readFontName, LF_FACESIZE, NULL, NULL);
+#endif
+				break;
+			case 0x737A: readFontSize = GetInt(ptr); break;  // sz: font size
+			case 0x6677: fontWeight_  = GetInt(ptr); break;  // fw: font weight
+			case 0x6666: fontFlags_   = (BYTE)GetInt(ptr); break; // ff: font flags
+			case 0x7462: tabSize_     = GetInt(ptr); break;  // tb: tab width
+			case 0x7363:                                     // sc: special char bits
+				if(ptr + 4 <= buf + len)
+					scBits_ = ((ptr[0] != L'0') << 0) | ((ptr[1] != L'0') << 1)
+					        | ((ptr[2] != L'0') << 2) | ((ptr[3] != L'0') << 3)
+					        | ((ptr[4] != L'0') << 4);
+				break;
+			case 0x7770: wrapType_  = GetInt(ptr); break;   // wp: wrap type
+			case 0x7777: wrapWidth_ = GetInt(ptr); break;   // ww: wrap width
+			case 0x7773: wrapSmart_ = (0 != GetInt(ptr)); break; // ws: wrap smart
+			case 0x6C6E: showLN_    = (0 != GetInt(ptr)); break; // ln: line number
+			}
+		}
+		if(!clfound)
+			colors_[6] = colors_[0];
+		if(readFontName[0] != TEXT('\0') && readFontSize > 0)
+		{
+			my_lstrcpys(fontName_, LF_FACESIZE, readFontName);
+			fontSize_ = readFontSize;
+		}
+	}
+
+	bool SaveToFile()
+	{
+		ki::Path full = (ki::Path(ki::Path::Exe) += TEXT("type\\"));
+		full += layFileName_.c_str();
+
+		unicode buf[1024];
+		unicode* p = buf;
+
+		p += wsprintf(p, L"ct=%02X%02X%02X\n", GetRValue(colors_[0]), GetGValue(colors_[0]), GetBValue(colors_[0]));
+		p += wsprintf(p, L"ck=%02X%02X%02X\n", GetRValue(colors_[1]), GetGValue(colors_[1]), GetBValue(colors_[1]));
+		p += wsprintf(p, L"cb=%02X%02X%02X\n", GetRValue(colors_[2]), GetGValue(colors_[2]), GetBValue(colors_[2]));
+		p += wsprintf(p, L"cr=%02X%02X%02X\n", GetRValue(colors_[3]), GetGValue(colors_[3]), GetBValue(colors_[3]));
+		p += wsprintf(p, L"cc=%02X%02X%02X\n", GetRValue(colors_[4]), GetGValue(colors_[4]), GetBValue(colors_[4]));
+		p += wsprintf(p, L"cn=%02X%02X%02X\n", GetRValue(colors_[5]), GetGValue(colors_[5]), GetBValue(colors_[5]));
+		p += wsprintf(p, L"cl=%02X%02X%02X\n", GetRValue(colors_[6]), GetGValue(colors_[6]), GetBValue(colors_[6]));
+		p += wsprintf(p, L"ft=%s\n",  fontName_);
+		p += wsprintf(p, L"sz=%d\n",  fontSize_);
+		if(fontWeight_ != FW_DONTCARE)
+			p += wsprintf(p, L"fw=%ld\n", fontWeight_);
+		if(fontFlags_ != 0)
+			p += wsprintf(p, L"ff=%d\n",  (int)fontFlags_);
+		p += wsprintf(p, L"tb=%d\n",  tabSize_);
+		p += wsprintf(p, L"sc=%c%c%c%c%c\n",
+			(scBits_ & 1)  ? L'1' : L'0',
+			(scBits_ & 2)  ? L'1' : L'0',
+			(scBits_ & 4)  ? L'1' : L'0',
+			(scBits_ & 8)  ? L'1' : L'0',
+			(scBits_ & 16) ? L'1' : L'0');
+		p += wsprintf(p, L"wp=%d\n",  wrapType_);
+		p += wsprintf(p, L"ww=%d\n",  wrapWidth_);
+		p += wsprintf(p, L"ws=%d\n",  wrapSmart_ ? 1 : 0);
+		p += wsprintf(p, L"ln=%d\n",  showLN_    ? 1 : 0);
+
+		HANDLE h = ::CreateFile(full.c_str(), GENERIC_WRITE, 0, NULL,
+			CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		if(h == INVALID_HANDLE_VALUE) return false;
+
+		DWORD written;
+		static const unicode kBOM = 0xFEFF;
+		::WriteFile(h, &kBOM, sizeof(unicode), &written, NULL);
+		::WriteFile(h, buf, (DWORD)((p - buf) * sizeof(unicode)), &written, NULL);
+		::CloseHandle(h);
+		return true;
+	}
+
+public:
+	LayEditDlg(const TCHAR* layfile, HWND parent, const ConfigManager& cfg)
+		: DlgImpl(IDD_EDITLAYOUT)
+		, layFileName_(layfile)
+		, fontSize_(cfg.defaultFontSize_)
+		, fontWeight_(cfg.defaultFontWeight_)
+		, fontFlags_(cfg.defaultFontFlags_)
+		, tabSize_(4)
+		, scBits_(0x07)
+		, wrapType_(-1)
+		, wrapWidth_(80)
+		, wrapSmart_(true)
+		, showLN_(true)
+	{
+		// Use same color defaults as LoadLayout's built-in defaults
+		COLORREF bgcol = ::GetSysColor(COLOR_WINDOW);
+		bool bright = COLBRIGHTNESS(bgcol) > 128;
+		colors_[0] = ::GetSysColor(COLOR_WINDOWTEXT);                       // TXT
+		colors_[1] = bright ? RGB(  0,  0,128) : RGB(128,255,255);          // KWD
+		colors_[2] = bgcol;                                                  // BG
+		colors_[3] = DefaultReadOnlyBgColor();                               // RO
+		colors_[4] = bright ? RGB(  0,128,  0) : RGB(255,255,128);          // CMT
+		colors_[5] = bright ? RGB(192,160,192) : RGB( 80, 64, 80);          // CTL
+		colors_[6] = ::GetSysColor(COLOR_WINDOWTEXT);                       // LN
+		my_lstrcpys(fontName_, LF_FACESIZE, cfg.defaultFontName_);
+
+		unicode dataBuf[512];
+		size_t len = ConfigManager::GetLayData(layfile, dataBuf, countof(dataBuf));
+		if(len) ParseLayData(dataBuf, len);
+
+		GoModal(parent);
+	}
+
+private:
+	void on_init() override
+	{
+		ki::String title = TEXT("Edit Layout: ");
+		title += layFileName_.c_str();
+		::SetWindowText(hwnd(), title.c_str());
+
+		UpdateFontDisplay();
+
+		TCHAR tmp[16];
+		SetItemText(IDC_LAY_TABSZ, Int2lStr(tmp, tabSize_));
+
+		if(scBits_ & 1)  CheckItem(IDC_LAY_SHOWEOF);
+		if(scBits_ & 2)  CheckItem(IDC_LAY_SHOWNL);
+		if(scBits_ & 4)  CheckItem(IDC_LAY_SHOWTAB);
+		if(scBits_ & 8)  CheckItem(IDC_LAY_SHOWSPACE);
+		if(scBits_ & 16) CheckItem(IDC_LAY_SHOWCTRLC);
+
+		if(wrapType_ == -1)     CheckItem(IDC_LAY_WRAP_NONE);
+		else if(wrapType_ == 0) CheckItem(IDC_LAY_WRAP_RIGHT);
+		else                    CheckItem(IDC_LAY_WRAP_WIDTH);
+
+		SetItemText(IDC_LAY_WRAPWIDTH, Int2lStr(tmp, wrapWidth_));
+
+		if(wrapSmart_) CheckItem(IDC_LAY_SMARTWRAP);
+		else           CheckItem(IDC_LAY_WRAP_CHAR);
+
+		if(showLN_) CheckItem(IDC_LAY_SHOWLN);
+
+		UpdateWrapControls();
+
+		// Apply named-control translations explicitly.
+		// ApplyToDialog() runs before on_init() but may enumerate children in
+		// reverse Z-order; that misaligns static.N keys.  Named controls use
+		// numeric-ID keys and are unaffected by order - however, to be safe we
+		// force-apply them here so the correct locale text is always shown.
+		static const UINT kTranslateCtrl[] = {
+			IDC_CHOOSEFONT,
+			IDC_LAY_SHOWEOF, IDC_LAY_SHOWNL,   IDC_LAY_SHOWTAB,
+			IDC_LAY_SHOWSPACE, IDC_LAY_SHOWCTRLC, IDC_LAY_SHOWLN,
+			IDC_LAY_WRAP_NONE, IDC_LAY_WRAP_RIGHT, IDC_LAY_WRAP_WIDTH,
+			IDC_LAY_SMARTWRAP, IDC_LAY_WRAP_CHAR,
+		};
+		LangManager& lm = LangManager::Get();
+		for(int i = 0; i < (int)(sizeof(kTranslateCtrl)/sizeof(kTranslateCtrl[0])); ++i)
+		{
+			const wchar_t* t = lm.GetDlgCtrlText(IDD_EDITLAYOUT, kTranslateCtrl[i]);
+			if(t) SetItemText(kTranslateCtrl[i], t);
+		}
+	}
+
+	bool on_ok() override
+	{
+		TCHAR buf[64];
+		GetItemText(IDC_LAY_TABSZ, countof(buf), buf);
+		tabSize_ = String::GetInt(buf);
+		if(tabSize_ < 1)  tabSize_ = 1;
+		if(tabSize_ > 64) tabSize_ = 64;
+
+		scBits_ = 0;
+		if(isItemChecked(IDC_LAY_SHOWEOF))   scBits_ |= 1;
+		if(isItemChecked(IDC_LAY_SHOWNL))    scBits_ |= 2;
+		if(isItemChecked(IDC_LAY_SHOWTAB))   scBits_ |= 4;
+		if(isItemChecked(IDC_LAY_SHOWSPACE)) scBits_ |= 8;
+		if(isItemChecked(IDC_LAY_SHOWCTRLC)) scBits_ |= 16;
+
+		wrapType_ = isItemChecked(IDC_LAY_WRAP_NONE)  ? -1
+		          : isItemChecked(IDC_LAY_WRAP_RIGHT) ?  0 : 1;
+
+		GetItemText(IDC_LAY_WRAPWIDTH, countof(buf), buf);
+		wrapWidth_ = String::GetInt(buf);
+		if(wrapWidth_ < 1) wrapWidth_ = 1;
+
+		wrapSmart_ = (isItemChecked(IDC_LAY_SMARTWRAP) != 0);
+		showLN_    = (isItemChecked(IDC_LAY_SHOWLN)    != 0);
+
+		if(!SaveToFile())
+		{
+			MsgBox(TEXT("Failed to save layout file."), NULL, MB_OK | MB_ICONERROR);
+			return false;
+		}
+		return true;
+	}
+
+	bool on_command(UINT cmd, UINT id, HWND /*ctrl*/) override
+	{
+		if(cmd == BN_CLICKED)
+		{
+			for(int i = 0; i < 7; ++i)
+				if(kColorIds_[i] == id) { PickColor(i); return true; }
+
+			switch(id)
+			{
+			case IDC_CHOOSEFONT:
+				{
+					LOGFONT lf = {};
+					my_lstrcpys(lf.lfFaceName, LF_FACESIZE, fontName_);
+					HDC hdc = ::GetDC(hwnd());
+					lf.lfHeight    = -MulDiv(fontSize_, ::GetDeviceCaps(hdc, LOGPIXELSY), 72);
+					::ReleaseDC(hwnd(), hdc);
+					lf.lfWeight    = fontWeight_;
+					lf.lfItalic    = (fontFlags_ & 1) ? TRUE : FALSE;
+					lf.lfUnderline = (fontFlags_ & 2) ? TRUE : FALSE;
+					lf.lfStrikeOut = (fontFlags_ & 4) ? TRUE : FALSE;
+					lf.lfCharSet   = DEFAULT_CHARSET;
+
+					CHOOSEFONT cf = {};
+					cf.lStructSize = sizeof(cf);
+					cf.hwndOwner   = hwnd();
+					cf.lpLogFont   = &lf;
+					cf.Flags       = CF_SCREENFONTS | CF_INITTOLOGFONTSTRUCT;
+
+					if(ChooseFont(&cf))
+					{
+						my_lstrcpys(fontName_, LF_FACESIZE, lf.lfFaceName);
+						if(cf.iPointSize > 0) fontSize_ = cf.iPointSize / 10;
+						fontWeight_ = lf.lfWeight;
+						fontFlags_  = (BYTE)(
+							  (lf.lfItalic    ? 1 : 0)
+							| (lf.lfUnderline ? 2 : 0)
+							| (lf.lfStrikeOut ? 4 : 0));
+						UpdateFontDisplay();
+					}
+				}
+				return true;
+
+			case IDC_LAY_WRAP_NONE:
+			case IDC_LAY_WRAP_RIGHT:
+			case IDC_LAY_WRAP_WIDTH:
+				UpdateWrapControls();
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool on_message(UINT msg, WPARAM /*wp*/, LPARAM lp) override
+	{
+		if(msg == WM_DRAWITEM)
+		{
+			DrawColorButton(reinterpret_cast<DRAWITEMSTRUCT*>(lp));
+			return true;
+		}
+		return false;
+	}
+};
+
+const UINT LayEditDlg::kColorIds_[7] = {
+	IDC_LAY_COLOR_TXT, IDC_LAY_COLOR_KWD, IDC_LAY_COLOR_BG,
+	IDC_LAY_COLOR_RO,  IDC_LAY_COLOR_CMT, IDC_LAY_COLOR_CTL, IDC_LAY_COLOR_LN
+};
 
 //-------------------------------------------------------------------------
 // Settings dialog related
@@ -340,7 +792,11 @@ private:
 				NewProcessFromComboBox(IDC_PAT_KWD);
 				break;
 			case IDC_EDITLAY:
-				NewProcessFromComboBox(IDC_PAT_LAY);
+				{
+					TCHAR buf[MAX_PATH];
+					if(getComboBoxText(IDC_PAT_LAY, buf) && buf[0])
+						LayEditDlg(buf, hwnd(), cfg_);
+				}
 				break;
 			case IDC_NEWDOCTYPE:
 				on_newdoctype();
@@ -422,56 +878,8 @@ bool ConfigManager::DoDialog( const ki::Window& parent )
 
 
 //-------------------------------------------------------------------------
-// Process reading from *.lay file, Process reading from *.lay file
+// Process reading from *.lay file
 //-------------------------------------------------------------------------
-
-namespace {
-#ifndef UNICODE
-	static ulong ToByte( const unicode str[2] )
-	{
-		ulong c = str[0];
-		if     ( L'a' <= str[0] ) c -= (L'a' - 10);
-		else if( L'A' <= str[0] ) c -= (L'A' - 10);
-		else                      c -=  L'0';
-		c = c*16 + str[1];
-		if     ( L'a' <= str[1] ) c -= (L'a' - 10);
-		else if( L'A' <= str[1] ) c -= (L'A' - 10);
-		else                      c -=  L'0';
-		return c;
-	}
-	static ulong GetColor( const unicode* str )
-	{
-		ulong val = 0;
-		for(int i=0; i<=2 && str && str[1]; ++i,str+=2 )
-			val |= ToByte(str) << (i*8);
-		return val;
-	}
-	static int GetInt( const unicode* str )
-	{
-		int c = 0;
-		int s = 1;
-		if( *str == L'-' )
-			s=-1, ++str;
-		for( ; *str!=L'\0'; ++str )
-			c = c * 10 + *str - L'0';
-		return c*s;
-	}
-#else
-	static inline int GetInt( const unicode* str )
-		{ return String::GetInt( str ); }
-	static inline ulong GetColor( const unicode* str )
-		{ ulong v = Hex2Ulong( str ); return ((v&0x0000FF)<<16) | ((v&0x00FF00)<<0) | ((v&0xFF0000)>>16); }
-#endif
-}
-// Brightness approximation, that does not take gamma into account.
-#define COLBRIGHTNESS(x) ( (218*GetRValue(x) + 732*GetGValue(x) + 74*GetBValue(x))>>10 )
-
-namespace {
-	static COLORREF DefaultReadOnlyBgColor()
-	{
-		return RGB(255,240,240);
-	}
-}
 
 void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 {
@@ -511,10 +919,11 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 		dt->wrapType   = -1;
 		dt->wrapSmart  = true;
 		dt->showLN     = true;
-		dt->fontCS     = DEFAULT_CHARSET;
+		dt->fontCS     = defaultFontCS_;
 		dt->fontQual   = DEFAULT_QUALITY;
 
-		dt->vc.SetFont( TEXT("FixedSys"), 12, dt->fontCS );
+		dt->vc.SetFont( defaultFontName_, defaultFontSize_, dt->fontCS,
+		                defaultFontWeight_, defaultFontFlags_ );
 	}
 	dt->loaded     = true;
 
@@ -526,11 +935,13 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 	// Rad buffer
 	if( len )
 	{
-		TCHAR  fontname[LF_FACESIZE];
-		int    fontsize = dt->vc.fontsize;
-		int    fontxwidth=0;
-		LONG   fontweight=FW_DONTCARE;
-		BYTE   fontflags=0;
+		TCHAR  fontname[LF_FACESIZE] = {};
+		int    fontsize    = dt->vc.fontsize;
+		int    fontxwidth  = dt->vc.fontwidth;
+		LONG   fontweight  = dt->vc.font.lfWeight;
+		BYTE   fontflags   = (BYTE)( (dt->vc.font.lfItalic    ? 1 : 0)
+		                           | (dt->vc.font.lfUnderline  ? 2 : 0)
+		                           | (dt->vc.font.lfStrikeOut  ? 4 : 0) );
 		bool   clfound = false;
 		dt->fontCS = DEFAULT_CHARSET;
 
@@ -692,6 +1103,38 @@ size_t ConfigManager::GetLayData(const TCHAR *name, unicode *buf, size_t buf_len
 
 static const TCHAR s_sharedConfigSection[] = TEXT("SharedConfig");
 
+void ConfigManager::LoadDefaultFontFromIni()
+{
+	ki::IniFile ini_;
+	ini_.SetSectionAsUserNameIfNotShared( s_sharedConfigSection );
+	ki::String name = ini_.GetStr( TEXT("DefaultFontName"), TEXT("") );
+	int size = ini_.GetInt( TEXT("DefaultFontSize"), 0 );
+	if( name.len() > 0 && size > 0 )
+	{
+		my_lstrcpys( defaultFontName_, countof(defaultFontName_), name.c_str() );
+		defaultFontSize_   = (short)size;
+		defaultFontWeight_ = ini_.GetInt( TEXT("DefaultFontWeight"), FW_DONTCARE );
+		defaultFontFlags_  = (BYTE)ini_.GetInt( TEXT("DefaultFontFlags"), 0 );
+		defaultFontCS_     = (uchar)ini_.GetInt( TEXT("DefaultFontCharset"), DEFAULT_CHARSET );
+	}
+}
+
+void ConfigManager::SetTempFont( const TCHAR* name, short size, uchar charset,
+                                  LONG weight, BYTE flags, int quality )
+{
+	curDt_->vc.SetFont( name, size, charset, weight, flags, 0, quality );
+
+	// Persist font as new default (used as fallback when layout has no font)
+	my_lstrcpys( defaultFontName_, countof(defaultFontName_), name );
+	defaultFontSize_   = size;
+	defaultFontWeight_ = weight;
+	defaultFontFlags_  = flags;
+	defaultFontCS_     = charset;
+
+	inichanged_ = 1;
+	SaveIni();
+}
+
 void ConfigManager::LoadIni()
 {
 	ki::IniFile ini_;
@@ -743,6 +1186,20 @@ void ConfigManager::LoadIni()
 	}
 
 	language_ = ini_.GetStr( TEXT("Language"), TEXT("") );
+
+	// Default font (read back so SaveIni always has up-to-date values)
+	{
+		ki::String fname = ini_.GetStr( TEXT("DefaultFontName"), TEXT("") );
+		int fsize = ini_.GetInt( TEXT("DefaultFontSize"), 0 );
+		if( fname.len() > 0 && fsize > 0 )
+		{
+			my_lstrcpys( defaultFontName_, countof(defaultFontName_), fname.c_str() );
+			defaultFontSize_   = (short)fsize;
+			defaultFontWeight_ = ini_.GetInt( TEXT("DefaultFontWeight"), FW_DONTCARE );
+			defaultFontFlags_  = (BYTE)ini_.GetInt( TEXT("DefaultFontFlags"), 0 );
+			defaultFontCS_     = (uchar)ini_.GetInt( TEXT("DefaultFontCharset"), DEFAULT_CHARSET );
+		}
+	}
 
 	// New file related
 	newfileCharset_ = ini_.GetInt( TEXT("NewfileCharset"), charSets_.defaultCs() );
@@ -916,6 +1373,13 @@ void ConfigManager::SaveIni()
 	// ini_.PutBool(TEXT("QuickExit"), useQuickExit_);
 
 	ini_.PutStr( TEXT("Language"), language_.c_str() );
+
+	// Default font (fallback when layout file has no font specification)
+	ini_.PutStr( TEXT("DefaultFontName"),    defaultFontName_ );
+	ini_.PutInt( TEXT("DefaultFontSize"),    defaultFontSize_ );
+	ini_.PutInt( TEXT("DefaultFontWeight"),  defaultFontWeight_ );
+	ini_.PutInt( TEXT("DefaultFontFlags"),   defaultFontFlags_ );
+	ini_.PutInt( TEXT("DefaultFontCharset"), defaultFontCS_ );
 
 	// New file related
 	ini_.PutInt( TEXT("NewfileCharset"), newfileCharset_ );

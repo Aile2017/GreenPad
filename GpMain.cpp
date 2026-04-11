@@ -1630,14 +1630,71 @@ void GreenPadWnd::on_setzoom( short zoom )
 	stb_.SetZoom( zoom );
 }
 
+// ChooseFont shows family names in its combo (e.g. "游ゴシック"), but GDI
+// typeface names include the style suffix (e.g. "游ゴシック Light").
+// Passing the typeface name to CF_INITTOLOGFONTSTRUCT fails because the combo
+// has no entry for "游ゴシック Light".
+// Fix: strip known style words from the end of the face name to recover the
+// family name, then probe EnumFontFamiliesEx with the family name to get the
+// correct lfCharSet for the Script filter.
+static bool IsFontStyleWord( const WCHAR* word )
+{
+	static const WCHAR* const kStyles[] = {
+		L"Thin", L"ExtraLight", L"UltraLight", L"Light",
+		L"Regular", L"Normal", L"Roman", L"Medium",
+		L"SemiBold", L"DemiBold", L"Bold",
+		L"ExtraBold", L"UltraBold", L"Black", L"Heavy",
+		L"Italic", L"Oblique",
+		nullptr
+	};
+	for( int i = 0; kStyles[i]; ++i )
+		if( lstrcmpiW(word, kStyles[i]) == 0 ) return true;
+	return false;
+}
+
+static void NormalizeFontFamilyName( WCHAR* family )
+{
+	if( !family || !family[0] ) return;
+	for(;;) {
+		WCHAR* lastSpace = nullptr;
+		for( WCHAR* p = family; *p; ++p )
+			if( *p == L' ' ) lastSpace = p;
+		if( !lastSpace || !IsFontStyleWord(lastSpace + 1) ) break;
+		*lastSpace = L'\0';
+	}
+}
+
+static int CALLBACK GetFontCharsetProc(
+	const LOGFONT* lf, const TEXTMETRIC*, DWORD, LPARAM lParam )
+{
+	*reinterpret_cast<BYTE*>(lParam) = lf->lfCharSet;
+	return 0;
+}
+
 void GreenPadWnd::on_choosefont()
 {
 	LOGFONT lf = cfg_.vConfig().font;
 	short sz = cfg_.vConfig().fontsize;
 
-	// lfHeight must be set so ChooseFont can initialize the size selector
 	HDC hdc = ::GetDC( hwnd() );
 	lf.lfHeight = -MulDiv( sz, ::GetDeviceCaps(hdc, LOGPIXELSY), 72 );
+
+	if( lf.lfFaceName[0] )
+	{
+		// Strip trailing style words to get the family name ChooseFont shows.
+		WCHAR family[LF_FACESIZE];
+		my_lstrcpysW( family, LF_FACESIZE, lf.lfFaceName );
+		NormalizeFontFamilyName( family );
+		my_lstrcpys( lf.lfFaceName, LF_FACESIZE, family );
+
+		// Probe the actual GDI charset so the Script filter matches correctly.
+		LOGFONT query = {};
+		query.lfCharSet = DEFAULT_CHARSET;
+		my_lstrcpys( query.lfFaceName, LF_FACESIZE, family );
+		BYTE cs = DEFAULT_CHARSET;
+		::EnumFontFamiliesEx( hdc, &query, GetFontCharsetProc, (LPARAM)&cs, 0 );
+		lf.lfCharSet = cs;
+	}
 	::ReleaseDC( hwnd(), hdc );
 
 	CHOOSEFONT cf = {};
@@ -1652,6 +1709,7 @@ void GreenPadWnd::on_choosefont()
 		  (lf.lfItalic    ? 1 : 0)
 		| (lf.lfUnderline ? 2 : 0)
 		| (lf.lfStrikeOut ? 4 : 0) );
+	NormalizeFontFamilyName( lf.lfFaceName );
 	cfg_.SetTempFont( lf.lfFaceName, static_cast<short>(cf.iPointSize / 10),
 	                  lf.lfCharSet, lf.lfWeight, flags, lf.lfQuality );
 	edit_.getView().SetFont( CurrentVConfig(), cfg_.GetZoom() );

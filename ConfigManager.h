@@ -71,9 +71,8 @@ public:
 
 	//@{Display color, font, etc. //@}
 	inline const editwing::VConfig& vConfig() const { return curDt_->vc; }
-	inline void SetTempFont( const TCHAR* name, short size, uchar charset,
-	                         LONG weight=FW_DONTCARE, BYTE flags=0, int quality=DEFAULT_QUALITY )
-	                         { curDt_->vc.SetFont( name, size, charset, weight, flags, 0, quality ); }
+	void SetTempFont( const TCHAR* name, short size, uchar charset,
+	                  LONG weight=FW_DONTCARE, BYTE flags=0, int quality=DEFAULT_QUALITY ) A_COLD;
 	inline COLORREF readOnlyBgColor() const { return curDt_->readOnlyBgColor; }
 
 	//@{ keyword file name (full path) //@}
@@ -236,13 +235,22 @@ private:
 
 	void LoadIni() A_COLD;
 	void SaveIni() A_COLD;
+	void LoadDefaultFontFromIni() A_COLD;
 	void ReadAllDocTypes( const TCHAR *ininame ) A_COLD;
 	void LoadLayout( DocType* dt ) A_COLD;
 	bool MatchDocType( const unicode* fname, const unicode* pat );
 
+	// Default font (persisted to ini, fallback when layout file has no font)
+	TCHAR defaultFontName_[LF_FACESIZE];
+	short defaultFontSize_;
+	LONG  defaultFontWeight_;  // FW_DONTCARE=0 means normal
+	BYTE  defaultFontFlags_;   // bit0=italic, bit1=underline, bit2=strikeout
+	uchar defaultFontCS_;      // lfCharSet
+
 private:
 
 	friend struct ConfigDlg;
+	friend struct LayEditDlg;
 	NOCOPY(ConfigManager);
 };
 

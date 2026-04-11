@@ -106,6 +106,19 @@
 #define IDC_LAY_SMARTWRAP               1062
 #define IDC_LAY_FONFLAGS                1063
 
+#define IDC_LAY_COLOR_TXT               1064
+#define IDC_LAY_COLOR_KWD               1065
+#define IDC_LAY_COLOR_BG                1066
+#define IDC_LAY_COLOR_RO                1067
+#define IDC_LAY_COLOR_CMT               1068
+#define IDC_LAY_COLOR_CTL               1069
+#define IDC_LAY_COLOR_LN                1070
+#define IDC_LAY_WRAP_NONE               1071
+#define IDC_LAY_WRAP_RIGHT              1072
+#define IDC_LAY_WRAP_WIDTH              1073
+#define IDC_LAY_WRAPWIDTH               1074
+#define IDC_LAY_WRAP_CHAR               1075
+
 #define ID_CMD_OPENELEVATED             40001
 #define ID_CMD_REOPENFILE               40002
 #define ID_CMD_PROPERTY                 40003

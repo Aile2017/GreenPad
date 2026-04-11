@@ -251,6 +251,19 @@ static const NameIdPair kControlNames[] = {
     {L"IDC_DELDOCTYPE",     1023},
     {L"IDC_EDITKWD",        1024},
     {L"IDC_EDITLAY",        1025},
+    // IDD_EDITLAYOUT controls
+    {L"IDC_CHOOSEFONT",     1054},
+    {L"IDC_LAY_SHOWEOF",    1056},
+    {L"IDC_LAY_SHOWNL",     1057},
+    {L"IDC_LAY_SHOWTAB",    1058},
+    {L"IDC_LAY_SHOWSPACE",  1059},
+    {L"IDC_LAY_SHOWCTRLC",  1060},
+    {L"IDC_LAY_SHOWLN",     1061},
+    {L"IDC_LAY_SMARTWRAP",  1062},
+    {L"IDC_LAY_WRAP_NONE",  1071},
+    {L"IDC_LAY_WRAP_RIGHT", 1072},
+    {L"IDC_LAY_WRAP_WIDTH", 1073},
+    {L"IDC_LAY_WRAP_CHAR",  1075},
 };
 
 template<size_t N>
@@ -505,6 +518,17 @@ void LangManager::ApplyToMenuLevel(HMENU hMenu, const wchar_t* path) const {
             }
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// GetDlgCtrlText
+// ---------------------------------------------------------------------------
+const wchar_t* LangManager::GetDlgCtrlText(UINT dialogId, UINT ctrlId) const {
+    const WMap* m = pImpl_->dialogs_.get(dialogId);
+    if (!m) return nullptr;
+    wchar_t key[16];
+    wsprintfW(key, L"%u", ctrlId);
+    return m->get(key);
 }
 
 // ---------------------------------------------------------------------------
