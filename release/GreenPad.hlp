@@ -1,47 +1,431 @@
 GreenPad Help
-===========
+=============
 
 Overview
 --------
-GreenPad is a lightweight text editor for Windows.
-It is designed as a practical Notepad replacement with a minimal footprint.
+GreenPad is a lightweight Unicode text editor for Windows.
+It aims to be a practical Notepad replacement with minimal footprint.
+
+  * Full Unicode support (BMP + supplementary planes via surrogate pairs)
+  * Proportional and fixed-width font support
+  * Syntax highlighting via .kwd keyword files
+  * Regular expression search (PCRE2 when pcre2-16.dll is present)
+  * Wide character encoding support (see "Character Encodings" below)
+  * Multilingual UI: English, Japanese, Korean, Chinese (Simplified/Traditional),
+    Russian (language auto-detected from Windows display language)
 
 Original author: k.inaba
 Extended by: roytam1, RamonUnch
-This build: modernized 64-bit fork with PCRE2 and chardet support.
+This build: modernised 64-bit fork (Windows Vista+ x64).
+
+Source: https://github.com/Aile2017/GreenPad
+
 
 Keyboard Shortcuts
 ------------------
-Ctrl+R                Reopen
-Ctrl+L                Open elevated
-Shift+Ctrl+S / F12    Save As
-Ctrl+Y                Redo
-F5                    Reload file
-F6                    Insert date and time
-F7                    Open selection as file/URL
-F8                    Display selection length
-Ctrl+F                Find
-F3 / Shift+F3         Find next / previous
-Ctrl+H                Replace
-Ctrl+J                Jump to line
-Ctrl+G                External grep
-Ctrl+1/2/3            Wrap: none / fixed width / window width
-Ctrl+I                Insert Unicode code point
-Ctrl+B                Go to matching brace
+
+File
+  Ctrl+N              New file
+  Ctrl+O              Open...
+  Ctrl+R              ReOpen (change encoding)
+  Ctrl+L              Open elevated (UAC)
+  Alt+Enter           ReOpen (same as Ctrl+R)
+  Ctrl+S              Save
+  Ctrl+Shift+S        Save As...
+  F12                 Save As...
+  F5                  Reload file (keeps cursor position)
+  Ctrl+P              Print...
+  Ctrl+E              Save and Exit
+  Ctrl+Shift+E        Discard and Exit
+  Ctrl+F4             Exit
+  Esc                 Quick Exit (prompts if unsaved)
+
+Edit
+  Ctrl+Z              Undo
+  Ctrl+Y              Redo
+  Ctrl+X / Shift+Del  Cut
+  Ctrl+C / Ctrl+Ins   Copy
+  Ctrl+V / Shift+Ins  Paste
+  Del                 Delete selection
+  Ctrl+A              Select all
+  F6                  Insert date & time
+  Ctrl+I              Insert Unicode code point
+  Tab                 Indent selection (multi-line)
+  Shift+Tab           Unindent selection (multi-line)
+  Ctrl+K              Delete to end of line
+  Ctrl+U              Delete to start of line
+  Ctrl+Shift+K        Delete to end of file
+  Ctrl+Shift+U        Delete to start of file
+
+Modify (Edit > Modify)
+  Alt+U               Upper case selection
+  Alt+L               Lower case selection
+  Alt+I               Invert case selection
+  Alt+R               Reduce to ASCII (replace non-ASCII with '?')
+  Alt+W               Trim trailing spaces
+  Alt+Z               Strip first character of each selected line
+  Alt+A               Strip last character of each selected line
+  Alt+Q               Quote (add comment character to each selected line)
+  Alt+N               Unquote (remove comment character)
+  Ctrl+\              External filter...
+
+Search
+  Ctrl+F              Find / Replace
+  Ctrl+H              Find / Replace (same dialog)
+  F3                  Find next
+  F2                  Find previous
+  Shift+F3            Find previous
+  Ctrl+J              Jump to line (supports: 543  +10  3,8  etc.)
+  Ctrl+G              External grep
+  F7                  Open selection as file path or URL
+  F8                  Show selection length in status bar
+  Ctrl+B              Go to matching brace / bracket / quote
+
+View
+  Ctrl+1              No wrapping
+  Ctrl+2              Wrap at fixed character width
+  Ctrl+3              Wrap at window right edge
+  Ctrl+Up             Zoom in
+  Ctrl+Down           Zoom out
+  Ctrl+0              Reset zoom to 100%
+
+Window
+  Ctrl+Tab            Next GreenPad window
+  Ctrl+Shift+Tab      Previous GreenPad window
+
+Help
+  F1                  Context help (opens HelpExe with current file info)
+
 
 Command Line
 ------------
-greenpad [-r] [-l<line>] [-c<charset>] [-e<locale>] <file> ...
+  greenpad [-r] [-l<line>] [-c<charset>] [-e<locale>] [<file> ...]
 
-Options:
-  -r       Start in read-only mode
+  -r              Open in read-only mode
+  -l<line>        Scroll to line number (e.g. -l543)
+  -c<charset>     Override character encoding (see codes below)
+  -e<locale>      Override UI language (e.g. -eja-JP, -ezh-CN)
+  -lang <locale>  Same as -e but as a separate argument
 
-Common charset codes:
-  -65001   UTF-8
-  -5       UTF-16 BE
-  -6       UTF-16 LE
-  -932     EUC-JP
-  -933     ISO-2022-JP
+  Multiple -l/-c/-<file> triplets can be given to open several files.
 
-Locale example:
-  -eja-JP
+  Example:
+    greenpad -l543 -c932 readme.txt
+    Opens readme.txt as Shift_JIS and scrolls to line 543.
+
+
+Character Encodings
+-------------------
+Use the code with -c on the command line (prefix the number with -c, no space).
+The same codes appear in the ReOpen dialog's encoding combo box.
+
+Unicode / ISO
+  Auto-detect           0       (default; BOM and heuristic detection)
+  UTF-8                -65001   (no BOM)
+  UTF-8 (BOM)           65001
+  UTF-16 BE            -5       (no BOM)
+  UTF-16 BE (BOM)      -3
+  UTF-16 LE            -6       (no BOM)
+  UTF-16 LE (BOM)      -4
+  UTF-32 BE            -9       (no BOM)
+  UTF-32 BE (BOM)      -7
+  UTF-32 LE            -10      (no BOM)
+  UTF-32 LE (BOM)      -8
+  UTF-7                 65000
+  UTF-1                -1
+  UTF-1 (BOM)          -64999
+  UTF-5                -2
+  UTF-5 (BOM)          -14
+  UTF-9 (1997)         -11
+  UTF-9 (1997, BOM)    -65002
+  UTF-EBCDIC           -15
+  UTF-EBCDIC (BOM)     -16
+  SCSU                 -60002
+  SCSU (BOM)           -60000
+  BOCU-1               -60003
+  BOCU-1 (BOM)         -60001
+  FSS-UTF (1992)       -12
+  FSS-UTF (1992, BOM)  -13
+  ASCII                 20127
+
+Japanese
+  Shift_JIS (Windows)   932
+  EUC-JP               -932
+  ISO-2022-JP          -933
+  x-mac-japanese        10001
+
+Korean
+  EUC-KR / UHC          949
+  ISO-2022-KR          -950
+  Johab                 1361
+  x-mac-korean          10003
+
+Chinese (Simplified)
+  GB18030               54936   (no BOM)
+  GB18030 (BOM)        -54936
+  GBK / GB2312          936
+  ISO-2022-CN          -936
+  HZ-GB2312            -937
+  x-mac-prc             10008
+
+Chinese (Traditional)
+  Big5                  950
+  EUC-TW / CNS          20000
+  TCA                   20001
+  ETen (Big5-HKSCS)     20002
+  IBM 5550              20003
+  Teletext              20004
+  Wang                  20005
+  x-mac-taiwan          10002
+
+Western European
+  Windows-1252          1252
+  ISO-8859-15           28605
+  CP850 (DOS)           850
+  x-mac-roman           10000
+
+Central European
+  Windows-1250          1250
+  ISO-8859-2            28592
+  CP852 (DOS)           852
+  x-mac-ce              10029
+  x-mac-croatia         10082
+  x-mac-romania         10010
+
+Cyrillic
+  Windows-1251          1251
+  ISO-8859-5            28595
+  KOI8-R                20866
+  KOI8-U                21866
+  CP855 (IBM)           855
+  CP866 (DOS)           866
+  x-mac-cyrillic        10007
+  x-mac-ukraine         10017
+
+Greek
+  Windows-1253          1253
+  ISO-8859-7            28597
+  CP737 (IBM)           737
+  CP869 (MS-DOS)        869
+  x-mac-greek           10006
+
+Turkish
+  Windows-1254          1254
+  ISO-8859-9            28599
+  CP857 (DOS)           857
+  x-mac-turkish         10081
+
+Baltic
+  Windows-1257          1257
+  CP775 (IBM)           775
+
+Hebrew
+  Windows-1255          1255
+  ISO-8859-8            28598
+  CP862 (DOS)           862
+  x-mac-hebrew          10005
+
+Arabic
+  Windows-1256          1256
+  ISO-8859-6            28596
+  CP720 (IBM)           720
+  CP864 (MS-DOS)        864
+  x-mac-arabic          10004
+
+Thai
+  Windows-874           874
+  ISO-8859-11           28601
+
+Vietnamese
+  Windows-1258          1258
+
+Other
+  CP437 (US DOS)        437
+  ISO-8859-3 (Esperanto) 28593
+
+Note: availability of a charset depends on whether the corresponding
+Windows code page is installed on the system.
+
+
+Layout Files (.lay)
+-------------------
+Each document type (default, html, program, ...) has a .lay file in
+the type/ subfolder next to GreenPad.exe.  You can edit these files
+with any text editor, or use Settings > Edit Layout in GreenPad.
+
+The file is UTF-16 LE with BOM.  Each line has the form "key=value".
+
+Colors (6-digit hex RGB, e.g. FF0000 = red):
+  ct=RRGGBB   Text color
+  ck=RRGGBB   Keyword color
+  cb=RRGGBB   Background color
+  cr=RRGGBB   Read-only background color
+  cc=RRGGBB   Comment color
+  cn=RRGGBB   Special / control character color
+  cl=RRGGBB   Line number color
+
+Font:
+  ft=name     Font face name (e.g. Consolas)
+  sz=N        Font size in points (e.g. 10)
+  fw=N        Font weight  0=don't care  400=normal  700=bold
+  ff=N        Font style flags: 1=italic  2=underline  4=strikeout
+              (combine with |: e.g. 3 = italic+underline)
+  fx=N        Font width in points (0 = use default width)
+  cs=N        Font charset (Windows LOGFONT lfCharSet value)
+  fq=N        Font quality (Windows LOGFONT lfQuality value)
+
+Tab / Special Characters:
+  tb=N        Tab width in characters (e.g. 4)
+  sc=BBBBB    Show special characters: five 0/1 flags for
+              [EOF marker, line endings, tabs, half-width spaces,
+               full-width spaces / control chars]
+              Example: sc=11101  (show all except half-width spaces)
+
+Wrapping:
+  wp=N        Wrap type: -1=none  0=at window right edge  1=at ww chars
+  ww=N        Wrap width in characters (used when wp=1)
+  ws=N        Smart wrap: 1=wrap at word boundaries  0=wrap at character
+
+Line numbers:
+  ln=N        Show line numbers: 1=yes  0=no
+
+
+Syntax Highlighting (.kwd)
+--------------------------
+Place .kwd files in the type/ subdirectory.  GreenPad matches the
+current filename against the patterns listed in Settings to select
+the active document type and its associated .kwd file.
+
+Format (line by line):
+  Line 1: four flags (0 or 1) — CaseSensitive EnSingleQuote EnDoubleQuote EnEscape
+           Recommended: 0111 (case-insensitive, string-aware)
+                     or 1111 (case-sensitive, string-aware)
+  Line 2: block-comment start symbol (e.g.  /*  )
+  Line 3: block-comment end symbol   (e.g.  */  )
+  Line 4: line-comment start symbol  (e.g.  //  )
+  Line 5+: keywords, one per line
+
+Example header for C/C++:
+  1111
+  /*
+  */
+  //
+  auto
+  bool
+  break
+  ...
+
+The default comment character for plain text files is '>'.
+Alt+Q (Quote) prepends this character; Alt+N (Unquote) removes it.
+
+
+Regular Expressions
+-------------------
+GreenPad supports two regex engines selected automatically at startup:
+
+  * PCRE2 (full Perl-compatible regex) — used when pcre2-16.dll is
+    present in the same directory as GreenPad.exe.
+    Supports: groups, back-references, lookahead/behind, Unicode
+    properties, etc.  Full PCRE2 syntax applies.
+
+    Replacement strings support back-references:
+      \0  entire match
+      \1 … \9  captured groups 1–9
+
+  * Built-in NFA engine (fallback when pcre2-16.dll is absent):
+
+    Quantifiers:    ?  *  +
+    Alternation:    a|b
+    Grouping:       ( ... )
+    Anchors:        ^  start of line    $  end of line
+    Escape:         \t  tab    \\  backslash    \[  literal [
+    Character classes:
+      [abc]    matches a, b, or c
+      [^abc]   matches any character except a, b, c
+      [a-z]    range
+      \w  \W   [0-9a-zA-Z_] and its complement
+      \d  \D   [0-9] and its complement
+      \s  \S   [ \t] and its complement
+
+    Limitations of the built-in engine:
+      * Searches line by line (cannot match across newlines)
+      * No back-references
+      * Greedy only (no lazy quantifiers)
+
+Both engines perform case-insensitive matching when the "Ignore case"
+option is checked in the Find dialog.
+
+Insert Unicode code point (Ctrl+I):
+  Type a code point value and press Enter.  Prefixes:
+    (none) or x   hexadecimal   e.g.  1F600  or  x1F600
+    . (dot)       decimal       e.g.  .128512
+    o or O        octal         e.g.  o370300
+
+
+External Programs
+-----------------
+Configure external programs in Settings (View > Settings).
+
+  GrepExe   Path and arguments for the external grep tool.
+            Placeholders:
+              %D   current directory
+              %F   full path of current file
+              %N   filename only (no path)
+              %S   current selection text
+
+            Example:
+              C:\Tools\grep.exe -n "%S" "%F"
+
+  HelpExe   Path and arguments for the F1 context help tool.
+            Same %D/%F/%N/%S placeholders apply.
+
+  ExFilter  Path and arguments for the external filter (Ctrl+\).
+            The selected text is piped to stdin; stdout replaces
+            the selection.
+
+
+Settings (GreenPad.ini)
+-----------------------
+The ini file lives next to GreenPad.exe (or in %APPDATA%\GreenPad
+when shared-config mode is disabled).
+
+Useful manual settings:
+
+  [GreenPad]
+  Language=ja-JP       Force UI language (overrides OS display language).
+                       Available: en-US  ja-JP  ko-KR  zh-CN  zh-TW  ru-RU
+  WarnOnModified=0     Disable "file changed outside GreenPad" warning.
+  HelpExe=...          External help program (see above).
+  GrepExe=...          External grep program.
+  NewfileCharset=65001 Default encoding for new files (UTF-8 with BOM).
+
+  [SharedConfig]
+  Enable=1             Use a single ini shared by all user accounts on
+                       this machine (useful for portable installations).
+
+Q: How to change the default font for all document types?
+A: Use View > Font to choose a font interactively.  GreenPad saves it
+   as the fallback font in the ini file.  Individual document types
+   can override this in their .lay files.
+
+Q: How to open or save a file whose encoding is not in the dropdown?
+A: Type the Windows code page number directly into the encoding combo
+   box in the Open / Save / ReOpen dialog.
+   Use the special negative codes (see "Character Encodings") for
+   non-Windows encodings (UTF-1, EUC-JP, etc.).
+
+Q: How to share settings across users on the same machine?
+A: Add the following to GreenPad.ini:
+     [SharedConfig]
+     Enable=1
+
+
+License
+-------
+This build is released under the CC0 1.0 Universal public domain dedication.
+To the extent possible under law, all copyright and related rights have been
+waived.  See https://creativecommons.org/publicdomain/zero/1.0/
+
+Original GreenPad by k.inaba (http://www.kmonos.net/)
+Extended by roytam1 and RamonUnch.
+This fork maintained by Aile2017.

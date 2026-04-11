@@ -9,6 +9,7 @@ release/*.pch
 
 # IDE and editor files
 .claude/
+CLAUDE.md
 .github/*
 !.github/workflows/
 .vs/

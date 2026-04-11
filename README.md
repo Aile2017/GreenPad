@@ -147,27 +147,42 @@ For a complete list of all keyboard shortcuts, see [docs/keybindings.md](docs/ke
 
 ### Layout files (`.lay`)
 
-Located in `release/type/`. Edit manually to change fonts and colors:
+Located in `release/type/`. Each document type has its own `.lay` file.
+
+**GUI editor:** open **View → Settings**, select a document type, then click the **"edit"** button next to the Layout dropdown. The dialog lets you pick colors with a color picker and choose the font interactively.
+
+To edit manually, the file is UTF-16 LE with BOM; each line is `key=value`:
 
 ```
+# Font
 ft=Font name
 sz=Font size (points)
-fw=Font weight (400=normal, 700=bold)
-ff=Font flags (1:Italic 2:Underline 4:Strikeout)
+fw=Font weight (0=don't care  400=normal  700=bold)
+ff=Font style flags (1:Italic  2:Underline  4:Strikeout, combinable)
 fx=Font width in points (0=default)
-ct=Text color (RGB)
+cs=Font charset (Windows LOGFONT lfCharSet; 0=DEFAULT_CHARSET)
+fq=Font quality (Windows LOGFONT lfQuality; 0=DEFAULT_QUALITY)
+
+# Colors (6-digit hex RGB, e.g. FF0000=red)
+ct=Text color
 ck=Keyword color
 cb=Background color
 cr=Read-only background color
-cc=Control character color
-cn=Comment color
+cc=Comment color
+cn=Special/control character color
 cl=Line number color
-tb=Tab width
-sc=11000  (Show special chars: EOF/LF/Tab/Space/fullwidth-space)
-wp=Wrap type (-1:none  0:window edge  1:fixed width)
-ww=Wrap width (chars)
-ws=Word wrap (1=word boundaries  0=character)
-ln=Show line numbers
+
+# Tab / special characters
+tb=Tab width (characters)
+sc=BBBBB  (five 0/1 flags: EOF marker / line endings / tabs / spaces / fullwidth-spaces)
+
+# Wrapping
+wp=Wrap type (-1:none  0:window right edge  1:fixed width)
+ww=Wrap width in characters (used when wp=1)
+ws=Smart wrap (1=word boundaries  0=character)
+
+# Line numbers
+ln=Show line numbers (1=yes  0=no)
 ```
 
 Color behavior: normal mode uses `cb`, read-only mode uses `cr`.
