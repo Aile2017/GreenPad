@@ -120,9 +120,18 @@ static.0 = 搜尋字串(&T):
 static.1 = 取代字串(&W):
 static.2 = 選項(&O)
 
+[Dialog.IDD_NEWFILENAME]
+Caption = 新增檔案
+static.0 = 名稱(&N):
+IDOK = 確定
+IDCANCEL = 取消
+
 [Dialog.IDD_EXFILTER]
 Caption = 外部篩選器
 static.0 = 命令(&C):
+IDC_FILTERDELBTN = 刪除
+IDC_FILTERUPBTN = 上移
+IDC_FILTERDOWNBTN = 下移
 IDOK = 執行(&R)
 IDCANCEL = 取消
 
@@ -149,7 +158,11 @@ IDC_REMSIZE = 記憶視窗大小(&S)
 IDC_REMPLACE = 記憶視窗位置(&P)
 IDC_NEWDOCTYPE = 新增
 IDC_DELDOCTYPE = 刪除
+IDC_ADDKWD = 新增
+IDC_DELKWD = 刪除
 IDC_EDITKWD = 編輯
+IDC_ADDLAY = 新增
+IDC_DELLAY = 刪除
 IDC_EDITLAY = 編輯
 static.0 = 通用
 static.1 = 復原次數限制(&U):

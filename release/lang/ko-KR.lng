@@ -32,8 +32,8 @@ IDS_INSSERT = 삽입(&I)
 IDS_ZOOMPC = 확대/축소
 IDS_UNTITLED = 제목 없음
 IDS_CHARSET_CAPTION = 문자 인코딩:
-IDS_EXFILTER_FAILED = 외부 필터가 실패했습니다 (종료 코드: %d)
 IDS_CRLF_CAPTION = 줄 끝:
+IDS_EXFILTER_FAILED = 외부 필터가 실패했습니다 (종료 코드: %d)
 
 [Menu]
 popup.0 = 파일(&F)
@@ -120,9 +120,18 @@ static.0 = 검색 문자열(&T):
 static.1 = 바꿀 문자열(&W):
 static.2 = 옵션(&O)
 
+[Dialog.IDD_NEWFILENAME]
+Caption = 새 파일
+static.0 = 이름(&N):
+IDOK = 확인
+IDCANCEL = 취소
+
 [Dialog.IDD_EXFILTER]
 Caption = 외부 필터
 static.0 = 명령(&C):
+IDC_FILTERDELBTN = 삭제
+IDC_FILTERUPBTN = 위
+IDC_FILTERDOWNBTN = 아래
 IDOK = 실행(&R)
 IDCANCEL = 취소
 
@@ -149,7 +158,11 @@ IDC_REMSIZE = 창 크기 기억(&S)
 IDC_REMPLACE = 창 위치 기억(&P)
 IDC_NEWDOCTYPE = 추가
 IDC_DELDOCTYPE = 제거
+IDC_ADDKWD = 추가
+IDC_DELKWD = 제거
 IDC_EDITKWD = 편집
+IDC_ADDLAY = 추가
+IDC_DELLAY = 제거
 IDC_EDITLAY = 편집
 static.0 = 일반
 static.1 = 실행 취소 제한(&U):

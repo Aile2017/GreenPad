@@ -27,10 +27,6 @@ ConfigManager::ConfigManager()
 	defaultFontFlags_  = 0;
 	defaultFontCS_     = DEFAULT_CHARSET;
 
-	// Load saved default font from ini before loading any layout,
-	// so the layout can override it if it specifies its own font.
-	LoadDefaultFontFromIni();
-
 	// Read the default layout settings before anything else.
 	DocType d;
 	d.name    = RzsString(IDS_DEFAULT).c_str();
@@ -778,6 +774,121 @@ private:
 		}
 		return false;
 	}
+	void on_addfile( UINT comboId, const TCHAR* defExt )
+	{
+		struct NewFileNameDlg A_FINAL: public DlgImpl
+		{
+			TCHAR name[MAX_PATH];
+			NewFileNameDlg(HWND parent)
+				: DlgImpl(IDD_NEWFILENAME)
+			{
+				name[0] = 0;
+				GoModal(parent);
+			}
+			bool on_ok() override
+			{
+				GetItemText(IDC_NEWFILENAME_NAME, countof(name), name);
+				return name[0] != 0;
+			}
+		} dlg(hwnd());
+
+		if( dlg.endcode() != IDOK || !dlg.name[0] ) return;
+
+		// Build filename: name.ext
+		TCHAR fname[MAX_PATH];
+		my_lstrcpys(fname, countof(fname), dlg.name);
+		lstrcat(fname, TEXT("."));
+		lstrcat(fname, defExt);
+
+		// Create type/ directory if needed, then create file
+		ki::Path typeDir = ki::Path(ki::Path::Exe) += TEXT("type");
+		::CreateDirectory(typeDir.c_str(), NULL);
+		ki::Path dest = (ki::Path(ki::Path::Exe) += TEXT("type\\")) += fname;
+		HANDLE h = ::CreateFile(dest.c_str(), GENERIC_WRITE, 0, NULL,
+		                        CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		if( h == INVALID_HANDLE_VALUE ) return;
+
+		// For .kwd files, write BOM + minimal template so GreenPad opens as UTF-16 LE
+		// kwd format: line1=flags(case/q1/q2/esc), line2=block-open, line3=block-close, line4=line-comment
+		if( lstrcmpi(defExt, TEXT("kwd")) == 0 )
+		{
+			static const unicode kKwdTemplate[] = {
+				0xFEFF,                         // BOM
+				L'0', L'\n',                    // flags: case-insensitive
+				L'/', L'*', L'\n',              // block comment start
+				L'*', L'/', L'\n',              // block comment end
+				L'/', L'/', L'\n',              // line comment
+			};
+			DWORD written;
+			::WriteFile(h, kKwdTemplate, sizeof(kKwdTemplate), &written, NULL);
+		}
+		// For .lay files, write default content
+		else if( lstrcmpi(defExt, TEXT("lay")) == 0 )
+		{
+			COLORREF bgcol = ::GetSysColor(COLOR_WINDOW);
+			bool bright = COLBRIGHTNESS(bgcol) > 128;
+			COLORREF ct = ::GetSysColor(COLOR_WINDOWTEXT);
+			COLORREF ck = bright ? RGB(  0,  0,128) : RGB(128,255,255);
+			COLORREF cb = bgcol;
+			COLORREF cr = DefaultReadOnlyBgColor();
+			COLORREF cc = bright ? RGB(  0,128,  0) : RGB(255,255,128);
+			COLORREF cn = bright ? RGB(192,160,192) : RGB( 80, 64, 80);
+			COLORREF cl = ::GetSysColor(COLOR_WINDOWTEXT);
+
+			unicode buf[1024];
+			unicode* p = buf;
+			p += wsprintf(p, L"ct=%02X%02X%02X\n", GetRValue(ct), GetGValue(ct), GetBValue(ct));
+			p += wsprintf(p, L"ck=%02X%02X%02X\n", GetRValue(ck), GetGValue(ck), GetBValue(ck));
+			p += wsprintf(p, L"cb=%02X%02X%02X\n", GetRValue(cb), GetGValue(cb), GetBValue(cb));
+			p += wsprintf(p, L"cr=%02X%02X%02X\n", GetRValue(cr), GetGValue(cr), GetBValue(cr));
+			p += wsprintf(p, L"cc=%02X%02X%02X\n", GetRValue(cc), GetGValue(cc), GetBValue(cc));
+			p += wsprintf(p, L"cn=%02X%02X%02X\n", GetRValue(cn), GetGValue(cn), GetBValue(cn));
+			p += wsprintf(p, L"cl=%02X%02X%02X\n", GetRValue(cl), GetGValue(cl), GetBValue(cl));
+			p += wsprintf(p, L"ft=%s\n",  cfg_.defaultFontName_);
+			p += wsprintf(p, L"sz=%d\n",  cfg_.defaultFontSize_);
+			if( cfg_.defaultFontWeight_ != FW_DONTCARE )
+				p += wsprintf(p, L"fw=%ld\n", cfg_.defaultFontWeight_);
+			if( cfg_.defaultFontFlags_ != 0 )
+				p += wsprintf(p, L"ff=%d\n",  (int)cfg_.defaultFontFlags_);
+			p += wsprintf(p, L"tb=%d\n",  4);
+			p += wsprintf(p, L"sc=11100\n");  // EOF, NL, TAB visible
+			p += wsprintf(p, L"wp=%d\n",  -1);
+			p += wsprintf(p, L"ww=%d\n",  80);
+			p += wsprintf(p, L"ws=%d\n",  1);
+			p += wsprintf(p, L"ln=%d\n",  1);
+
+			DWORD written;
+			static const unicode kBOM = 0xFEFF;
+			::WriteFile(h, &kBOM, sizeof(unicode), &written, NULL);
+			::WriteFile(h, buf, (DWORD)((p - buf) * sizeof(unicode)), &written, NULL);
+		}
+		::CloseHandle(h);
+
+		// Add to combobox if not already listed, then select
+		if( (int)SendMsgToItem(comboId, CB_FINDSTRINGEXACT, (WPARAM)-1, (LPARAM)fname) == CB_ERR )
+			SendMsgToItem(comboId, CB_ADDSTRING, 0, (LPARAM)fname);
+		SendMsgToItem(comboId, CB_SELECTSTRING, (WPARAM)-1, (LPARAM)fname);
+	}
+	void on_delfile( UINT comboId )
+	{
+		TCHAR buf[MAX_PATH];
+		if( !getComboBoxText(comboId, buf) || !buf[0] ) return;
+
+		String msg = TEXT("[");
+		msg += buf;
+		msg += TEXT("]");
+		msg += RzsString(IDS_OKTODEL).c_str();
+		if( IDNO == MsgBox(msg.c_str(), RzsString(IDS_APPNAME).c_str(), MB_YESNO) ) return;
+
+		ki::Path full = (ki::Path(ki::Path::Exe) += TEXT("type\\")) += buf;
+		::DeleteFile(full.c_str());
+
+		int sel = (int)SendMsgToItem(comboId, CB_GETCURSEL, 0, 0);
+		if( sel != CB_ERR )
+			SendMsgToItem(comboId, CB_DELETESTRING, (WPARAM)sel, 0);
+		SendMsgToItem(comboId, CB_SETCURSEL, 0, 0);
+	}
+
 	void NewProcessFromComboBox( UINT idc )
 	{
 		TCHAR buf[MAX_PATH];
@@ -802,8 +913,20 @@ private:
 		default:
 			switch( id )
 			{
+			case IDC_ADDKWD:
+				on_addfile(IDC_PAT_KWD, TEXT("kwd"));
+				break;
+			case IDC_DELKWD:
+				on_delfile(IDC_PAT_KWD);
+				break;
 			case IDC_EDITKWD:
 				NewProcessFromComboBox(IDC_PAT_KWD);
+				break;
+			case IDC_ADDLAY:
+				on_addfile(IDC_PAT_LAY, TEXT("lay"));
+				break;
+			case IDC_DELLAY:
+				on_delfile(IDC_PAT_LAY);
 				break;
 			case IDC_EDITLAY:
 				{
@@ -1126,20 +1249,97 @@ size_t ConfigManager::GetLayData(const TCHAR *name, unicode *buf, size_t buf_len
 
 static const TCHAR s_sharedConfigSection[] = TEXT("SharedConfig");
 
-void ConfigManager::LoadDefaultFontFromIni()
+void ConfigManager::SaveFontToLayFile( const TCHAR* layfile, const TCHAR* fontName,
+                                       short fontSize, LONG fontWeight, BYTE fontFlags )
 {
-	ki::IniFile ini_;
-	ini_.SetSectionAsUserNameIfNotShared( s_sharedConfigSection );
-	ki::String name = ini_.GetStr( TEXT("DefaultFontName"), TEXT("") );
-	int size = ini_.GetInt( TEXT("DefaultFontSize"), 0 );
-	if( name.len() > 0 && size > 0 )
+	if( !layfile || !layfile[0] ) return;
+
+	// --- Read current lay file settings as starting values ---
+	COLORREF bgcol = ::GetSysColor(COLOR_WINDOW);
+	bool bright = COLBRIGHTNESS(bgcol) > 128;
+	COLORREF colors[7] = {
+		::GetSysColor(COLOR_WINDOWTEXT),
+		bright ? RGB(0,0,128)    : RGB(128,255,255),
+		bgcol,
+		DefaultReadOnlyBgColor(),
+		bright ? RGB(0,128,0)    : RGB(255,255,128),
+		bright ? RGB(192,160,192): RGB(80,64,80),
+		::GetSysColor(COLOR_WINDOWTEXT)
+	};
+	int tabSize = 4, scBits = 0x07, wrapType = -1, wrapWidth = 80;
+	bool wrapSmart = true, showLN = true;
+
+	unicode buf[512];
+	size_t len = GetLayData(layfile, buf, countof(buf));
+	if( len )
 	{
-		my_lstrcpys( defaultFontName_, countof(defaultFontName_), name.c_str() );
-		defaultFontSize_   = (short)size;
-		defaultFontWeight_ = ini_.GetInt( TEXT("DefaultFontWeight"), FW_DONTCARE );
-		defaultFontFlags_  = (BYTE)ini_.GetInt( TEXT("DefaultFontFlags"), 0 );
-		defaultFontCS_     = (uchar)ini_.GetInt( TEXT("DefaultFontCharset"), DEFAULT_CHARSET );
+		unicode *nptr = buf;
+		for( unicode *ptr = buf; ptr < buf+len; ptr = nptr )
+		{
+			while( *nptr != L'\0' && *nptr != L'\r' && *nptr != L'\n' && *nptr != L'|' )
+				nptr++;
+			if( nptr < buf+len ) { *nptr++ = L'\0'; nptr += (*nptr == L'\n'); }
+			if( nptr-ptr < 3 || ptr[0] == L';' || ptr[2] != L'=' ) continue;
+
+			unicode key = (unicode)((ptr[0]<<8) | ptr[1]);
+			ptr += 3;
+			switch(key)
+			{
+			case 0x6374: colors[0] = GetColor(ptr); break;
+			case 0x636B: colors[1] = GetColor(ptr); break;
+			case 0x6362: colors[2] = GetColor(ptr); break;
+			case 0x6372: colors[3] = GetColor(ptr); break;
+			case 0x6363: colors[4] = GetColor(ptr); break;
+			case 0x636E: colors[5] = GetColor(ptr); break;
+			case 0x636C: colors[6] = GetColor(ptr); break;
+			case 0x7462: tabSize   = GetInt(ptr);   break;
+			case 0x7363:
+				if( ptr+4 < buf+len )
+					scBits = ((ptr[0]!=L'0')<<0)|((ptr[1]!=L'0')<<1)|((ptr[2]!=L'0')<<2)
+					       | ((ptr[3]!=L'0')<<3)|((ptr[4]!=L'0')<<4);
+				break;
+			case 0x7770: wrapType  = GetInt(ptr);         break;
+			case 0x7777: wrapWidth = GetInt(ptr);         break;
+			case 0x7773: wrapSmart = (0!=GetInt(ptr));    break;
+			case 0x6C6E: showLN    = (0!=GetInt(ptr));    break;
+			// ft/sz/fw/ff: skipped — overwritten below
+			}
+		}
 	}
+
+	// --- Write back with updated font ---
+	ki::Path full = (ki::Path(ki::Path::Exe) += TEXT("type\\")) += layfile;
+	unicode out[1024], *p = out;
+	p += wsprintf(p, L"ct=%02X%02X%02X\n", GetRValue(colors[0]),GetGValue(colors[0]),GetBValue(colors[0]));
+	p += wsprintf(p, L"ck=%02X%02X%02X\n", GetRValue(colors[1]),GetGValue(colors[1]),GetBValue(colors[1]));
+	p += wsprintf(p, L"cb=%02X%02X%02X\n", GetRValue(colors[2]),GetGValue(colors[2]),GetBValue(colors[2]));
+	p += wsprintf(p, L"cr=%02X%02X%02X\n", GetRValue(colors[3]),GetGValue(colors[3]),GetBValue(colors[3]));
+	p += wsprintf(p, L"cc=%02X%02X%02X\n", GetRValue(colors[4]),GetGValue(colors[4]),GetBValue(colors[4]));
+	p += wsprintf(p, L"cn=%02X%02X%02X\n", GetRValue(colors[5]),GetGValue(colors[5]),GetBValue(colors[5]));
+	p += wsprintf(p, L"cl=%02X%02X%02X\n", GetRValue(colors[6]),GetGValue(colors[6]),GetBValue(colors[6]));
+	p += wsprintf(p, L"ft=%s\n",  fontName);
+	p += wsprintf(p, L"sz=%d\n",  fontSize);
+	if( fontWeight != FW_DONTCARE )
+		p += wsprintf(p, L"fw=%ld\n", fontWeight);
+	if( fontFlags != 0 )
+		p += wsprintf(p, L"ff=%d\n",  (int)fontFlags);
+	p += wsprintf(p, L"tb=%d\n",  tabSize);
+	p += wsprintf(p, L"sc=%c%c%c%c%c\n",
+		(scBits&1)?L'1':L'0', (scBits&2)?L'1':L'0', (scBits&4)?L'1':L'0',
+		(scBits&8)?L'1':L'0', (scBits&16)?L'1':L'0');
+	p += wsprintf(p, L"wp=%d\n",  wrapType);
+	p += wsprintf(p, L"ww=%d\n",  wrapWidth);
+	p += wsprintf(p, L"ws=%d\n",  wrapSmart ? 1 : 0);
+	p += wsprintf(p, L"ln=%d\n",  showLN    ? 1 : 0);
+
+	HANDLE h = ::CreateFile(full.c_str(), GENERIC_WRITE, 0, NULL,
+		CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if( h == INVALID_HANDLE_VALUE ) return;
+	DWORD written;
+	static const unicode kBOM = 0xFEFF;
+	::WriteFile(h, &kBOM, sizeof(unicode), &written, NULL);
+	::WriteFile(h, out, (DWORD)((p-out)*sizeof(unicode)), &written, NULL);
+	::CloseHandle(h);
 }
 
 void ConfigManager::SetTempFont( const TCHAR* name, short size, uchar charset,
@@ -1147,15 +1347,17 @@ void ConfigManager::SetTempFont( const TCHAR* name, short size, uchar charset,
 {
 	curDt_->vc.SetFont( name, size, charset, weight, flags, 0, quality );
 
-	// Persist font as new default (used as fallback when layout has no font)
+	// Update runtime defaults (fallback for LayEditDlg and built-in LoadLayout path)
 	my_lstrcpys( defaultFontName_, countof(defaultFontName_), name );
 	defaultFontSize_   = size;
 	defaultFontWeight_ = weight;
 	defaultFontFlags_  = flags;
 	defaultFontCS_     = charset;
 
-	inichanged_ = 1;
-	SaveIni();
+	// Persist font to the current layout file
+	const TCHAR* layfile = curDt_->layfile.len() > 0
+	                       ? curDt_->layfile.c_str() : TEXT("default.lay");
+	SaveFontToLayFile( layfile, name, size, weight, flags );
 }
 
 void ConfigManager::LoadIni()
@@ -1210,20 +1412,6 @@ void ConfigManager::LoadIni()
 
 	language_ = ini_.GetStr( TEXT("Language"), TEXT("") );
 
-	// Default font (read back so SaveIni always has up-to-date values)
-	{
-		ki::String fname = ini_.GetStr( TEXT("DefaultFontName"), TEXT("") );
-		int fsize = ini_.GetInt( TEXT("DefaultFontSize"), 0 );
-		if( fname.len() > 0 && fsize > 0 )
-		{
-			my_lstrcpys( defaultFontName_, countof(defaultFontName_), fname.c_str() );
-			defaultFontSize_   = (short)fsize;
-			defaultFontWeight_ = ini_.GetInt( TEXT("DefaultFontWeight"), FW_DONTCARE );
-			defaultFontFlags_  = (BYTE)ini_.GetInt( TEXT("DefaultFontFlags"), 0 );
-			defaultFontCS_     = (uchar)ini_.GetInt( TEXT("DefaultFontCharset"), DEFAULT_CHARSET );
-		}
-	}
-
 	// New file related
 	newfileCharset_ = ini_.GetInt( TEXT("NewfileCharset"), charSets_.defaultCs() );
 	if(newfileCharset_ == -1) newfileCharset_ = 1252; // 1.07.4 bugfix
@@ -1242,28 +1430,7 @@ void ConfigManager::LoadIni()
 
 void ConfigManager::ReadAllDocTypes( const TCHAR *ininame )
 {
-	static const char s_defaultIni[] =
-		"1=Assembly,program.lay,asm.kwd,.*\\.asm$\0"
-		"2=B2E,program.lay,b2e.kwd,.*\\.b2e$\0"
-		"3=C/C++,program.lay,C.kwd,.*(\\.(c|cpp|cxx|cc|h|hpp)|include\\\\[^\\.]+)$\0"
-		"4=C#,program.lay,C#.kwd,.*\\.cs$\0"
-		"5=D,program.lay,D.kwd,.*\\.d$\0"
-		"6=Delphi,program.lay,Delphi.kwd,.*\\.pas$\0"
-		"7=Fortran,program.lay,Fortran.kwd,.*\\.(f|for|f90|f95|f03|f15)$\0"
-		"8=Java,program.lay,Java.kwd,.*\\.java$\0"
-		"9=HTML,html.lay,HTML.kwd,.*(\\.html|\\.htm|temporary internet files\\\\.+)$\0"
-		"10=CSS,program.lay,CSS.kwd,.*\\.css$\0"
-		"11=Perl,program.lay,Perl.kwd,.*\\.(pl|pm|cgi)$\0"
-		"12=Ruby,program.lay,Ruby.kwd,.*\\.rb$\0"
-		"13=PHP,program.lay,PHP.kwd,.*\\.(php|php3|php4)$\0"
-		"14=Python,program.lay,Python.kwd,.*\\.py$\0"
-		"15=Lua,program.lay,Lua.kwd,.*\\.lua$\0"
-		"16=Java Script,program.lay,JS.kwd,.*\\.js$\0"
-		"17=Erlang,program.lay,Erlang.kwd,.*\\.erl$\0"
-		"18=Haskell,program.lay,Haskell.kwd,.*\\.l?hs$\0"
-		"19=OCaml,program.lay,OCaml.kwd,.*\\.mli?$\0"
-		"20=INI,,ini.kwd,.*\\.ini$\0"
-		"21=UnicodeText,unitext.lay,,\0\0";
+	static const char s_defaultIni[] = "\0";
 
 	DocType d;
 	// [DocType]
@@ -1397,13 +1564,6 @@ void ConfigManager::SaveIni()
 
 	ini_.PutStr( TEXT("Language"), language_.c_str() );
 
-	// Default font (fallback when layout file has no font specification)
-	ini_.PutStr( TEXT("DefaultFontName"),    defaultFontName_ );
-	ini_.PutInt( TEXT("DefaultFontSize"),    defaultFontSize_ );
-	ini_.PutInt( TEXT("DefaultFontWeight"),  defaultFontWeight_ );
-	ini_.PutInt( TEXT("DefaultFontFlags"),   defaultFontFlags_ );
-	ini_.PutInt( TEXT("DefaultFontCharset"), defaultFontCS_ );
-
 	// New file related
 	ini_.PutInt( TEXT("NewfileCharset"), newfileCharset_ );
 	ini_.PutStr( TEXT("NewfileDoctype"), newfileDoctype_.c_str() );
@@ -1487,6 +1647,36 @@ void ConfigManager::AddFilterHistory( const ki::String& cmd )
 		filterHistory_[i] = filterHistory_[i-1];
 	filterHistory_[0] = cmd;
 
+	inichanged_ = 1;
+	SaveIni();
+}
+
+void ConfigManager::RemoveFilterHistory( const ki::String& cmd )
+{
+	int found = -1;
+	for (int i = 0; i < kFilterHistoryMax; ++i) {
+		if (lstrcmp(filterHistory_[i].c_str(), cmd.c_str()) == 0) {
+			found = i;
+			break;
+		}
+	}
+	if (found < 0) return;
+
+	for (int i = found; i < kFilterHistoryMax - 1; ++i)
+		filterHistory_[i] = filterHistory_[i+1];
+	filterHistory_[kFilterHistoryMax - 1] = ki::String();
+
+	inichanged_ = 1;
+	SaveIni();
+}
+
+void ConfigManager::SwapFilterHistory( int i, int j )
+{
+	if (i < 0 || i >= kFilterHistoryMax) return;
+	if (j < 0 || j >= kFilterHistoryMax) return;
+	ki::String tmp = filterHistory_[i];
+	filterHistory_[i] = filterHistory_[j];
+	filterHistory_[j] = tmp;
 	inichanged_ = 1;
 	SaveIni();
 }

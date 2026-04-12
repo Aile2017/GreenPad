@@ -120,9 +120,18 @@ static.0 = 検索文字列(&T):
 static.1 = 置換文字列(&W):
 static.2 = オプション(&O)
 
+[Dialog.IDD_NEWFILENAME]
+Caption = 新規ファイル
+static.0 = 名前(&N):
+IDOK = OK
+IDCANCEL = キャンセル
+
 [Dialog.IDD_EXFILTER]
 Caption = 外部フィルタ
 static.0 = コマンド(&C):
+IDC_FILTERDELBTN = 削除
+IDC_FILTERUPBTN = 上へ
+IDC_FILTERDOWNBTN = 下へ
 IDOK = 実行(&R)
 IDCANCEL = キャンセル
 
@@ -149,7 +158,11 @@ IDC_REMSIZE = ウィンドウサイズを記憶(&S)
 IDC_REMPLACE = ウィンドウ位置を記憶(&P)
 IDC_NEWDOCTYPE = 追加
 IDC_DELDOCTYPE = 削除
+IDC_ADDKWD = 追加
+IDC_DELKWD = 削除
 IDC_EDITKWD = 編集
+IDC_ADDLAY = 追加
+IDC_DELLAY = 削除
 IDC_EDITLAY = 編集
 static.0 = 共通設定
 static.1 = [元に戻す]上限(&U):

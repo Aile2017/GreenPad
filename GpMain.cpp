@@ -352,8 +352,6 @@ LRESULT GreenPadWnd::on_message( UINT msg, WPARAM wp, LPARAM lp )
 			ScreenToClient(stb_.hwnd(), &pt);
 			if( stb_.SendMsg( SB_GETRECT, GpStBar::MAIN_PART, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
 				on_jump();
-			else if( stb_.SendMsg( SB_GETRECT, GpStBar::RO_PART, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
-				on_zoom();
 			else if( stb_.SendMsg( SB_GETRECT, GpStBar::ZOOM_PART, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
 				on_zoom();
 			else if( stb_.SendMsg( SB_GETRECT, GpStBar::UNI_PART, reinterpret_cast<LPARAM>(&rc) ) && PtInRect(&rc, pt) )
@@ -1225,9 +1223,9 @@ void GreenPadWnd::on_exfilter()
 {
 	// --- Show command-input dialog ---
 	struct ExFilterDlg A_FINAL : public DlgImpl {
-		ExFilterDlg(HWND parent, const ki::String* hist, int histLen)
+		ExFilterDlg(HWND parent, const ki::String* hist, int histLen, ConfigManager& cfg)
 			: DlgImpl(IDD_EXFILTER)
-			, hist_(hist), histLen_(histLen), parent_(parent)
+			, hist_(hist), histLen_(histLen), parent_(parent), cfg_(cfg)
 		{ GoModal(parent_); }
 
 		void on_init() override {
@@ -1246,11 +1244,47 @@ void GreenPadWnd::on_exfilter()
 			cmd_ = buf;
 			return true;
 		}
+		bool on_command( UINT /*notif*/, UINT id, HWND ) override {
+			if (id == IDC_FILTERDELBTN) {
+				int sel = (int)SendMsgToItem(IDC_FILTERCMDBOX, CB_GETCURSEL, 0, 0);
+				if (sel == CB_ERR) return true;
+				TCHAR buf[2048];
+				SendMsgToItem(IDC_FILTERCMDBOX, CB_GETLBTEXT, (WPARAM)sel, (LPARAM)buf);
+				cfg_.RemoveFilterHistory(buf);
+				SendMsgToItem(IDC_FILTERCMDBOX, CB_DELETESTRING, (WPARAM)sel, 0);
+				int count = (int)SendMsgToItem(IDC_FILTERCMDBOX, CB_GETCOUNT, 0, 0);
+				if (count > 0)
+					SendMsgToItem(IDC_FILTERCMDBOX, CB_SETCURSEL,
+						(WPARAM)(sel < count ? sel : count - 1), 0);
+				return true;
+			}
+			if (id == IDC_FILTERUPBTN || id == IDC_FILTERDOWNBTN) {
+				int sel   = (int)SendMsgToItem(IDC_FILTERCMDBOX, CB_GETCURSEL, 0, 0);
+				int count = (int)SendMsgToItem(IDC_FILTERCMDBOX, CB_GETCOUNT,  0, 0);
+				if (sel == CB_ERR) return true;
+				int other = (id == IDC_FILTERUPBTN) ? sel - 1 : sel + 1;
+				if (other < 0 || other >= count) return true;
+				TCHAR a[2048], b[2048];
+				SendMsgToItem(IDC_FILTERCMDBOX, CB_GETLBTEXT, (WPARAM)sel,   (LPARAM)a);
+				SendMsgToItem(IDC_FILTERCMDBOX, CB_GETLBTEXT, (WPARAM)other, (LPARAM)b);
+				int hi = sel > other ? sel : other;
+				int lo = sel > other ? other : sel;
+				SendMsgToItem(IDC_FILTERCMDBOX, CB_DELETESTRING,  (WPARAM)hi, 0);
+				SendMsgToItem(IDC_FILTERCMDBOX, CB_DELETESTRING,  (WPARAM)lo, 0);
+				SendMsgToItem(IDC_FILTERCMDBOX, CB_INSERTSTRING, (WPARAM)lo, (LPARAM)(hi == sel ? a : b));
+				SendMsgToItem(IDC_FILTERCMDBOX, CB_INSERTSTRING, (WPARAM)hi, (LPARAM)(lo == sel ? a : b));
+				cfg_.SwapFilterHistory(sel, other);
+				SendMsgToItem(IDC_FILTERCMDBOX, CB_SETCURSEL, (WPARAM)other, 0);
+				return true;
+			}
+			return false;
+		}
 		const ki::String* hist_;
 		int histLen_;
 		HWND parent_;
+		ConfigManager& cfg_;
 		ki::String cmd_;
-	} dlg(hwnd(), &cfg_.filterHistory(0), ConfigManager::kFilterHistoryMax);
+	} dlg(hwnd(), &cfg_.filterHistory(0), ConfigManager::kFilterHistoryMax, cfg_);
 
 	if (dlg.endcode() != IDOK || dlg.cmd_.len() == 0)
 		return;

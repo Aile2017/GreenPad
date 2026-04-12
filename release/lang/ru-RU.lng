@@ -120,9 +120,18 @@ static.0 = &Найти:
 static.1 = &На:
 static.2 = &Параметры
 
+[Dialog.IDD_NEWFILENAME]
+Caption = Новый файл
+static.0 = &Имя:
+IDOK = OK
+IDCANCEL = Отмена
+
 [Dialog.IDD_EXFILTER]
 Caption = Внешний фильтр
 static.0 = Команда(&C):
+IDC_FILTERDELBTN = Удал.
+IDC_FILTERUPBTN = Вверх
+IDC_FILTERDOWNBTN = Вниз
 IDOK = Выполнить(&R)
 IDCANCEL = Отмена
 
@@ -149,7 +158,11 @@ IDC_REMSIZE = Запомнить &размер
 IDC_REMPLACE = Запомнить &позицию
 IDC_NEWDOCTYPE = Доб.
 IDC_DELDOCTYPE = Удл.
+IDC_ADDKWD = Доб.
+IDC_DELKWD = Удл.
 IDC_EDITKWD = изм.
+IDC_ADDLAY = Доб.
+IDC_DELLAY = Удл.
 IDC_EDITLAY = изм.
 static.0 = Общие
 static.1 = &Отмена:

@@ -120,9 +120,18 @@ static.0 = Fi&nd:
 static.1 = Re&place:
 static.2 = &Options
 
+[Dialog.IDD_NEWFILENAME]
+Caption = New File
+static.0 = &Name:
+IDOK = OK
+IDCANCEL = Cancel
+
 [Dialog.IDD_EXFILTER]
 Caption = External Filter
 static.0 = &Command:
+IDC_FILTERDELBTN = Del
+IDC_FILTERUPBTN = Up
+IDC_FILTERDOWNBTN = Down
 IDOK = &Run
 IDCANCEL = Cancel
 
@@ -149,7 +158,11 @@ IDC_REMSIZE = Remember Window &Size
 IDC_REMPLACE = Remember Window &Pos
 IDC_NEWDOCTYPE = Add
 IDC_DELDOCTYPE = Del
+IDC_ADDKWD = Add
+IDC_DELKWD = Del
 IDC_EDITKWD = edit
+IDC_ADDLAY = Add
+IDC_DELLAY = Del
 IDC_EDITLAY = edit
 static.0 = Common
 static.1 = &Undo:

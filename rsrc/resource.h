@@ -189,6 +189,15 @@
 #define IDS_EXFILTER_FAILED             25
 #define IDD_EXFILTER                    114
 #define IDC_FILTERCMDBOX                1035
+#define IDC_FILTERDELBTN                1036
+#define IDC_FILTERUPBTN                 1037
+#define IDC_FILTERDOWNBTN               1038
+#define IDD_NEWFILENAME                 115
+#define IDC_NEWFILENAME_NAME            1043
+#define IDC_ADDKWD                      1039
+#define IDC_DELKWD                      1040
+#define IDC_ADDLAY                      1041
+#define IDC_DELLAY                      1042
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED

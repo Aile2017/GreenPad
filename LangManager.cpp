@@ -228,6 +228,7 @@ static const NameIdPair kDialogNames[] = {
     {L"IDD_ABOUTDLG",    112},
     {L"IDD_EDITLAYOUT",  113},
     {L"IDD_EXFILTER",    114},
+    {L"IDD_NEWFILENAME", 115},
 };
 
 static const NameIdPair kControlNames[] = {
@@ -251,6 +252,16 @@ static const NameIdPair kControlNames[] = {
     {L"IDC_DELDOCTYPE",     1023},
     {L"IDC_EDITKWD",        1024},
     {L"IDC_EDITLAY",        1025},
+    // IDD_CONFIG controls
+    {L"IDC_ADDKWD",         1039},
+    {L"IDC_DELKWD",         1040},
+    {L"IDC_ADDLAY",         1041},
+    {L"IDC_DELLAY",         1042},
+    // IDD_EXFILTER controls
+    {L"IDC_FILTERCMDBOX",   1035},
+    {L"IDC_FILTERDELBTN",   1036},
+    {L"IDC_FILTERUPBTN",    1037},
+    {L"IDC_FILTERDOWNBTN",  1038},
     // IDD_EDITLAYOUT controls
     {L"IDC_CHOOSEFONT",     1054},
     {L"IDC_LAY_SHOWEOF",    1056},

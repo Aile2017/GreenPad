@@ -120,9 +120,18 @@ static.0 = 搜索字符串(&T):
 static.1 = 替换字符串(&W):
 static.2 = 选项(&O)
 
+[Dialog.IDD_NEWFILENAME]
+Caption = 新建文件
+static.0 = 名称(&N):
+IDOK = 确定
+IDCANCEL = 取消
+
 [Dialog.IDD_EXFILTER]
 Caption = 外部过滤器
 static.0 = 命令(&C):
+IDC_FILTERDELBTN = 删除
+IDC_FILTERUPBTN = 上移
+IDC_FILTERDOWNBTN = 下移
 IDOK = 运行(&R)
 IDCANCEL = 取消
 
@@ -149,7 +158,11 @@ IDC_REMSIZE = 记忆窗口大小(&S)
 IDC_REMPLACE = 记忆窗口位置(&P)
 IDC_NEWDOCTYPE = 新增
 IDC_DELDOCTYPE = 删除
+IDC_ADDKWD = 新增
+IDC_DELKWD = 删除
 IDC_EDITKWD = 编辑
+IDC_ADDLAY = 新增
+IDC_DELLAY = 删除
 IDC_EDITLAY = 编辑
 static.0 = 通用
 static.1 = 撤销限制(&U):

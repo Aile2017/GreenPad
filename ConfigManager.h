@@ -121,9 +121,11 @@ public:
 	ki::Path GetMRU( int no ) const A_COLD;
 
 	//@{ External filter command history //@}
-	enum { kFilterHistoryMax = 10 };
+	enum { kFilterHistoryMax = 20 };
 	inline const ki::String& filterHistory(int i) const { return filterHistory_[i]; }
 	void AddFilterHistory( const ki::String& cmd ) A_COLD;
+	void RemoveFilterHistory( const ki::String& cmd ) A_COLD;
+	void SwapFilterHistory( int i, int j ) A_COLD;
 
 	//@{ Get list of supported character sets //@}
 	inline CharSetList& GetCharSetList() { return charSets_; }
@@ -235,12 +237,13 @@ private:
 
 	void LoadIni() A_COLD;
 	void SaveIni() A_COLD;
-	void LoadDefaultFontFromIni() A_COLD;
+	void SaveFontToLayFile( const TCHAR* layfile, const TCHAR* fontName,
+	                        short fontSize, LONG fontWeight, BYTE fontFlags ) A_COLD;
 	void ReadAllDocTypes( const TCHAR *ininame ) A_COLD;
 	void LoadLayout( DocType* dt ) A_COLD;
 	bool MatchDocType( const unicode* fname, const unicode* pat );
 
-	// Default font (persisted to ini, fallback when layout file has no font)
+	// Default font (runtime-only fallback; not persisted to ini)
 	TCHAR defaultFontName_[LF_FACESIZE];
 	short defaultFontSize_;
 	LONG  defaultFontWeight_;  // FW_DONTCARE=0 means normal
