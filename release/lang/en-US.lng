@@ -89,12 +89,12 @@ ID_CMD_ZOOMDLG = &Set Zoom...
 ID_CMD_ZOOMRZ = R&eset Zoom\tCtrl+0
 ID_CMD_ZOOMUP = Zoom &Up\tCtrl+Up
 ID_CMD_ZOOMDN = Zoom Do&wn\tCtrl+Down
-ID_CMD_CHOOSEFONT = &Font...
 ID_CMD_CONFIG = &Settings...
 ID_CMD_STATUSBAR = Status&Bar
 ID_CMD_READONLY = Read &Only Mode
 ID_CMD_HELP = &Context Help...\tF1
 ID_CMD_HELPABOUT = &About
+ID_CMD_CHOOSEFONT = &Font...
 
 [Dialog.IDD_REOPENDLG]
 Caption = ReOpen File
@@ -129,11 +129,11 @@ IDCANCEL = Cancel
 [Dialog.IDD_EXFILTER]
 Caption = External Filter
 static.0 = &Command:
+IDOK = &Run
+IDCANCEL = Cancel
 IDC_FILTERDELBTN = Del
 IDC_FILTERUPBTN = Up
 IDC_FILTERDOWNBTN = Down
-IDOK = &Run
-IDCANCEL = Cancel
 
 [Dialog.IDD_ABOUTDLG]
 Caption = About GreenPad
@@ -160,10 +160,10 @@ IDC_NEWDOCTYPE = Add
 IDC_DELDOCTYPE = Del
 IDC_ADDKWD = Add
 IDC_DELKWD = Del
-IDC_EDITKWD = edit
+IDC_EDITKWD = Edit
 IDC_ADDLAY = Add
 IDC_DELLAY = Del
-IDC_EDITLAY = edit
+IDC_EDITLAY = Edit
 static.0 = Common
 static.1 = &Undo:
 static.2 = times

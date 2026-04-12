@@ -89,12 +89,12 @@ ID_CMD_ZOOMDLG = &Установить масштаб...
 ID_CMD_ZOOMRZ = С&бросить масштаб\tCtrl+0
 ID_CMD_ZOOMUP = Увеличить &масштаб\tCtrl+Up
 ID_CMD_ZOOMDN = Уменьшить масштаб\tCtrl+Down
-ID_CMD_CHOOSEFONT = &Шрифт...
 ID_CMD_CONFIG = &Настройки...
 ID_CMD_STATUSBAR = Строка &состояния
 ID_CMD_READONLY = Режим т&олько чтения
 ID_CMD_HELP = &Контекстная справка...\tF1
 ID_CMD_HELPABOUT = &О программе
+ID_CMD_CHOOSEFONT = &Шрифт...
 
 [Dialog.IDD_REOPENDLG]
 Caption = Переоткр.
@@ -129,11 +129,11 @@ IDCANCEL = Отмена
 [Dialog.IDD_EXFILTER]
 Caption = Внешний фильтр
 static.0 = Команда(&C):
+IDOK = Выполнить(&R)
+IDCANCEL = Отмена
 IDC_FILTERDELBTN = Удал.
 IDC_FILTERUPBTN = Вверх
 IDC_FILTERDOWNBTN = Вниз
-IDOK = Выполнить(&R)
-IDCANCEL = Отмена
 
 [Dialog.IDD_ABOUTDLG]
 Caption = О GreenPad
@@ -160,10 +160,10 @@ IDC_NEWDOCTYPE = Доб.
 IDC_DELDOCTYPE = Удл.
 IDC_ADDKWD = Доб.
 IDC_DELKWD = Удл.
-IDC_EDITKWD = изм.
+IDC_EDITKWD = Изм.
 IDC_ADDLAY = Доб.
 IDC_DELLAY = Удл.
-IDC_EDITLAY = изм.
+IDC_EDITLAY = Изм.
 static.0 = Общие
 static.1 = &Отмена:
 static.2 = раз

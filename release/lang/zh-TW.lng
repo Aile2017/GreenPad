@@ -32,8 +32,8 @@ IDS_INSSERT = 插入(&I)
 IDS_ZOOMPC = 縮放
 IDS_UNTITLED = 未命名
 IDS_CHARSET_CAPTION = 字元編碼:
-IDS_EXFILTER_FAILED = 外部篩選器失敗（結束代碼：%d）
 IDS_CRLF_CAPTION = 行結尾:
+IDS_EXFILTER_FAILED = 外部篩選器失敗（結束代碼：%d）
 
 [Menu]
 popup.0 = 檔案(&F)
@@ -89,12 +89,12 @@ ID_CMD_ZOOMDLG = 縮放設定(&S)...
 ID_CMD_ZOOMRZ = 重置縮放(&E)\tCtrl+0
 ID_CMD_ZOOMUP = 放大(&U)\tCtrl+Up
 ID_CMD_ZOOMDN = 縮小(&W)\tCtrl+Down
-ID_CMD_CHOOSEFONT = 字型(&F)...
 ID_CMD_CONFIG = 設定(&S)...
 ID_CMD_STATUSBAR = 狀態列(&B)
 ID_CMD_READONLY = 唯讀模式(&O)
 ID_CMD_HELP = 關聯說明(&C)...\tF1
 ID_CMD_HELPABOUT = 關於(&A)
+ID_CMD_CHOOSEFONT = 字型(&F)...
 
 [Dialog.IDD_REOPENDLG]
 Caption = 重新載入
@@ -129,11 +129,11 @@ IDCANCEL = 取消
 [Dialog.IDD_EXFILTER]
 Caption = 外部篩選器
 static.0 = 命令(&C):
+IDOK = 執行(&R)
+IDCANCEL = 取消
 IDC_FILTERDELBTN = 刪除
 IDC_FILTERUPBTN = 上移
 IDC_FILTERDOWNBTN = 下移
-IDOK = 執行(&R)
-IDCANCEL = 取消
 
 [Dialog.IDD_ABOUTDLG]
 Caption = 關於

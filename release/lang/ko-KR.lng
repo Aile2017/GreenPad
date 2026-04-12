@@ -89,12 +89,12 @@ ID_CMD_ZOOMDLG = 확대/축소 설정(&S)...
 ID_CMD_ZOOMRZ = 확대/축소 초기화(&E)\tCtrl+0
 ID_CMD_ZOOMUP = 확대(&U)\tCtrl+Up
 ID_CMD_ZOOMDN = 축소(&W)\tCtrl+Down
-ID_CMD_CHOOSEFONT = 글꼴(&F)...
 ID_CMD_CONFIG = 설정(&S)...
 ID_CMD_STATUSBAR = 상태 표시줄(&B)
 ID_CMD_READONLY = 읽기 전용 모드(&O)
 ID_CMD_HELP = 도움말(&C)...\tF1
 ID_CMD_HELPABOUT = 정보(&A)
+ID_CMD_CHOOSEFONT = 글꼴(&F)...
 
 [Dialog.IDD_REOPENDLG]
 Caption = 다시 열기
@@ -129,11 +129,11 @@ IDCANCEL = 취소
 [Dialog.IDD_EXFILTER]
 Caption = 외부 필터
 static.0 = 명령(&C):
+IDOK = 실행(&R)
+IDCANCEL = 취소
 IDC_FILTERDELBTN = 삭제
 IDC_FILTERUPBTN = 위
 IDC_FILTERDOWNBTN = 아래
-IDOK = 실행(&R)
-IDCANCEL = 취소
 
 [Dialog.IDD_ABOUTDLG]
 Caption = 정보

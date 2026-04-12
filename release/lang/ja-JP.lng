@@ -89,12 +89,12 @@ ID_CMD_ZOOMDLG = ズーム設定(&S)...
 ID_CMD_ZOOMRZ = ズームリセット(&E)\tCtrl+0
 ID_CMD_ZOOMUP = ズームアップ(&U)\tCtrl+Up
 ID_CMD_ZOOMDN = ズームダウン(&W)\tCtrl+Down
-ID_CMD_CHOOSEFONT = フォント(&F)...
 ID_CMD_CONFIG = 設定(&S)...
 ID_CMD_STATUSBAR = ステータス バー(&B)
 ID_CMD_READONLY = 読み取り専用(&O)
 ID_CMD_HELP = ヘルプ(&C)...\tF1
 ID_CMD_HELPABOUT = バージョン情報(&A)
+ID_CMD_CHOOSEFONT = フォント(&F)...
 
 [Dialog.IDD_REOPENDLG]
 Caption = 開き直す
@@ -129,11 +129,11 @@ IDCANCEL = キャンセル
 [Dialog.IDD_EXFILTER]
 Caption = 外部フィルタ
 static.0 = コマンド(&C):
+IDOK = 実行(&R)
+IDCANCEL = キャンセル
 IDC_FILTERDELBTN = 削除
 IDC_FILTERUPBTN = 上へ
 IDC_FILTERDOWNBTN = 下へ
-IDOK = 実行(&R)
-IDCANCEL = キャンセル
 
 [Dialog.IDD_ABOUTDLG]
 Caption = バージョン情報
