@@ -10,6 +10,34 @@ void SetFontSize(LOGFONT *font, HDC hDC, int fsiz, int fx);
 #define GPM_MRUCHANGED WM_APP+0
 
 //=========================================================================
+// Intermediate data structure holding all .lay file fields.
+// Used as a common representation between the parser, writer, and
+// the runtime (ConfigManager::DocType) / dialog (LayEditDlg).
+//=========================================================================
+struct LayData
+{
+	COLORREF colors[7];            // [0]=TXT [1]=KWD [2]=BG [3]=RO [4]=CMT [5]=CTL [6]=LN
+	TCHAR    fontName[LF_FACESIZE];
+	int      fontSize;
+	LONG     fontWeight;           // FW_DONTCARE = not specified
+	BYTE     fontFlags;            // bit0=italic bit1=underline bit2=strikeout
+	int      fontCS;               // lfCharSet  (cs=)
+	int      fontQual;             // lfQuality  (fq=)
+	int      fontXWidth;           // lfWidth    (fx=)
+	int      tabSize;
+	int      scBits;               // bit0=EOF bit1=EOL bit2=TAB bit3=HSP bit4=ZSP
+	int      wrapType;             // -1=none 0=right-edge N>0=fixed-width
+	int      wrapWidth;
+	bool     wrapSmart;            // true=word-wrap false=char-wrap
+	bool     showLN;
+
+	// Apply built-in defaults for colour and layout fields.
+	// Font fields (fontName/fontSize) are left zeroed; the caller is
+	// responsible for filling them from the runtime font state.
+	void SetDefaults();
+};
+
+//=========================================================================
 //@{ @pkg Gp.Main //@}
 //@{
 //	Centralized management of settings
@@ -45,6 +73,8 @@ public:
 	bool DoDialog( const ki::Window& parent )  A_COLD;
 
 	static size_t GetLayData(const TCHAR *name, unicode *buf, size_t buf_len);
+	static void   ParseLayBuf(unicode* buf, size_t len, LayData& out) A_COLD;
+	static size_t WriteLayBuf(unicode* out, const LayData& d) A_COLD;
 
 public:
 
@@ -238,7 +268,8 @@ private:
 	void LoadIni() A_COLD;
 	void SaveIni() A_COLD;
 	void SaveFontToLayFile( const TCHAR* layfile, const TCHAR* fontName,
-	                        short fontSize, LONG fontWeight, BYTE fontFlags ) A_COLD;
+	                        short fontSize, LONG fontWeight, BYTE fontFlags,
+	                        uchar fontCS=DEFAULT_CHARSET, int fontQual=DEFAULT_QUALITY ) A_COLD;
 	void ReadAllDocTypes( const TCHAR *ininame ) A_COLD;
 	void LoadLayout( DocType* dt ) A_COLD;
 	bool MatchDocType( const unicode* fname, const unicode* pat );

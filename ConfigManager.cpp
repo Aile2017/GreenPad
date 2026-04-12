@@ -160,6 +160,168 @@ namespace {
 }
 
 //-------------------------------------------------------------------------
+// LayData
+//-------------------------------------------------------------------------
+
+void LayData::SetDefaults()
+{
+	COLORREF bgcol  = ::GetSysColor(COLOR_WINDOW);
+	bool     bright = COLBRIGHTNESS(bgcol) > 128;
+
+	colors[0] = ::GetSysColor(COLOR_WINDOWTEXT);                        // TXT
+	colors[1] = bright ? RGB(  0,  0,128) : RGB(128,255,255);           // KWD
+	colors[2] = bgcol;                                                   // BG
+	colors[3] = DefaultReadOnlyBgColor();                                // RO
+	colors[4] = bright ? RGB(  0,128,  0) : RGB(255,255,128);           // CMT
+	colors[5] = bright ? RGB(192,160,192) : RGB( 80, 64, 80);           // CTL
+	colors[6] = ::GetSysColor(COLOR_WINDOWTEXT);                        // LN
+
+	fontName[0]  = TEXT('\0');
+	fontSize     = 0;
+	fontWeight   = FW_DONTCARE;
+	fontFlags    = 0;
+	fontCS       = DEFAULT_CHARSET;
+	fontQual     = DEFAULT_QUALITY;
+	fontXWidth   = 0;
+
+	tabSize      = 4;
+	scBits       = 0x07; // EOF+EOL+TAB visible; HSP and ZSP (full-width space) not shown
+	wrapType     = -1;
+	wrapWidth    = 80;
+	wrapSmart    = true;
+	showLN       = true;
+}
+
+//-------------------------------------------------------------------------
+// ParseLayBuf — common .lay file parser
+//
+// Overlays the field values found in buf onto out.
+// Fields absent from buf are left unchanged (caller pre-initialises out).
+// Font bleed-prevention: if ft=+sz= are present but fw=/ff= are absent,
+// fontWeight/fontFlags are reset to FW_DONTCARE/0 respectively.
+// cl= fallback: if cl= is absent, colors[6] (LN) is set to colors[0] (TXT).
+//-------------------------------------------------------------------------
+
+void ConfigManager::ParseLayBuf(unicode* buf, size_t len, LayData& out)
+{
+	TCHAR readFontName[LF_FACESIZE] = {};
+	int   readFontSize   = 0;
+	LONG  readFontWeight = FW_DONTCARE;
+	BYTE  readFontFlags  = 0;
+	bool  fwFound = false, ffFound = false;
+	bool  clfound = false;
+
+	unicode* nptr = buf;
+	for( unicode* ptr = buf; ptr < buf + len; ptr = nptr )
+	{
+		while( *nptr != L'\0' && *nptr != L'\r' && *nptr != L'\n' && *nptr != L'|' )
+			nptr++;
+		if( nptr < buf + len ) { *nptr++ = L'\0'; nptr += (*nptr == L'\n'); }
+		if( nptr - ptr < 3 || ptr[0] == L';' || ptr[2] != L'=' ) continue;
+
+		unicode key = (unicode)((ptr[0] << 8) | ptr[1]);
+		ptr += 3;
+
+		switch( key )
+		{
+		case 0x6374: out.colors[0] = GetColor(ptr); break; // ct: text
+		case 0x636B: out.colors[1] = GetColor(ptr); break; // ck: keyword
+		case 0x6362: out.colors[2] = GetColor(ptr); break; // cb: background
+		case 0x6372: out.colors[3] = GetColor(ptr); break; // cr: RO background
+		case 0x6363: out.colors[4] = GetColor(ptr); break; // cc: comment
+		case 0x636E: out.colors[5] = GetColor(ptr); break; // cn: control char
+		case 0x636C:                                        // cl: line number
+			clfound = true;
+			out.colors[6] = GetColor(ptr);
+			break;
+		case 0x6674:                                        // ft: font name
+#ifdef UNICODE
+			my_lstrcpysW( readFontName, LF_FACESIZE, ptr );
+#else
+			WideCharToMultiByte( CP_ACP, 0, ptr, -1, readFontName, LF_FACESIZE, NULL, NULL );
+#endif
+			break;
+		case 0x737A: readFontSize   = GetInt(ptr);              break; // sz: font size
+		case 0x6677: readFontWeight = GetInt(ptr); fwFound = true; break; // fw: font weight
+		case 0x6666: readFontFlags  = (BYTE)GetInt(ptr); ffFound = true; break; // ff: font flags
+		case 0x6373: out.fontCS     = GetInt(ptr); break; // cs: charset
+		case 0x6671: out.fontQual   = GetInt(ptr); break; // fq: font quality
+		case 0x6678: out.fontXWidth = GetInt(ptr); break; // fx: font x-width
+		case 0x7462: out.tabSize    = GetInt(ptr); break; // tb: tab width
+		case 0x7363:                                        // sc: special char bits
+			if( ptr + 4 < buf + len )
+				out.scBits = ((ptr[0]!=L'0')<<0) | ((ptr[1]!=L'0')<<1)
+				           | ((ptr[2]!=L'0')<<2) | ((ptr[3]!=L'0')<<3)
+				           | ((ptr[4]!=L'0')<<4);
+			break;
+		case 0x7770: out.wrapType  = GetInt(ptr);      break; // wp: wrap type
+		case 0x7777: out.wrapWidth = GetInt(ptr);      break; // ww: wrap width
+		case 0x7773: out.wrapSmart = (0!=GetInt(ptr)); break; // ws: wrap smart
+		case 0x6C6E: out.showLN    = (0!=GetInt(ptr)); break; // ln: line number
+		}
+	}
+
+	// cl fallback
+	if( !clfound ) out.colors[6] = out.colors[0];
+
+	// Font resolution with bleed-prevention
+	if( readFontName[0] != TEXT('\0') && readFontSize > 0 )
+	{
+		my_lstrcpys( out.fontName, LF_FACESIZE, readFontName );
+		out.fontSize   = readFontSize;
+		out.fontWeight = fwFound ? readFontWeight : FW_DONTCARE;
+		out.fontFlags  = ffFound ? readFontFlags  : 0;
+	}
+	else
+	{
+		// No complete font spec: apply only explicitly-set weight/flags
+		if( fwFound ) out.fontWeight = readFontWeight;
+		if( ffFound ) out.fontFlags  = readFontFlags;
+	}
+}
+
+//-------------------------------------------------------------------------
+// WriteLayBuf — common .lay file writer
+//
+// Serialises d into out (UTF-16 LE, no BOM).
+// Returns the number of unicode characters written.
+// Caller must provide a buffer of at least 1024 unicode characters.
+//-------------------------------------------------------------------------
+
+size_t ConfigManager::WriteLayBuf(unicode* out, const LayData& d)
+{
+	unicode* p = out;
+	p += wsprintf(p, L"ct=%02X%02X%02X\n", GetRValue(d.colors[0]),GetGValue(d.colors[0]),GetBValue(d.colors[0]));
+	p += wsprintf(p, L"ck=%02X%02X%02X\n", GetRValue(d.colors[1]),GetGValue(d.colors[1]),GetBValue(d.colors[1]));
+	p += wsprintf(p, L"cb=%02X%02X%02X\n", GetRValue(d.colors[2]),GetGValue(d.colors[2]),GetBValue(d.colors[2]));
+	p += wsprintf(p, L"cr=%02X%02X%02X\n", GetRValue(d.colors[3]),GetGValue(d.colors[3]),GetBValue(d.colors[3]));
+	p += wsprintf(p, L"cc=%02X%02X%02X\n", GetRValue(d.colors[4]),GetGValue(d.colors[4]),GetBValue(d.colors[4]));
+	p += wsprintf(p, L"cn=%02X%02X%02X\n", GetRValue(d.colors[5]),GetGValue(d.colors[5]),GetBValue(d.colors[5]));
+	p += wsprintf(p, L"cl=%02X%02X%02X\n", GetRValue(d.colors[6]),GetGValue(d.colors[6]),GetBValue(d.colors[6]));
+	p += wsprintf(p, L"ft=%s\n",  d.fontName);
+	p += wsprintf(p, L"sz=%d\n",  d.fontSize);
+	if( d.fontWeight != FW_DONTCARE )
+		p += wsprintf(p, L"fw=%ld\n", d.fontWeight);
+	if( d.fontFlags != 0 )
+		p += wsprintf(p, L"ff=%d\n",  (int)d.fontFlags);
+	if( d.fontCS != DEFAULT_CHARSET )
+		p += wsprintf(p, L"cs=%d\n",  (int)d.fontCS);
+	if( d.fontQual != DEFAULT_QUALITY )
+		p += wsprintf(p, L"fq=%d\n",  d.fontQual);
+	if( d.fontXWidth != 0 )
+		p += wsprintf(p, L"fx=%d\n",  d.fontXWidth);
+	p += wsprintf(p, L"tb=%d\n",  d.tabSize);
+	p += wsprintf(p, L"sc=%c%c%c%c%c\n",
+		(d.scBits& 1)?L'1':L'0', (d.scBits& 2)?L'1':L'0', (d.scBits& 4)?L'1':L'0',
+		(d.scBits& 8)?L'1':L'0', (d.scBits&16)?L'1':L'0');
+	p += wsprintf(p, L"wp=%d\n",  d.wrapType);
+	p += wsprintf(p, L"ww=%d\n",  d.wrapWidth);
+	p += wsprintf(p, L"ws=%d\n",  d.wrapSmart ? 1 : 0);
+	p += wsprintf(p, L"ln=%d\n",  d.showLN    ? 1 : 0);
+	return (size_t)(p - out);
+}
+
+//-------------------------------------------------------------------------
 // Layout file editor dialog
 //-------------------------------------------------------------------------
 
@@ -172,6 +334,9 @@ private:
 	int        fontSize_;
 	LONG       fontWeight_;
 	BYTE       fontFlags_;
+	int        fontCS_;    // cs= charset
+	int        fontQual_;  // fq= font quality
+	int        fontXWidth_; // fx= font x-width
 	int        tabSize_;
 	int        scBits_;    // bit0=EOF bit1=EOL bit2=TAB bit3=HSP bit4=ZSP
 	int        wrapType_;  // -1=none 0=right-edge 1=fixed-width
@@ -251,82 +416,40 @@ private:
 
 	void ParseLayData(unicode* buf, size_t len)
 	{
-		TCHAR readFontName[LF_FACESIZE] = {};
-		int   readFontSize = 0;
-		LONG  readFontWeight = FW_DONTCARE;
-		BYTE  readFontFlags  = 0;
-		bool  fwFound = false, ffFound = false;
-		bool  clfound = false;
+		// Initialise LayData from current dialog state, overlay with file values,
+		// then copy back.  All parsing logic lives in ParseLayBuf.
+		LayData ld;
+		for( int i = 0; i < 7; i++ ) ld.colors[i] = colors_[i];
+		my_lstrcpys( ld.fontName, LF_FACESIZE, fontName_ );
+		ld.fontSize   = fontSize_;
+		ld.fontWeight = fontWeight_;
+		ld.fontFlags  = fontFlags_;
+		ld.fontCS     = fontCS_;
+		ld.fontQual   = fontQual_;
+		ld.fontXWidth = fontXWidth_;
+		ld.tabSize    = tabSize_;
+		ld.scBits     = scBits_;
+		ld.wrapType   = wrapType_;
+		ld.wrapWidth  = wrapWidth_;
+		ld.wrapSmart  = wrapSmart_;
+		ld.showLN     = showLN_;
 
-		unicode* nptr = buf;
-		for(unicode* ptr = buf; ptr < buf + len; ptr = nptr)
-		{
-			while(*nptr != L'\0' && *nptr != L'\r' && *nptr != L'\n' && *nptr != L'|')
-				nptr++;
-			if(nptr < buf + len)
-			{
-				*nptr++ = L'\0';
-				nptr += (*nptr == L'\n');
-			}
-			if(nptr - ptr < 3 || ptr[0] == L';' || ptr[2] != L'=')
-				continue;
+		ConfigManager::ParseLayBuf( buf, len, ld );
 
-			unicode XXoption = (ptr[0] << 8) | ptr[1];
-			ptr += 3;
-
-			switch(XXoption)
-			{
-			case 0x6374: colors_[0] = GetColor(ptr); break; // ct: text
-			case 0x636B: colors_[1] = GetColor(ptr); break; // ck: keyword
-			case 0x6362: colors_[2] = GetColor(ptr); break; // cb: background
-			case 0x6372: colors_[3] = GetColor(ptr); break; // cr: RO background
-			case 0x6363: colors_[4] = GetColor(ptr); break; // cc: comment
-			case 0x636E: colors_[5] = GetColor(ptr); break; // cn: special char
-			case 0x636C:                                     // cl: line number
-				clfound = true;
-				colors_[6] = GetColor(ptr);
-				break;
-			case 0x6674:                                     // ft: font name
-#ifdef UNICODE
-				my_lstrcpysW(readFontName, LF_FACESIZE, ptr);
-#else
-				WideCharToMultiByte(CP_ACP, 0, ptr, -1, readFontName, LF_FACESIZE, NULL, NULL);
-#endif
-				break;
-			case 0x737A: readFontSize   = GetInt(ptr); break;             // sz: font size
-			case 0x6677: readFontWeight = GetInt(ptr); fwFound = true; break; // fw: font weight
-			case 0x6666: readFontFlags  = (BYTE)GetInt(ptr); ffFound = true; break; // ff: font flags
-			case 0x7462: tabSize_     = GetInt(ptr); break;  // tb: tab width
-			case 0x7363:                                     // sc: special char bits
-				if(ptr + 4 <= buf + len)
-					scBits_ = ((ptr[0] != L'0') << 0) | ((ptr[1] != L'0') << 1)
-					        | ((ptr[2] != L'0') << 2) | ((ptr[3] != L'0') << 3)
-					        | ((ptr[4] != L'0') << 4);
-				break;
-			case 0x7770: wrapType_  = GetInt(ptr); break;   // wp: wrap type
-			case 0x7777: wrapWidth_ = GetInt(ptr); break;   // ww: wrap width
-			case 0x7773: wrapSmart_ = (0 != GetInt(ptr)); break; // ws: wrap smart
-			case 0x6C6E: showLN_    = (0 != GetInt(ptr)); break; // ln: line number
-			}
-		}
-		if(!clfound)
-			colors_[6] = colors_[0];
-		if(readFontName[0] != TEXT('\0') && readFontSize > 0)
-		{
-			// Font name+size found in file: apply them along with weight/flags.
-			// Reset weight/flags to defaults if not explicitly set in the file,
-			// so the default font's style does not bleed into the saved lay file.
-			my_lstrcpys(fontName_, LF_FACESIZE, readFontName);
-			fontSize_   = readFontSize;
-			fontWeight_ = fwFound ? readFontWeight : FW_DONTCARE;
-			fontFlags_  = ffFound ? readFontFlags  : 0;
-		}
-		else
-		{
-			// No font in file: apply only explicitly-specified weight/flags.
-			if(fwFound) fontWeight_ = readFontWeight;
-			if(ffFound) fontFlags_  = readFontFlags;
-		}
+		for( int i = 0; i < 7; i++ ) colors_[i] = ld.colors[i];
+		my_lstrcpys( fontName_, LF_FACESIZE, ld.fontName );
+		fontSize_   = ld.fontSize;
+		fontWeight_ = ld.fontWeight;
+		fontFlags_  = ld.fontFlags;
+		fontCS_     = ld.fontCS;
+		fontQual_   = ld.fontQual;
+		fontXWidth_ = ld.fontXWidth;
+		tabSize_    = ld.tabSize;
+		scBits_     = ld.scBits;
+		wrapType_   = ld.wrapType;
+		wrapWidth_  = ld.wrapWidth;
+		wrapSmart_  = ld.wrapSmart;
+		showLN_     = ld.showLN;
 	}
 
 	bool SaveToFile()
@@ -334,33 +457,24 @@ private:
 		ki::Path full = (ki::Path(ki::Path::Exe) += TEXT("type\\"));
 		full += layFileName_.c_str();
 
-		unicode buf[1024];
-		unicode* p = buf;
+		LayData ld;
+		for( int i = 0; i < 7; i++ ) ld.colors[i] = colors_[i];
+		my_lstrcpys( ld.fontName, LF_FACESIZE, fontName_ );
+		ld.fontSize   = fontSize_;
+		ld.fontWeight = fontWeight_;
+		ld.fontFlags  = fontFlags_;
+		ld.fontCS     = fontCS_;
+		ld.fontQual   = fontQual_;
+		ld.fontXWidth = fontXWidth_;
+		ld.tabSize    = tabSize_;
+		ld.scBits     = scBits_;
+		ld.wrapType   = wrapType_;
+		ld.wrapWidth  = wrapWidth_;
+		ld.wrapSmart  = wrapSmart_;
+		ld.showLN     = showLN_;
 
-		p += wsprintf(p, L"ct=%02X%02X%02X\n", GetRValue(colors_[0]), GetGValue(colors_[0]), GetBValue(colors_[0]));
-		p += wsprintf(p, L"ck=%02X%02X%02X\n", GetRValue(colors_[1]), GetGValue(colors_[1]), GetBValue(colors_[1]));
-		p += wsprintf(p, L"cb=%02X%02X%02X\n", GetRValue(colors_[2]), GetGValue(colors_[2]), GetBValue(colors_[2]));
-		p += wsprintf(p, L"cr=%02X%02X%02X\n", GetRValue(colors_[3]), GetGValue(colors_[3]), GetBValue(colors_[3]));
-		p += wsprintf(p, L"cc=%02X%02X%02X\n", GetRValue(colors_[4]), GetGValue(colors_[4]), GetBValue(colors_[4]));
-		p += wsprintf(p, L"cn=%02X%02X%02X\n", GetRValue(colors_[5]), GetGValue(colors_[5]), GetBValue(colors_[5]));
-		p += wsprintf(p, L"cl=%02X%02X%02X\n", GetRValue(colors_[6]), GetGValue(colors_[6]), GetBValue(colors_[6]));
-		p += wsprintf(p, L"ft=%s\n",  fontName_);
-		p += wsprintf(p, L"sz=%d\n",  fontSize_);
-		if(fontWeight_ != FW_DONTCARE)
-			p += wsprintf(p, L"fw=%ld\n", fontWeight_);
-		if(fontFlags_ != 0)
-			p += wsprintf(p, L"ff=%d\n",  (int)fontFlags_);
-		p += wsprintf(p, L"tb=%d\n",  tabSize_);
-		p += wsprintf(p, L"sc=%c%c%c%c%c\n",
-			(scBits_ & 1)  ? L'1' : L'0',
-			(scBits_ & 2)  ? L'1' : L'0',
-			(scBits_ & 4)  ? L'1' : L'0',
-			(scBits_ & 8)  ? L'1' : L'0',
-			(scBits_ & 16) ? L'1' : L'0');
-		p += wsprintf(p, L"wp=%d\n",  wrapType_);
-		p += wsprintf(p, L"ww=%d\n",  wrapWidth_);
-		p += wsprintf(p, L"ws=%d\n",  wrapSmart_ ? 1 : 0);
-		p += wsprintf(p, L"ln=%d\n",  showLN_    ? 1 : 0);
+		unicode buf[1024];
+		size_t len = ConfigManager::WriteLayBuf( buf, ld );
 
 		HANDLE h = ::CreateFile(full.c_str(), GENERIC_WRITE, 0, NULL,
 			CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -369,7 +483,7 @@ private:
 		DWORD written;
 		static const unicode kBOM = 0xFEFF;
 		::WriteFile(h, &kBOM, sizeof(unicode), &written, NULL);
-		::WriteFile(h, buf, (DWORD)((p - buf) * sizeof(unicode)), &written, NULL);
+		::WriteFile(h, buf, (DWORD)(len * sizeof(unicode)), &written, NULL);
 		::CloseHandle(h);
 		return true;
 	}
@@ -381,24 +495,21 @@ public:
 		, fontSize_(cfg.defaultFontSize_)
 		, fontWeight_(cfg.defaultFontWeight_)
 		, fontFlags_(cfg.defaultFontFlags_)
-		, tabSize_(4)
-		, scBits_(0x07)
-		, wrapType_(-1)
-		, wrapWidth_(80)
-		, wrapSmart_(true)
-		, showLN_(true)
+		, fontCS_(cfg.defaultFontCS_)
 	{
-		// Use same color defaults as LoadLayout's built-in defaults
-		COLORREF bgcol = ::GetSysColor(COLOR_WINDOW);
-		bool bright = COLBRIGHTNESS(bgcol) > 128;
-		colors_[0] = ::GetSysColor(COLOR_WINDOWTEXT);                       // TXT
-		colors_[1] = bright ? RGB(  0,  0,128) : RGB(128,255,255);          // KWD
-		colors_[2] = bgcol;                                                  // BG
-		colors_[3] = DefaultReadOnlyBgColor();                               // RO
-		colors_[4] = bright ? RGB(  0,128,  0) : RGB(255,255,128);          // CMT
-		colors_[5] = bright ? RGB(192,160,192) : RGB( 80, 64, 80);          // CTL
-		colors_[6] = ::GetSysColor(COLOR_WINDOWTEXT);                       // LN
+		// Initialise layout/colour fields from the single source of truth.
+		LayData ld;
+		ld.SetDefaults();
+		for( int i = 0; i < 7; i++ ) colors_[i] = ld.colors[i];
 		my_lstrcpys(fontName_, LF_FACESIZE, cfg.defaultFontName_);
+		fontQual_   = ld.fontQual;
+		fontXWidth_ = ld.fontXWidth;
+		tabSize_    = ld.tabSize;
+		scBits_     = ld.scBits;
+		wrapType_   = ld.wrapType;
+		wrapWidth_  = ld.wrapWidth;
+		wrapSmart_  = ld.wrapSmart;
+		showLN_     = ld.showLN;
 
 		unicode dataBuf[512];
 		size_t len = ConfigManager::GetLayData(layfile, dataBuf, countof(dataBuf));
@@ -825,42 +936,18 @@ private:
 		// For .lay files, write default content
 		else if( lstrcmpi(defExt, TEXT("lay")) == 0 )
 		{
-			COLORREF bgcol = ::GetSysColor(COLOR_WINDOW);
-			bool bright = COLBRIGHTNESS(bgcol) > 128;
-			COLORREF ct = ::GetSysColor(COLOR_WINDOWTEXT);
-			COLORREF ck = bright ? RGB(  0,  0,128) : RGB(128,255,255);
-			COLORREF cb = bgcol;
-			COLORREF cr = DefaultReadOnlyBgColor();
-			COLORREF cc = bright ? RGB(  0,128,  0) : RGB(255,255,128);
-			COLORREF cn = bright ? RGB(192,160,192) : RGB( 80, 64, 80);
-			COLORREF cl = ::GetSysColor(COLOR_WINDOWTEXT);
-
+			LayData ld;
+			ld.SetDefaults();
+			my_lstrcpys( ld.fontName, LF_FACESIZE, cfg_.defaultFontName_ );
+			ld.fontSize   = cfg_.defaultFontSize_;
+			ld.fontWeight = cfg_.defaultFontWeight_;
+			ld.fontFlags  = cfg_.defaultFontFlags_;
 			unicode buf[1024];
-			unicode* p = buf;
-			p += wsprintf(p, L"ct=%02X%02X%02X\n", GetRValue(ct), GetGValue(ct), GetBValue(ct));
-			p += wsprintf(p, L"ck=%02X%02X%02X\n", GetRValue(ck), GetGValue(ck), GetBValue(ck));
-			p += wsprintf(p, L"cb=%02X%02X%02X\n", GetRValue(cb), GetGValue(cb), GetBValue(cb));
-			p += wsprintf(p, L"cr=%02X%02X%02X\n", GetRValue(cr), GetGValue(cr), GetBValue(cr));
-			p += wsprintf(p, L"cc=%02X%02X%02X\n", GetRValue(cc), GetGValue(cc), GetBValue(cc));
-			p += wsprintf(p, L"cn=%02X%02X%02X\n", GetRValue(cn), GetGValue(cn), GetBValue(cn));
-			p += wsprintf(p, L"cl=%02X%02X%02X\n", GetRValue(cl), GetGValue(cl), GetBValue(cl));
-			p += wsprintf(p, L"ft=%s\n",  cfg_.defaultFontName_);
-			p += wsprintf(p, L"sz=%d\n",  cfg_.defaultFontSize_);
-			if( cfg_.defaultFontWeight_ != FW_DONTCARE )
-				p += wsprintf(p, L"fw=%ld\n", cfg_.defaultFontWeight_);
-			if( cfg_.defaultFontFlags_ != 0 )
-				p += wsprintf(p, L"ff=%d\n",  (int)cfg_.defaultFontFlags_);
-			p += wsprintf(p, L"tb=%d\n",  4);
-			p += wsprintf(p, L"sc=11100\n");  // EOF, NL, TAB visible
-			p += wsprintf(p, L"wp=%d\n",  -1);
-			p += wsprintf(p, L"ww=%d\n",  80);
-			p += wsprintf(p, L"ws=%d\n",  1);
-			p += wsprintf(p, L"ln=%d\n",  1);
-
+			size_t len = ConfigManager::WriteLayBuf( buf, ld );
 			DWORD written;
 			static const unicode kBOM = 0xFEFF;
 			::WriteFile(h, &kBOM, sizeof(unicode), &written, NULL);
-			::WriteFile(h, buf, (DWORD)((p - buf) * sizeof(unicode)), &written, NULL);
+			::WriteFile(h, buf, (DWORD)(len * sizeof(unicode)), &written, NULL);
 		}
 		::CloseHandle(h);
 
@@ -1038,26 +1125,23 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 	else
 	{
 		// Load built-in default settings
-		COLORREF bgcol = ::GetSysColor(COLOR_WINDOW); // RGB(255,255,255);
-		bool brightmode = COLBRIGHTNESS(bgcol) > 128;
-		dt->vc.SetTabStep( 4 );
-		dt->vc.color[TXT] =
-		dt->vc.color[LN]  = ::GetSysColor(COLOR_WINDOWTEXT); // RGB(0,0,0);
-		dt->vc.color[CMT] = brightmode? RGB(0,128,0): RGB(255,255,128);
-		dt->vc.color[KWD] = brightmode? RGB(0,0,128): RGB(128,255,255);
-		dt->vc.color[BG]  = bgcol;
-		dt->vc.color[CTL] = brightmode? RGB(192,160,192) : RGB(80,64,80);
-		dt->readOnlyBgColor = DefaultReadOnlyBgColor();
-
-		// EOF=0, EOL=1, TAB=2, HSP=3, ZSP=4
-		dt->vc.sc = 027 ; //010 111 b
-
-		dt->wrapWidth  = 80;
-		dt->wrapType   = -1;
-		dt->wrapSmart  = true;
-		dt->showLN     = true;
+		LayData ld;
+		ld.SetDefaults();
+		dt->vc.color[TXT] = ld.colors[0];
+		dt->vc.color[KWD] = ld.colors[1];
+		dt->vc.color[BG]  = ld.colors[2];
+		dt->readOnlyBgColor = ld.colors[3];
+		dt->vc.color[CMT] = ld.colors[4];
+		dt->vc.color[CTL] = ld.colors[5];
+		dt->vc.color[LN]  = ld.colors[6];
+		dt->vc.SetTabStep( ld.tabSize );
+		dt->vc.sc    = ld.scBits;
+		dt->wrapWidth  = ld.wrapWidth;
+		dt->wrapType   = ld.wrapType;
+		dt->wrapSmart  = ld.wrapSmart;
+		dt->showLN     = ld.showLN;
 		dt->fontCS     = defaultFontCS_;
-		dt->fontQual   = DEFAULT_QUALITY;
+		dt->fontQual   = ld.fontQual;
 
 		dt->vc.SetFont( defaultFontName_, defaultFontSize_, dt->fontCS,
 		                defaultFontWeight_, defaultFontFlags_ );
@@ -1065,130 +1149,57 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 	dt->loaded     = true;
 
   // 2. Loading from *.lay files
-	// MessageBox(NULL, dt->layfile.c_str(), TEXT("Loading"), 0);
 	unicode buf[512];
-	size_t len = GetLayData(dt->layfile.c_str(), buf, countof(buf));
+	size_t len = GetLayData( dt->layfile.c_str(), buf, countof(buf) );
 
-	// Rad buffer
 	if( len )
 	{
-		TCHAR  fontname[LF_FACESIZE] = {};
-		int    fontsize    = dt->vc.fontsize;
-		int    fontxwidth  = dt->vc.fontwidth;
-		LONG   fontweight  = dt->vc.font.lfWeight;
-		BYTE   fontflags   = (BYTE)( (dt->vc.font.lfItalic    ? 1 : 0)
-		                           | (dt->vc.font.lfUnderline  ? 2 : 0)
-		                           | (dt->vc.font.lfStrikeOut  ? 4 : 0) );
-		bool   fwFound = false, ffFound = false;
-		bool   clfound = false;
-		dt->fontCS = DEFAULT_CHARSET;
+		// Initialise LayData from the step-1 result stored in dt.
+		LayData ld;
+		ld.colors[0] = dt->vc.color[TXT];
+		ld.colors[1] = dt->vc.color[KWD];
+		ld.colors[2] = dt->vc.color[BG];
+		ld.colors[3] = dt->readOnlyBgColor;
+		ld.colors[4] = dt->vc.color[CMT];
+		ld.colors[5] = dt->vc.color[CTL];
+		ld.colors[6] = dt->vc.color[LN];
+		ld.fontName[0] = TEXT('\0');           // empty: set by ParseLayBuf only if ft= found
+		ld.fontSize   = dt->vc.fontsize;
+		ld.fontXWidth = dt->vc.fontwidth;
+		ld.fontWeight = dt->vc.font.lfWeight;
+		ld.fontFlags  = (BYTE)( (dt->vc.font.lfItalic   ? 1 : 0)
+		                      | (dt->vc.font.lfUnderline ? 2 : 0)
+		                      | (dt->vc.font.lfStrikeOut ? 4 : 0) );
+		ld.fontCS   = DEFAULT_CHARSET;         // reset, as per original logic
+		ld.fontQual = dt->fontQual;
+		ld.tabSize  = dt->vc.tabstep;
+		ld.scBits   = dt->vc.sc;
+		ld.wrapType  = dt->wrapType;
+		ld.wrapWidth = dt->wrapWidth;
+		ld.wrapSmart = dt->wrapSmart;
+		ld.showLN   = dt->showLN;
 
-		// Read the whole file at once.
-		unicode *nptr=buf,*ptr;
-		for( ptr=buf; ptr<buf+len; ptr=nptr ) // !EOF
-		{
-			// Get to next line
-			while( *nptr != L'\0' && *nptr != L'\r' && *nptr != L'\n' && *nptr != L'|' )
-				nptr++;
-			if( nptr < buf+len )
-			{
-				*nptr++ = L'\0'; // zero out endline.
-				nptr += *(nptr) == L'\n'; // Skip eventual \n
-			}
-			if( nptr-ptr < 3 || ptr[0] == L';' || ptr[2] != L'=' )
-				continue;
+		ParseLayBuf( buf, len, ld );
 
-			unicode XXoption = (ptr[0]<<8) | ptr[1];
-			ptr += 3; // go just after the = sign
-
-			switch( XXoption ) // ASCII only
-			{
-			case 0x6374: // ct: COLOR-TEXT
-				dt->vc.color[TXT] = GetColor(ptr);
-				break;
-			case 0x636B: // ck: COLOR-KEYWORD
-				dt->vc.color[KWD] = GetColor(ptr);
-				break;
-			case 0x6362: // cb: COLOR-BACKGROUND
-				dt->vc.color[BG ] = GetColor(ptr);
-				break;
-			case 0x6372: // cr: COLOR-READONLY-BACKGROUND
-				dt->readOnlyBgColor = GetColor(ptr);
-				break;
-			case 0x6363: // cc: COLOR-COMMENT
-				dt->vc.color[CMT] = GetColor(ptr);
-				break;
-			case 0x636E: // cn: COLOR-CONTROL
-				dt->vc.color[CTL] = GetColor(ptr);
-				break;
-			case 0x636C: // cl: COLOR-LINE
-				clfound = true;
-				dt->vc.color[LN] = GetColor(ptr);
-				break;
-			case 0x6666: // ff: FONT FLAGS
-				fontflags = GetInt(ptr);
-				ffFound = true;
-				break;
-			case 0x6674: // ft: FONT
-				#ifdef UNICODE
-				my_lstrcpysW( fontname, countof(fontname), ptr );
-				#else
-				WideCharToMultiByte(CP_ACP, 0, ptr, -1, fontname, countof(fontname), NULL, NULL);
-				#endif
-				break;
-			case 0x6677: // fw: FONT WEIGHT
-				fontweight = GetInt(ptr);
-				fwFound = true;
-				break;
-			case 0x6678: // fw: FONT X Width
-				fontxwidth = GetInt(ptr);
-				break;
-			case 0x737A: // sz: SIZE
-				fontsize = GetInt(ptr);
-				break;
-			case 0x6373: // cs: FONT-CHAR-SET
-				dt->fontCS = GetInt(ptr);
-				break;
-			case 0x7462: // tb: TAB
-				dt->vc.SetTabStep( GetInt(ptr) );
-				break;
-			case 0x7363: // sc: SPECIAL-CHAR
-				if( ptr + 4 < buf+len )
-					dt->vc.sc = ( (ptr[0] != L'0') << 0 )
-					          | ( (ptr[1] != L'0') << 1 )
-					          | ( (ptr[2] != L'0') << 2 )
-					          | ( (ptr[3] != L'0') << 3 )
-					          | ( (ptr[4] != L'0') << 4 );
-				break;
-			case 0x7770: // wp: WRAP-TYPE
-				dt->wrapType = GetInt(ptr);
-				break;
-			case 0x7777: // ww: WRAP-WIDTH
-				dt->wrapWidth = GetInt(ptr);
-				break;
-			case 0x7773: // ws WRAP-SMART
-				dt->wrapSmart = (0!=GetInt(ptr));
-				break;
-			case 0x6C6E: // ln: LINE-NO
-				dt->showLN = (0!=GetInt(ptr));
-				break;
-			case 0x6671: // fq: Font Quality
-				dt->fontQual = GetInt(ptr);
-				break;
-			}
-		}
-
-		if( !clfound )
-			dt->vc.color[LN] = dt->vc.color[TXT];
-		if( fontname[0]!=TEXT('\0') && fontsize!=0 )
-		{
-			// Font name+size found: reset weight/flags to defaults if not
-			// explicitly set, so the inherited font's style does not bleed in.
-			if( !fwFound ) fontweight = FW_DONTCARE;
-			if( !ffFound ) fontflags  = 0;
-			dt->vc.SetFont( fontname, fontsize, dt->fontCS
-						, fontweight, fontflags, fontxwidth, dt->fontQual );
-		}
+		// Apply results back to dt.
+		dt->vc.color[TXT] = ld.colors[0];
+		dt->vc.color[KWD] = ld.colors[1];
+		dt->vc.color[BG]  = ld.colors[2];
+		dt->readOnlyBgColor = ld.colors[3];
+		dt->vc.color[CMT] = ld.colors[4];
+		dt->vc.color[CTL] = ld.colors[5];
+		dt->vc.color[LN]  = ld.colors[6];
+		dt->fontCS   = ld.fontCS;
+		dt->fontQual = ld.fontQual;
+		dt->vc.SetTabStep( ld.tabSize );
+		dt->vc.sc    = ld.scBits;
+		dt->wrapType  = ld.wrapType;
+		dt->wrapWidth = ld.wrapWidth;
+		dt->wrapSmart = ld.wrapSmart;
+		dt->showLN   = ld.showLN;
+		if( ld.fontName[0] != TEXT('\0') && ld.fontSize > 0 )
+			dt->vc.SetFont( ld.fontName, ld.fontSize, ld.fontCS,
+			                ld.fontWeight, ld.fontFlags, ld.fontXWidth, ld.fontQual );
 	}
 }
 
@@ -1250,87 +1261,32 @@ size_t ConfigManager::GetLayData(const TCHAR *name, unicode *buf, size_t buf_len
 static const TCHAR s_sharedConfigSection[] = TEXT("SharedConfig");
 
 void ConfigManager::SaveFontToLayFile( const TCHAR* layfile, const TCHAR* fontName,
-                                       short fontSize, LONG fontWeight, BYTE fontFlags )
+                                       short fontSize, LONG fontWeight, BYTE fontFlags,
+                                       uchar fontCS, int fontQual )
 {
 	if( !layfile || !layfile[0] ) return;
 
-	// --- Read current lay file settings as starting values ---
-	COLORREF bgcol = ::GetSysColor(COLOR_WINDOW);
-	bool bright = COLBRIGHTNESS(bgcol) > 128;
-	COLORREF colors[7] = {
-		::GetSysColor(COLOR_WINDOWTEXT),
-		bright ? RGB(0,0,128)    : RGB(128,255,255),
-		bgcol,
-		DefaultReadOnlyBgColor(),
-		bright ? RGB(0,128,0)    : RGB(255,255,128),
-		bright ? RGB(192,160,192): RGB(80,64,80),
-		::GetSysColor(COLOR_WINDOWTEXT)
-	};
-	int tabSize = 4, scBits = 0x07, wrapType = -1, wrapWidth = 80;
-	bool wrapSmart = true, showLN = true;
+	// --- Read current lay file settings, then override font with new values ---
+	LayData ld;
+	ld.SetDefaults();
 
 	unicode buf[512];
-	size_t len = GetLayData(layfile, buf, countof(buf));
-	if( len )
-	{
-		unicode *nptr = buf;
-		for( unicode *ptr = buf; ptr < buf+len; ptr = nptr )
-		{
-			while( *nptr != L'\0' && *nptr != L'\r' && *nptr != L'\n' && *nptr != L'|' )
-				nptr++;
-			if( nptr < buf+len ) { *nptr++ = L'\0'; nptr += (*nptr == L'\n'); }
-			if( nptr-ptr < 3 || ptr[0] == L';' || ptr[2] != L'=' ) continue;
+	size_t len = GetLayData( layfile, buf, countof(buf) );
+	if( len ) ParseLayBuf( buf, len, ld );
 
-			unicode key = (unicode)((ptr[0]<<8) | ptr[1]);
-			ptr += 3;
-			switch(key)
-			{
-			case 0x6374: colors[0] = GetColor(ptr); break;
-			case 0x636B: colors[1] = GetColor(ptr); break;
-			case 0x6362: colors[2] = GetColor(ptr); break;
-			case 0x6372: colors[3] = GetColor(ptr); break;
-			case 0x6363: colors[4] = GetColor(ptr); break;
-			case 0x636E: colors[5] = GetColor(ptr); break;
-			case 0x636C: colors[6] = GetColor(ptr); break;
-			case 0x7462: tabSize   = GetInt(ptr);   break;
-			case 0x7363:
-				if( ptr+4 < buf+len )
-					scBits = ((ptr[0]!=L'0')<<0)|((ptr[1]!=L'0')<<1)|((ptr[2]!=L'0')<<2)
-					       | ((ptr[3]!=L'0')<<3)|((ptr[4]!=L'0')<<4);
-				break;
-			case 0x7770: wrapType  = GetInt(ptr);         break;
-			case 0x7777: wrapWidth = GetInt(ptr);         break;
-			case 0x7773: wrapSmart = (0!=GetInt(ptr));    break;
-			case 0x6C6E: showLN    = (0!=GetInt(ptr));    break;
-			// ft/sz/fw/ff: skipped — overwritten below
-			}
-		}
-	}
+	// Override font fields with the values supplied by the caller.
+	// fx= (fontXWidth) is intentionally kept as read from file.
+	my_lstrcpys( ld.fontName, LF_FACESIZE, fontName );
+	ld.fontSize   = fontSize;
+	ld.fontWeight = fontWeight;
+	ld.fontFlags  = fontFlags;
+	ld.fontCS     = fontCS;
+	ld.fontQual   = fontQual;
 
-	// --- Write back with updated font ---
+	// --- Write back ---
 	ki::Path full = (ki::Path(ki::Path::Exe) += TEXT("type\\")) += layfile;
-	unicode out[1024], *p = out;
-	p += wsprintf(p, L"ct=%02X%02X%02X\n", GetRValue(colors[0]),GetGValue(colors[0]),GetBValue(colors[0]));
-	p += wsprintf(p, L"ck=%02X%02X%02X\n", GetRValue(colors[1]),GetGValue(colors[1]),GetBValue(colors[1]));
-	p += wsprintf(p, L"cb=%02X%02X%02X\n", GetRValue(colors[2]),GetGValue(colors[2]),GetBValue(colors[2]));
-	p += wsprintf(p, L"cr=%02X%02X%02X\n", GetRValue(colors[3]),GetGValue(colors[3]),GetBValue(colors[3]));
-	p += wsprintf(p, L"cc=%02X%02X%02X\n", GetRValue(colors[4]),GetGValue(colors[4]),GetBValue(colors[4]));
-	p += wsprintf(p, L"cn=%02X%02X%02X\n", GetRValue(colors[5]),GetGValue(colors[5]),GetBValue(colors[5]));
-	p += wsprintf(p, L"cl=%02X%02X%02X\n", GetRValue(colors[6]),GetGValue(colors[6]),GetBValue(colors[6]));
-	p += wsprintf(p, L"ft=%s\n",  fontName);
-	p += wsprintf(p, L"sz=%d\n",  fontSize);
-	if( fontWeight != FW_DONTCARE )
-		p += wsprintf(p, L"fw=%ld\n", fontWeight);
-	if( fontFlags != 0 )
-		p += wsprintf(p, L"ff=%d\n",  (int)fontFlags);
-	p += wsprintf(p, L"tb=%d\n",  tabSize);
-	p += wsprintf(p, L"sc=%c%c%c%c%c\n",
-		(scBits&1)?L'1':L'0', (scBits&2)?L'1':L'0', (scBits&4)?L'1':L'0',
-		(scBits&8)?L'1':L'0', (scBits&16)?L'1':L'0');
-	p += wsprintf(p, L"wp=%d\n",  wrapType);
-	p += wsprintf(p, L"ww=%d\n",  wrapWidth);
-	p += wsprintf(p, L"ws=%d\n",  wrapSmart ? 1 : 0);
-	p += wsprintf(p, L"ln=%d\n",  showLN    ? 1 : 0);
+	unicode out[1024];
+	size_t outlen = WriteLayBuf( out, ld );
 
 	HANDLE h = ::CreateFile(full.c_str(), GENERIC_WRITE, 0, NULL,
 		CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -1338,7 +1294,7 @@ void ConfigManager::SaveFontToLayFile( const TCHAR* layfile, const TCHAR* fontNa
 	DWORD written;
 	static const unicode kBOM = 0xFEFF;
 	::WriteFile(h, &kBOM, sizeof(unicode), &written, NULL);
-	::WriteFile(h, out, (DWORD)((p-out)*sizeof(unicode)), &written, NULL);
+	::WriteFile(h, out, (DWORD)(outlen*sizeof(unicode)), &written, NULL);
 	::CloseHandle(h);
 }
 
@@ -1357,7 +1313,7 @@ void ConfigManager::SetTempFont( const TCHAR* name, short size, uchar charset,
 	// Persist font to the current layout file
 	const TCHAR* layfile = curDt_->layfile.len() > 0
 	                       ? curDt_->layfile.c_str() : TEXT("default.lay");
-	SaveFontToLayFile( layfile, name, size, weight, flags );
+	SaveFontToLayFile( layfile, name, size, weight, flags, charset, quality );
 }
 
 void ConfigManager::LoadIni()
