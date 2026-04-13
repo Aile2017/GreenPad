@@ -274,6 +274,9 @@ private:
 	void LoadLayout( DocType* dt ) A_COLD;
 	bool MatchDocType( const unicode* fname, const unicode* pat );
 
+	// EOL symbols (hidden ini parameters: EolSymCR/EolSymLF/EolSymCRLF)
+	unicode eolSym_[3];
+
 	// Default font (runtime-only fallback; not persisted to ini)
 	TCHAR defaultFontName_[LF_FACESIZE];
 	short defaultFontSize_;

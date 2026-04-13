@@ -157,6 +157,9 @@ public:
 	//@{ Whether to draw special characters or not //@}
 	bool sc( int i ) const { return 0 != (scDraw_ & (1u << i)); }
 
+	//@{ EOL symbol character for line-break type 0=CR 1=LF 2=CRLF //@}
+	unicode eolSym( int i ) const { return eolSym_[i]; }
+
 private:
 
 	const HWND   hwnd_;// Window in which we paint
@@ -175,6 +178,7 @@ private:
 	GLYPHSET     *fontranges_;
 	COLORREF     colorTable_[7];
 	byte         scDraw_;
+	unicode      eolSym_[3];  // [0]=CR [1]=LF [2]=CRLF
 
 private:
 

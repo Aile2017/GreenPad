@@ -27,6 +27,9 @@ ConfigManager::ConfigManager()
 	defaultFontFlags_  = 0;
 	defaultFontCS_     = DEFAULT_CHARSET;
 
+	// Initialize EOL symbols to default (overridden by ini in LoadIni)
+	eolSym_[0] = eolSym_[1] = eolSym_[2] = L'\x2193'; // ↓
+
 	// Read the default layout settings before anything else.
 	DocType d;
 	d.name    = RzsString(IDS_DEFAULT).c_str();
@@ -1201,6 +1204,11 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 			dt->vc.SetFont( ld.fontName, ld.fontSize, ld.fontCS,
 			                ld.fontWeight, ld.fontFlags, ld.fontXWidth, ld.fontQual );
 	}
+
+	// Apply global EOL symbol settings (from INI or built-in defaults)
+	dt->vc.eolSym[0] = eolSym_[0];
+	dt->vc.eolSym[1] = eolSym_[1];
+	dt->vc.eolSym[2] = eolSym_[2];
 }
 
 // Try to open a file in the type\ folder and fallback to
@@ -1376,6 +1384,46 @@ void ConfigManager::LoadIni()
 		newfileCharset_ = ::GetACP();
 	newfileDoctype_ = ini_.GetStr( TEXT("NewfileDoctype"), RzsString( IDS_DEFAULT ).c_str() );
 	newfileLB_      = (lbcode) ini_.GetInt( TEXT("NewfileLB"), CRLF );
+
+	// EOL symbols (hidden ini parameters; default U+2193 ↓ for all)
+	// Values are specified as "U+XXXX" (1-4 hex digits), e.g. EolSymLF=U+2193
+	{
+		static const TCHAR* kKeys[3] = {
+			TEXT("EolSymCR"), TEXT("EolSymLF"), TEXT("EolSymCRLF")
+		};
+		for( int i = 0; i < 3; ++i )
+		{
+			ki::String s = ini_.GetStr( kKeys[i], TEXT("") );
+			unicode ch = L'\x2193'; // default: ↓
+			const TCHAR* p = s.c_str();
+			if( (p[0]==L'U'||p[0]==L'u') && p[1]==L'+' )
+			{
+				p += 2;
+				unsigned val = 0; int nd = 0;
+				for( ; nd < 4 && *p; ++nd, ++p )
+				{
+					TCHAR c = *p;
+					if     ( c>=L'0' && c<=L'9' ) val = val*16 + (c-L'0');
+					else if( c>=L'A' && c<=L'F' ) val = val*16 + (c-L'A'+10);
+					else if( c>=L'a' && c<=L'f' ) val = val*16 + (c-L'a'+10);
+					else { nd = 0; break; } // invalid digit → ignore
+				}
+				if( nd > 0 ) ch = (unicode)val;
+			}
+			eolSym_[i] = ch;
+		}
+	}
+	// The default doctype was loaded before LoadIni() updated eolSym_,
+	// so sync eolSym_ into it now.
+	{
+		DtList::iterator def = dtList_.begin();
+		if( def != dtList_.end() && def->loaded )
+		{
+			def->vc.eolSym[0] = eolSym_[0];
+			def->vc.eolSym[1] = eolSym_[1];
+			def->vc.eolSym[2] = eolSym_[2];
+		}
+	}
 
 	// Clear all numbers other than 0 in the document type list
 	dtList_.DelAfter( ++dtList_.begin() );

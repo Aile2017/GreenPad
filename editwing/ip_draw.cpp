@@ -336,6 +336,11 @@ void Painter::Init( const VConfig& vc )
 	// Whether to draw control characters or not? flag is stored.
 	scDraw_ = vc.sc;
 
+	// Memorize EOL symbols
+	eolSym_[0] = vc.eolSym[0];
+	eolSym_[1] = vc.eolSym[1];
+	eolSym_[2] = vc.eolSym[2];
+
 	// Memorize text color
 	for( unsigned i=0; i<countof(colorTable_); ++i )
 		colorTable_[i] = vc.color[i];
@@ -884,12 +889,9 @@ void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 		{
 			{
 				// EOL symbol depends on line break type: 0=CR 1=LF 2=CRLF
-				static const unicode eolSymTbl[3][2] = {
-					{ L'\xFFE9', L'\0' }, // CR
-					{ L'\xFFEC', L'\0' }, // LF
-					{ L'\x21B2', L'\0' }, // CRLF
-				};
-				const unicode* eolSym = eolSymTbl[ lbType_ < 3 ? lbType_ : 2 ];
+				// Characters come from VConfig::eolSym (configurable via INI).
+				unicode eolCh = p.eolSym( lbType_ < 3 ? lbType_ : 2 );
+				const unicode eolSym[2] = { eolCh, L'\0' };
 				p.W( eolSym ); // ensure widthTable_ entry is initialized
 				if( p.sc(sc) )
 				{
@@ -900,7 +902,7 @@ void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 						p.StringOut( eolSym, 1, x+v.XBASE, a.top-H );
 				}
 				if( v.SYB<a.top && a.top<=v.SYE && sc==scEOL )
-					Inv( a.top-H, x+v.XBASE, x+v.XBASE+p.Wc(*eolSym), p );
+					Inv( a.top-H, x+v.XBASE, x+v.XBASE+p.Wc(eolCh), p );
 			}
 		}
 	}

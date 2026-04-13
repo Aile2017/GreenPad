@@ -151,6 +151,9 @@ struct VConfig
 	//@{Special character display //@}
 	byte sc;
 
+	//@{ EOL symbols for CR/LF/CRLF (indices 0/1/2) //@}
+	unicode eolSym[3];
+
 	//@{ Dangerous default constructor //@}
 	VConfig() {}
 
@@ -166,6 +169,7 @@ struct VConfig
 		color[ BG] = RGB(255,255,255);
 		color[ LN] = RGB(0,0,0);//255,255,0);
 		sc = 0;
+		eolSym[0] = eolSym[1] = eolSym[2] = L'\x2193'; // ↓
 	}
 
 	//@{ Font related settings //@}
