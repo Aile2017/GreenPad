@@ -222,7 +222,7 @@ BEGIN
         MENUITEM "&Jump to Line\tCtrl+J",       ID_CMD_JUMP
         MENUITEM SEPARATOR
         MENUITEM "&Grep...\tCtrl+G",            ID_CMD_GREP
-        MENUITEM "&Open Selection...\tF7",      ID_CMD_OPENSELECTION
+        MENUITEM "&Tag Jump\tF7",               ID_CMD_OPENSELECTION
     END
     POPUP "&View"
     BEGIN

@@ -257,7 +257,7 @@ Reverse line order using `tac` (tail-to-head):
 set PATH=c:\usr\msys2\usr\bin;%PATH% & tac
 ```
 
-### Implementation Notes (not yet started)
+### Implementation Notes
 
 - Dialog: a single-line input dialog using the existing `DlgImpl` base class.
 - Use `CreateProcess` with anonymous pipes connected to stdin/stdout/stderr.

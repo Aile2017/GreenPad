@@ -1020,7 +1020,7 @@ void GreenPadWnd::on_initmenu( HMENU menu, bool editmenu_only )
 	// ::EnableMenuItem( menu, ID_CMD_REOPENFILE, MF_BYCOMMAND|(!isUntitled() ? MF_ENABLED : MF_GRAYED) );
 	::EnableMenuItem( menu, ID_CMD_OPENELEVATED, MF_BYCOMMAND|MF_ENABLED );
 	::EnableMenuItem( menu, ID_CMD_GREP, MF_BYCOMMAND|(cfg_.grepExe().len()>0 ? MF_ENABLED : MF_GRAYED) );
-	::EnableMenuItem( menu, ID_CMD_OPENSELECTION, gray_when_unselected );
+	::EnableMenuItem( menu, ID_CMD_OPENSELECTION, MF_BYCOMMAND|MF_ENABLED );
 	::EnableMenuItem( menu, ID_CMD_DATETIME, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
 	::EnableMenuItem( menu, ID_CMD_INSERTUNI, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
 
@@ -1117,38 +1117,98 @@ void GreenPadWnd::on_jump()
 
 void GreenPadWnd::on_openselection()
 {
-#define isAbsolutePath(x) ( x[0] == L'\\' || (x[0] && x[1] == L':') )
-	String cmd = TEXT("-c0 \"");
-	aarr<unicode> sel = edit_.getCursor().getSelectedStr();
-	// Remove trailing CRLFs.
-	size_t slen = my_lstrlenW( sel.get() );
-	while( slen-- && (sel[ slen ] == L'\r' || sel[ slen ] == L'\n') )
-		sel[ slen ] = L'\0';
+#define isAbsolutePath(x) ( (x)[0] == L'\\' || ((x)[0] && (x)[1] == L':') )
+	// Get the current cursor line text (no selection required).
+	const view::VPos *cur, *sel;
+	edit_.getCursor().getCurPosUnordered(&cur, &sel);
+	const unicode* line = edit_.getDoc().tl( cur->tl );
+	if( !line ) return;
 
-	if( my_instringW( sel.get(), L"http://")
-	||  my_instringW( sel.get(), L"https://")
-	||  my_instringW( sel.get(), L"ftp://")
-	||  my_instringW( sel.get(), L"ftps://") )
+	// URL check — scan for http(s):// or ftp(s):// and open with shell.
 	{
-		// We have an URL.
-		cmd = sel.get();
-		ShellExecute(NULL, TEXT("open"), cmd.c_str(), NULL, NULL, SW_SHOWNORMAL);
-		return;
+		static const unicode* kUrlPrefixes[] = {
+			L"https://", L"http://", L"ftps://", L"ftp://", nullptr
+		};
+		const unicode* url_start = nullptr;
+		for( int pi = 0; kUrlPrefixes[pi] && !url_start; ++pi )
+		{
+			size_t plen = my_lstrlenW( kUrlPrefixes[pi] );
+			for( const unicode* p = line; *p; ++p )
+			{
+				if( *p == kUrlPrefixes[pi][0] )
+				{
+					bool match = true;
+					for( size_t k = 1; k < plen && match; ++k )
+						match = (p[k] == kUrlPrefixes[pi][k]);
+					if( match ) { url_start = p; break; }
+				}
+			}
+		}
+		if( url_start )
+		{
+			size_t ulen = 0;
+			while( url_start[ulen] && url_start[ulen] != L' ' && url_start[ulen] != L'\t'
+			    && url_start[ulen] != L'\r' && url_start[ulen] != L'\n' )
+				++ulen;
+			String url;
+			for( size_t i = 0; i < ulen; ++i ) url += url_start[i];
+			ShellExecute(NULL, TEXT("open"), url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+			return;
+		}
 	}
-	if( !isAbsolutePath( sel ) )
+
+	// Tag jump: scan for "file:linenum" (grep) or "file(linenum)" (MSVC).
+	// Drive-letter colons (e.g. C:\) are skipped because the char after ':' is '\', not a digit.
+	const unicode* sep = nullptr;
+	for( const unicode* p = line; *p; ++p )
 	{
-		// We got a relative path, get a directorry for it.
+		if( (*p == L':' || *p == L'(') && p[1] >= L'0' && p[1] <= L'9' )
+		{
+			sep = p;
+			break;
+		}
+	}
+	if( !sep ) return;
+
+	// Extract path (left of separator) and line number (right of separator).
+	// Trim leading whitespace / non-path chars from the left.
+	const unicode* pathStart = line;
+	while( *pathStart == L' ' || *pathStart == L'\t' ) ++pathStart;
+
+	// Copy path.
+	size_t pathLen = (size_t)(sep - pathStart);
+	if( pathLen == 0 ) return;
+	String filepath;
+	for( size_t i = 0; i < pathLen; ++i ) filepath += pathStart[i];
+
+	// Parse line number.
+	const unicode* numPtr = sep + 1;
+	int linenum = 0;
+	while( *numPtr >= L'0' && *numPtr <= L'9' )
+		linenum = linenum * 10 + (*numPtr++ - L'0');
+	if( linenum <= 0 ) return;
+
+	// Close paren for MSVC format — ignore, already past it.
+
+	// Resolve relative path against the current file's directory.
+	String resolvedPath;
+	if( !isAbsolutePath( filepath.c_str() ) )
+	{
 		Path d;
 		if( filename_.len() )
 			(d = filename_).BeDirOnly().BeBackSlash(true);
 		else
 			d = Path(Path::Cur);
-
-		cmd += d;
+		resolvedPath += d.c_str();
 	}
+	resolvedPath += filepath.c_str();
 
-	cmd += sel.get();
-	cmd += TEXT("\""); // -c0 "Path\To\File.ext"
+	// Launch new process: GreenPad.exe -l{linenum} "path"
+	String cmd = TEXT("-l");
+	cmd += SInt2Str(linenum).c_str();
+	cmd += TEXT(" \"");
+	cmd += resolvedPath.c_str();
+	cmd += TEXT("\"");
 	BootNewProcess( cmd.c_str() );
 #undef isAbsolutePath
 }
