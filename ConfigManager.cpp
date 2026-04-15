@@ -411,10 +411,11 @@ private:
 
 	void UpdateWrapControls()
 	{
+		bool isNone  = (isItemChecked(IDC_LAY_WRAP_NONE)  != 0);
 		bool isWidth = (isItemChecked(IDC_LAY_WRAP_WIDTH) != 0);
 		::EnableWindow(item(IDC_LAY_WRAPWIDTH), isWidth);
-		::EnableWindow(item(IDC_LAY_SMARTWRAP), isWidth);
-		::EnableWindow(item(IDC_LAY_WRAP_CHAR), isWidth);
+		::EnableWindow(item(IDC_LAY_SMARTWRAP), !isNone);
+		::EnableWindow(item(IDC_LAY_WRAP_CHAR), !isNone);
 	}
 
 	void ParseLayData(unicode* buf, size_t len)
@@ -524,9 +525,14 @@ public:
 private:
 	void on_init() override
 	{
-		ki::String title = TEXT("Edit Layout: ");
-		title += layFileName_.c_str();
-		::SetWindowText(hwnd(), title.c_str());
+		LangManager& lm = LangManager::Get();
+		const wchar_t* titleFmt = lm.GetDlgText(IDD_EDITLAYOUT, L"TitleFormat");
+		if( titleFmt )
+		{
+			TCHAR title[MAX_PATH + 64];
+			wsprintf(title, titleFmt, layFileName_.c_str());
+			::SetWindowText(hwnd(), title);
+		}
 
 		UpdateFontDisplay();
 
@@ -564,7 +570,6 @@ private:
 			IDC_LAY_WRAP_NONE, IDC_LAY_WRAP_RIGHT, IDC_LAY_WRAP_WIDTH,
 			IDC_LAY_SMARTWRAP, IDC_LAY_WRAP_CHAR,
 		};
-		LangManager& lm = LangManager::Get();
 		for(int i = 0; i < (int)(sizeof(kTranslateCtrl)/sizeof(kTranslateCtrl[0])); ++i)
 		{
 			const wchar_t* t = lm.GetDlgCtrlText(IDD_EDITLAYOUT, kTranslateCtrl[i]);
@@ -1811,4 +1816,3 @@ void ConfigManager::CheckMenu( HMENU m, int pos )
 		}
 	}
 }
-

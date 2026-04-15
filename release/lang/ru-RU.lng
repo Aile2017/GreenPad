@@ -179,6 +179,7 @@ static.11 = &Стиль:
 
 [Dialog.IDD_EDITLAYOUT]
 Caption = Редактор стиля
+TitleFormat = Редактор стиля: %s
 IDOK = OK
 IDCANCEL = Отмена
 static.0 = Цвета

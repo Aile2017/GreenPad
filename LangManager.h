@@ -32,6 +32,7 @@ public:
     // Look up a single named-control translation for explicit on_init() use.
     // Returns nullptr when no translation is available (fall back to RC text).
     const wchar_t* GetDlgCtrlText(UINT dialogId, UINT ctrlId) const;
+    const wchar_t* GetDlgText(UINT dialogId, const wchar_t* key) const;
 
     // Display name of current language (e.g., L"Japanese").
     const wchar_t* GetLanguageName() const;

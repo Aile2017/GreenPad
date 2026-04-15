@@ -179,6 +179,7 @@ static.11 = 레이아웃:
 
 [Dialog.IDD_EDITLAYOUT]
 Caption = 레이아웃 편집
+TitleFormat = 레이아웃 편집: %s
 IDOK = 확인
 IDCANCEL = 취소
 static.0 = 색상

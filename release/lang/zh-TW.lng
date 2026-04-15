@@ -179,6 +179,7 @@ static.11 = 版面配置:
 
 [Dialog.IDD_EDITLAYOUT]
 Caption = 編輯版面配置
+TitleFormat = 編輯版面配置: %s
 IDOK = 確定
 IDCANCEL = 取消
 static.0 = 顏色

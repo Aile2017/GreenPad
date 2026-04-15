@@ -179,6 +179,7 @@ static.11 = &Layout:
 
 [Dialog.IDD_EDITLAYOUT]
 Caption = Edit Layout
+TitleFormat = Edit Layout: %s
 IDOK = OK
 IDCANCEL = Cancel
 static.0 = Colors

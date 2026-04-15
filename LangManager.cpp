@@ -453,7 +453,7 @@ bool LangManager::Load(const wchar_t* path)
 
         case DIALOG:
             if (currentDialogId == 0) break;
-            if (wcscmp(key, L"Caption") == 0 || wcsncmp(key, L"static.", 7) == 0) {
+            if (wcscmp(key, L"Caption") == 0 || wcscmp(key, L"TitleFormat") == 0 || wcsncmp(key, L"static.", 7) == 0) {
                 pImpl_->dialogs_.getOrCreate(currentDialogId)->set(key, parsedVal);
             } else {
                 UINT ctrlId = LookupNameT(key, kControlNames);
@@ -539,6 +539,12 @@ const wchar_t* LangManager::GetDlgCtrlText(UINT dialogId, UINT ctrlId) const {
     if (!m) return nullptr;
     wchar_t key[16];
     wsprintfW(key, L"%u", ctrlId);
+    return m->get(key);
+}
+
+const wchar_t* LangManager::GetDlgText(UINT dialogId, const wchar_t* key) const {
+    const WMap* m = pImpl_->dialogs_.get(dialogId);
+    if (!m) return nullptr;
     return m->get(key);
 }
 
