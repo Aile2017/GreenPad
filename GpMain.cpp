@@ -1168,7 +1168,61 @@ void GreenPadWnd::on_openselection()
 			break;
 		}
 	}
-	if( !sep ) return;
+	if( !sep )
+	{
+		// No "file:linenum" pattern. Try to find a plain file path in the line.
+		const unicode* pathStart = line;
+		while( *pathStart == L' ' || *pathStart == L'\t' ) ++pathStart;
+
+		// Look for ':' that is not a drive-letter colon (e.g. C:\).
+		const unicode* colon = nullptr;
+		for( const unicode* p = pathStart; *p; ++p )
+		{
+			if( *p == L':' && p[1] != L'\\' && p[1] != L'/' )
+			{
+				colon = p;
+				break;
+			}
+		}
+
+		// Candidate path: portion before the colon, or the whole trimmed line if no colon.
+		String filepath;
+		if( colon )
+		{
+			size_t pathLen = (size_t)(colon - pathStart);
+			if( pathLen == 0 ) return;
+			for( size_t i = 0; i < pathLen; ++i ) filepath += pathStart[i];
+		}
+		else
+		{
+			const unicode* pathEnd = pathStart;
+			while( *pathEnd && *pathEnd != L'\r' && *pathEnd != L'\n' ) ++pathEnd;
+			while( pathEnd > pathStart && (pathEnd[-1] == L' ' || pathEnd[-1] == L'\t') ) --pathEnd;
+			size_t pathLen = (size_t)(pathEnd - pathStart);
+			if( pathLen == 0 ) return;
+			for( size_t i = 0; i < pathLen; ++i ) filepath += pathStart[i];
+		}
+
+		String resolvedPath;
+		if( !isAbsolutePath( filepath.c_str() ) )
+		{
+			Path d;
+			if( filename_.len() )
+				(d = filename_).BeDirOnly().BeBackSlash(true);
+			else
+				d = Path(Path::Cur);
+			resolvedPath += d.c_str();
+		}
+		resolvedPath += filepath.c_str();
+
+		if( ::GetFileAttributesW(resolvedPath.c_str()) == INVALID_FILE_ATTRIBUTES ) return;
+
+		String cmd = TEXT("\"");
+		cmd += resolvedPath.c_str();
+		cmd += TEXT("\"");
+		BootNewProcess( cmd.c_str() );
+		return;
+	}
 
 	// Extract path (left of separator) and line number (right of separator).
 	// Trim leading whitespace / non-path chars from the left.
@@ -1364,10 +1418,9 @@ void GreenPadWnd::on_exfilter()
 	aarr<unicode> selText = edit_.getCursor().getSelectedStr();
 
 	// --- Write selected text to temp input file ---
-	TCHAR tmpDir[MAX_PATH], tmpIn[MAX_PATH], tmpOut[MAX_PATH];
+	TCHAR tmpDir[MAX_PATH], tmpIn[MAX_PATH];
 	GetTempPath(MAX_PATH, tmpDir);
-	if (GetTempFileName(tmpDir, TEXT("gpf"), 0, tmpIn) == 0 ||
-	    GetTempFileName(tmpDir, TEXT("gpf"), 0, tmpOut) == 0) {
+	if (GetTempFileName(tmpDir, TEXT("gpf"), 0, tmpIn) == 0) {
 		if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
 		return;
 	}
@@ -1375,7 +1428,7 @@ void GreenPadWnd::on_exfilter()
 	{
 		TextFileW tf(resolveCSI(csi_), lb_);
 		if (!tf.Open(tmpIn)) {
-			DeleteFile(tmpIn); DeleteFile(tmpOut);
+			DeleteFile(tmpIn);
 			if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
 			return;
 		}
@@ -1401,7 +1454,7 @@ void GreenPadWnd::on_exfilter()
 	if (!CreatePipe(&hStdinR, &hStdinW, &sa, 0) ||
 	    !CreatePipe(&hStdoutR, &hStdoutW, &sa, 0) ||
 	    !CreatePipe(&hStderrR, &hStderrW, &sa, 0)) {
-		DeleteFile(tmpIn); DeleteFile(tmpOut);
+		DeleteFile(tmpIn);
 		if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
 		return;
 	}
@@ -1430,7 +1483,7 @@ void GreenPadWnd::on_exfilter()
 
 	if (!launched) {
 		CloseHandle(hStdinW); CloseHandle(hStdoutR); CloseHandle(hStderrR);
-		DeleteFile(tmpIn); DeleteFile(tmpOut);
+		DeleteFile(tmpIn);
 		if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
 		return;
 	}
@@ -1449,7 +1502,7 @@ void GreenPadWnd::on_exfilter()
 		CloseHandle(hStderrR);
 		TerminateProcess(psi.hProcess, 1);
 		CloseHandle(psi.hProcess);
-		DeleteFile(tmpIn); DeleteFile(tmpOut);
+		DeleteFile(tmpIn);
 		if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
 		return;
 	}
@@ -1497,18 +1550,9 @@ void GreenPadWnd::on_exfilter()
 		// stdout buffer allocation failed; leave text unchanged silently
 		if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
 	} else if (exitCode == 0) {
-		// Write stdout bytes to temp output file
-		HANDLE hOut = CreateFile(tmpOut, GENERIC_WRITE, 0,
-		                         NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-		if (hOut != INVALID_HANDLE_VALUE) {
-			DWORD written;
-			WriteFile(hOut, stdoutBuf, stdoutSize, &written, NULL);
-			CloseHandle(hOut);
-		}
-
-		// Read output file as unicode using file's charset
+		// Decode stdout bytes directly from memory
 		TextFileR tfr(resolveCSI(csi_));
-		if (tfr.Open(tmpOut)) {
+		if (tfr.OpenFromMemory(stdoutBuf, stdoutSize)) {
 			const size_t READ_CHUNK = 4096;
 			size_t resCap = READ_CHUNK * 2;
 			unicode* resBuf = (unicode*)HeapAlloc(GetProcessHeap(), 0, resCap * sizeof(unicode));
@@ -1568,7 +1612,6 @@ void GreenPadWnd::on_exfilter()
 	if (stdoutBuf)      HeapFree(GetProcessHeap(), 0, stdoutBuf);
 	if (stderrArgs.buf) HeapFree(GetProcessHeap(), 0, stderrArgs.buf);
 	DeleteFile(tmpIn);
-	DeleteFile(tmpOut);
 }
 
 void GreenPadWnd::on_grep()

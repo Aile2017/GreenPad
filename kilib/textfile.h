@@ -174,6 +174,9 @@ public:
 	//@{ open //@}
 	bool Open( const TCHAR* fname, bool always=false );
 
+	//@{ open from memory buffer (bypasses file I/O; charset detection still applies) //@}
+	bool OpenFromMemory( const uchar* buf, size_t siz );
+
 	//@{ close //@}
 	void Close();
 

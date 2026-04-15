@@ -1654,6 +1654,63 @@ bool TextFileR::Open( const TCHAR* fname, bool always )
 	return impl_ != NULL;
 }
 
+bool TextFileR::OpenFromMemory( const uchar* buf, size_t siz )
+{
+	cs_ = AutoDetection( cs_, buf, siz );
+	if( cs_ )
+	{
+		int needed_cs = neededCodepage( cs_ );
+
+		if( needed_cs > 0 && !::IsValidCodePage(needed_cs) )
+		{
+			TCHAR str[128];
+			::wsprintf(str, TEXT("Codepage cp%d Is not installed!\nDefaulting to current ACP"), needed_cs);
+			::MessageBox(::GetActiveWindow(), str, TEXT("Encoding"), MB_OK|MB_TASKMODAL);
+			if( cs_ == Western )
+				cs_ = 28591;
+			else
+				cs_ = ::GetACP();
+		}
+	}
+	if( !cs_ ) cs_ = ::GetACP();
+
+	switch( cs_ )
+	{
+	case 28591:   impl_ = new rWestISO88591(buf,siz); break;
+	case UTF16b:
+	case UTF16BE: impl_ = new rUtf16BE(buf,siz); break;
+	case UTF16l:
+	case UTF16LE: impl_ = new rUtf16LE(buf,siz); break;
+	case UTF32b:
+	case UTF32BE: impl_ = new rUtf32BE(buf,siz); break;
+	case UTF32l:
+	case UTF32LE: impl_ = new rUtf32LE(buf,siz); break;
+	case UTF1Y:
+	case UTF1:    impl_ = new rUtf1(buf,siz); break;
+	case UTF5Y:
+	case UTF5:    impl_ = new rUtf5(buf,siz); break;
+	case UTF7:    impl_ = new rUtf7(buf,siz); break;
+	case UTF9Y:
+	case UTF9:    impl_ = new rUtf9(buf,siz); break;
+	case SCSUY:
+	case SCSU:    impl_ = new rSCSU(buf,siz); break;
+	case BOCU1Y:
+	case BOCU1:   impl_ = new rBOCU1(buf,siz); break;
+	case OFSSUTFY:
+	case OFSSUTF: impl_ = new rUtfOFSS(buf,siz); break;
+	case UTFEBCDICY:
+	case UTFEBCDIC:impl_ = new rUtfEBCDIC(buf,siz); break;
+	case EucJP:   impl_ = new rIso2022(buf,siz,true,false,ASCII,JIS,KANA); break;
+	case IsoJP:   impl_ = new rIso2022(buf,siz,false,false,ASCII,KANA); break;
+	case IsoKR:   impl_ = new rIso2022(buf,siz,true,false,ASCII,KSX); break;
+	case IsoCN:   impl_ = new rIso2022(buf,siz,true,false,ASCII,GB); break;
+	case HZ:      impl_ = new rIso2022(buf,siz,true,true, ASCII,GB); break;
+	default:      impl_ = new rMBCS(buf,siz,cs_); break;
+	}
+
+	return impl_ != NULL;
+}
+
 int TextFileR::AutoDetection( int cs, const uchar* ptr, size_t totsiz )
 {
 //-- First, take statistics on the number of times a character appears
