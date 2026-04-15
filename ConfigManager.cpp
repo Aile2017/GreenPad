@@ -115,42 +115,10 @@ bool ConfigManager::MatchDocType
 //-------------------------------------------------------------------------
 
 namespace {
-#ifndef UNICODE
-	static ulong ToByte( const unicode str[2] )
-	{
-		ulong c = str[0];
-		if     ( L'a' <= str[0] ) c -= (L'a' - 10);
-		else if( L'A' <= str[0] ) c -= (L'A' - 10);
-		else                      c -=  L'0';
-		c = c*16 + str[1];
-		if     ( L'a' <= str[1] ) c -= (L'a' - 10);
-		else if( L'A' <= str[1] ) c -= (L'A' - 10);
-		else                      c -=  L'0';
-		return c;
-	}
-	static ulong GetColor( const unicode* str )
-	{
-		ulong val = 0;
-		for(int i=0; i<=2 && str && str[1]; ++i,str+=2 )
-			val |= ToByte(str) << (i*8);
-		return val;
-	}
-	static int GetInt( const unicode* str )
-	{
-		int c = 0;
-		int s = 1;
-		if( *str == L'-' )
-			s=-1, ++str;
-		for( ; *str!=L'\0'; ++str )
-			c = c * 10 + *str - L'0';
-		return c*s;
-	}
-#else
 	static inline int GetInt( const unicode* str )
 		{ return String::GetInt( str ); }
 	static inline ulong GetColor( const unicode* str )
 		{ ulong v = Hex2Ulong( str ); return ((v&0x0000FF)<<16) | ((v&0x00FF00)<<0) | ((v&0xFF0000)>>16); }
-#endif
 }
 // Brightness approximation, that does not take gamma into account.
 #define COLBRIGHTNESS(x) ( (218*GetRValue(x) + 732*GetGValue(x) + 74*GetBValue(x))>>10 )
@@ -238,11 +206,7 @@ void ConfigManager::ParseLayBuf(unicode* buf, size_t len, LayData& out)
 			out.colors[6] = GetColor(ptr);
 			break;
 		case 0x6674:                                        // ft: font name
-#ifdef UNICODE
 			my_lstrcpysW( readFontName, LF_FACESIZE, ptr );
-#else
-			WideCharToMultiByte( CP_ACP, 0, ptr, -1, readFontName, LF_FACESIZE, NULL, NULL );
-#endif
 			break;
 		case 0x737A: readFontSize   = GetInt(ptr);              break; // sz: font size
 		case 0x6677: readFontWeight = GetInt(ptr); fwFound = true; break; // fw: font weight
@@ -418,11 +382,8 @@ private:
 		::EnableWindow(item(IDC_LAY_WRAP_CHAR), !isNone);
 	}
 
-	void ParseLayData(unicode* buf, size_t len)
+	void DialogToLayData(LayData& ld) const
 	{
-		// Initialise LayData from current dialog state, overlay with file values,
-		// then copy back.  All parsing logic lives in ParseLayBuf.
-		LayData ld;
 		for( int i = 0; i < 7; i++ ) ld.colors[i] = colors_[i];
 		my_lstrcpys( ld.fontName, LF_FACESIZE, fontName_ );
 		ld.fontSize   = fontSize_;
@@ -437,9 +398,10 @@ private:
 		ld.wrapWidth  = wrapWidth_;
 		ld.wrapSmart  = wrapSmart_;
 		ld.showLN     = showLN_;
+	}
 
-		ConfigManager::ParseLayBuf( buf, len, ld );
-
+	void LayDataToDialog(const LayData& ld)
+	{
 		for( int i = 0; i < 7; i++ ) colors_[i] = ld.colors[i];
 		my_lstrcpys( fontName_, LF_FACESIZE, ld.fontName );
 		fontSize_   = ld.fontSize;
@@ -456,26 +418,23 @@ private:
 		showLN_     = ld.showLN;
 	}
 
+	void ParseLayData(unicode* buf, size_t len)
+	{
+		// Initialise LayData from current dialog state, overlay with file values,
+		// then copy back.  All parsing logic lives in ParseLayBuf.
+		LayData ld;
+		DialogToLayData(ld);
+		ConfigManager::ParseLayBuf( buf, len, ld );
+		LayDataToDialog(ld);
+	}
+
 	bool SaveToFile()
 	{
 		ki::Path full = (ki::Path(ki::Path::Exe) += TEXT("type\\"));
 		full += layFileName_.c_str();
 
 		LayData ld;
-		for( int i = 0; i < 7; i++ ) ld.colors[i] = colors_[i];
-		my_lstrcpys( ld.fontName, LF_FACESIZE, fontName_ );
-		ld.fontSize   = fontSize_;
-		ld.fontWeight = fontWeight_;
-		ld.fontFlags  = fontFlags_;
-		ld.fontCS     = fontCS_;
-		ld.fontQual   = fontQual_;
-		ld.fontXWidth = fontXWidth_;
-		ld.tabSize    = tabSize_;
-		ld.scBits     = scBits_;
-		ld.wrapType   = wrapType_;
-		ld.wrapWidth  = wrapWidth_;
-		ld.wrapSmart  = wrapSmart_;
-		ld.showLN     = showLN_;
+		DialogToLayData(ld);
 
 		unicode buf[1024];
 		size_t len = ConfigManager::WriteLayBuf( buf, ld );
@@ -496,24 +455,16 @@ public:
 	LayEditDlg(const TCHAR* layfile, HWND parent, const ConfigManager& cfg)
 		: DlgImpl(IDD_EDITLAYOUT)
 		, layFileName_(layfile)
-		, fontSize_(cfg.defaultFontSize_)
-		, fontWeight_(cfg.defaultFontWeight_)
-		, fontFlags_(cfg.defaultFontFlags_)
-		, fontCS_(cfg.defaultFontCS_)
 	{
-		// Initialise layout/colour fields from the single source of truth.
+		// Initialise from defaults, then override font fields from ConfigManager.
 		LayData ld;
 		ld.SetDefaults();
-		for( int i = 0; i < 7; i++ ) colors_[i] = ld.colors[i];
-		my_lstrcpys(fontName_, LF_FACESIZE, cfg.defaultFontName_);
-		fontQual_   = ld.fontQual;
-		fontXWidth_ = ld.fontXWidth;
-		tabSize_    = ld.tabSize;
-		scBits_     = ld.scBits;
-		wrapType_   = ld.wrapType;
-		wrapWidth_  = ld.wrapWidth;
-		wrapSmart_  = ld.wrapSmart;
-		showLN_     = ld.showLN;
+		my_lstrcpys(ld.fontName, LF_FACESIZE, cfg.defaultFontName_);
+		ld.fontSize   = cfg.defaultFontSize_;
+		ld.fontWeight = cfg.defaultFontWeight_;
+		ld.fontFlags  = cfg.defaultFontFlags_;
+		ld.fontCS     = cfg.defaultFontCS_;
+		LayDataToDialog(ld);
 
 		unicode dataBuf[512];
 		size_t len = ConfigManager::GetLayData(layfile, dataBuf, countof(dataBuf));
@@ -1250,17 +1201,7 @@ size_t ConfigManager::GetLayData(const TCHAR *name, unicode *buf, size_t buf_len
 	// file not found in the type directorry,
 	// look for a section in the main ini file.
 	IniFile ini;
-#ifdef UNICODE
 	len = GetPrivateProfileStringW( L"DocType", name, L"", buf, buf_len, ini.getName() );
-#else
-	char *tmp = (char *)TS.alloc( buf_len * sizeof(char) );
-	if( tmp )
-	{
-		len = ::GetPrivateProfileStringA( "DocType", name, "", tmp, buf_len, ini.getName() );
-		len = ::MultiByteToWideChar( CP_ACP, 0, tmp, len+1, buf, buf_len );
-		TS.freelast( tmp, buf_len * sizeof(char) );
-	}
-#endif
 
 	return len;
 }

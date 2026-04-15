@@ -4,7 +4,6 @@
 #include "path.h"
 using namespace ki;
 
-#ifdef UNICODE
 static TCHAR *GetUNCPath(const TCHAR *ifn)
 {
 	if(!ifn) return NULL;
@@ -63,7 +62,6 @@ static TCHAR *GetUNCPath(const TCHAR *ifn)
 	}
 	return (TCHAR *)ifn;
 }
-#endif
 
 HANDLE CreateFileUNC(
 	LPCTSTR fname,
@@ -74,10 +72,7 @@ HANDLE CreateFileUNC(
 	DWORD dwFlagsAndAttributes,
 	HANDLE hTemplateFile)
 {
-	TCHAR *UNCPath = const_cast<TCHAR*>(fname);
-#ifdef UNICODE
-	UNCPath = GetUNCPath(fname); // may return fname!
-#endif
+	TCHAR *UNCPath = GetUNCPath(fname); // may return fname!
 
 	// Open file read-only
 	HANDLE hFile = ::CreateFile(
@@ -89,26 +84,17 @@ HANDLE CreateFileUNC(
 		dwFlagsAndAttributes,
 		hTemplateFile
 	);
-#ifdef UNICODE
 	if( UNCPath != fname ) // Was allocated...
 		free( UNCPath );
-#endif
 	return hFile;
 }
 
 DWORD GetFileAttributesUNC(LPCTSTR fname)
 {
-	TCHAR *UNCPath = const_cast<TCHAR*>(fname);
-#ifdef UNICODE
-	UNCPath = GetUNCPath(fname); // may return fname!
-#endif
-
+	TCHAR *UNCPath = GetUNCPath(fname); // may return fname!
 	DWORD ret = ::GetFileAttributes(UNCPath);
-
-#ifdef UNICODE
 	if( UNCPath != fname ) // Was allocated...
 		free( UNCPath );
-#endif
 	return ret;
 }
 
@@ -252,10 +238,7 @@ bool FileW::Open( const TCHAR* fname, bool creat )
 		return false;
 	Close();
 
-	TCHAR *UNCPath = const_cast<TCHAR*>(fname);
-#ifdef UNICODE
-	UNCPath = GetUNCPath(fname); // may return fname!
-#endif
+	TCHAR *UNCPath = GetUNCPath(fname); // may return fname!
 
 	// Check for readonly flag
 	DWORD fattr = GetFileAttributes(UNCPath);
@@ -280,10 +263,8 @@ bool FileW::Open( const TCHAR* fname, bool creat )
 		creat ? CREATE_ALWAYS : OPEN_EXISTING,
 		fattr | FILE_FLAG_SEQUENTIAL_SCAN, NULL );
 
-#ifdef UNICODE
 	if( UNCPath != fname ) // Was allocated...
 		free( UNCPath );
-#endif
 
 	if( handle_ == INVALID_HANDLE_VALUE )
 	{

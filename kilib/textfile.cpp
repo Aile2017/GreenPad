@@ -53,29 +53,11 @@ static bool GetFileVersionText( const TCHAR* filePath, wchar_t* buf, int bufSize
 	if( !hVer ) return false;
 
 	FnGetFileVersionInfoSize fnSize = (FnGetFileVersionInfoSize)::GetProcAddress(
-		hVer,
-	#ifdef _UNICODE
-		"GetFileVersionInfoSizeW"
-	#else
-		"GetFileVersionInfoSizeA"
-	#endif
-	);
+		hVer, "GetFileVersionInfoSizeW" );
 	FnGetFileVersionInfo fnInfo = (FnGetFileVersionInfo)::GetProcAddress(
-		hVer,
-	#ifdef _UNICODE
-		"GetFileVersionInfoW"
-	#else
-		"GetFileVersionInfoA"
-	#endif
-	);
+		hVer, "GetFileVersionInfoW" );
 	FnVerQueryValue fnQuery = (FnVerQueryValue)::GetProcAddress(
-		hVer,
-	#ifdef _UNICODE
-		"VerQueryValueW"
-	#else
-		"VerQueryValueA"
-	#endif
-	);
+		hVer, "VerQueryValueW" );
 	if( !fnSize || !fnInfo || !fnQuery )
 	{
 		::FreeLibrary( hVer );
@@ -3879,13 +3861,6 @@ bool TextFileW::Open( const TCHAR* fname )
 	case UTF8:
 	case UTF8N:
 	default:
-#ifndef _UNICODE
-		if( (cs_==UTF8 || cs_==UTF8N) )
-			impl_ = new wUTF8( fp_, cs_ );
-		else if( cs_==UTF7 )
-			impl_ = new wUTF7( fp_ );
-		else
-#else
 		if( (cs_==UTF8 || cs_==UTF8N)
 		&&  !::IsValidCodePage(65001) )
 			impl_ = new wUTF8( fp_, cs_ );
@@ -3893,7 +3868,6 @@ bool TextFileW::Open( const TCHAR* fname )
 		&&    !::IsValidCodePage(65000) )
 			impl_ = new wUTF7( fp_ );
 		else
-#endif
 		impl_ = new wMBCS( fp_, cs_ );
 		break;
 	}

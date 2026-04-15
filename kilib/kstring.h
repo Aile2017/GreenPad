@@ -5,7 +5,6 @@
 #ifndef __ccdoc__
 
 
-#ifdef UNICODE
 	#define my_lstrcpy my_lstrcpyW
 	#define my_lstrcpys my_lstrcpysW
 	#define my_lstrlen my_lstrlenW
@@ -14,16 +13,6 @@
 //	#define my_lstrcat my_lstrcatW
 	#define my_lstrkpy my_lstrkpyW
 	#define my_lstrcmpiAscii my_lstrcmpiAsciiW
-#else
-	#define my_lstrcpy my_lstrcpyA
-	#define my_lstrcpys my_lstrcpysA
-	#define my_lstrlen my_lstrlenA
-	#define my_lstrcmp my_lstrcmpA
-	#define my_lstrchr my_lstrchrA
-//	#define my_lstrcat my_lstrcatA
-	#define my_lstrkpy my_lstrkpyA
-	#define my_lstrcmpiAscii my_lstrcmpiAsciiA
-#endif
 
 
 wchar_t * WINAPI my_CharUpperWW(wchar_t *s);
@@ -186,11 +175,7 @@ void my_lstrcpysA(char *out, size_t outlen, const char * restrict in)
 
 namespace ki {
 #endif
-#ifdef _UNICODE
 	#define XTCHAR char
-#else
-	#define XTCHAR wchar_t
-#endif
 
 //=========================================================================
 //@{
@@ -258,11 +243,7 @@ public:
 	String& operator+=( TCHAR c )
 		{ return CatString( &c, 1 ); }
 
-#ifdef _UNICODE
 	String& operator+=( const char* s );
-#else
-	String& operator+=( const wchar_t* s );
-#endif
 
 	//@{ Resource load //@}
 	String& Load( UINT rsrcID );
@@ -399,19 +380,10 @@ inline const String operator+( const String& a, TCHAR b )
 	{ return String(a) += b; }
 
 // Freeing the return value buffer of ConvToWChar
-inline void String::FreeWCMem( const wchar_t* wc ) const
-#ifdef _UNICODE
-	{}
-#else // _MBCS or _SBCS
-	{ free(const_cast<wchar_t*>(wc)); }
-#endif
+inline void String::FreeWCMem( const wchar_t* ) const {}
 
 inline void String::FreeCMem( const char* str ) const
-#ifdef _UNICODE
 	{ free( const_cast<char*>(str) ); }
-#else // _MBCS or _SBCS
-	{}
-#endif
 
 inline bool String::isCompatibleWithACP() const
 { return isCompatibleWithACP( c_str(), len() ); }

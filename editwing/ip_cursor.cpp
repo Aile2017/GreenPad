@@ -1364,23 +1364,8 @@ int Cursor::on_ime_reconvertstring( RECONVERTSTRING* rs )
 	if( ! isSelected() || cur_.tl != sel_.tl )
 		return 0;
 
-#ifdef _UNICODE
 	aarr<unicode> str = getSelectedStr();
 	if( !str.get() ) return 0;
-#else
-	aarr<char> str;
-	{
-		aarr<unicode> ub = getSelectedStr();
-		if( !ub.get() ) return 0;
-		ulong len;
-		for(len=0; ub[len]; ++len);
-		ki::aarr<char> nw( (len+1)*3 );
-		if( !nw.get() ) return 0;
-		str = nw;
-		::WideCharToMultiByte( CP_ACP, 0, ub.get(), -1,
-			str.get(), (len+1)*3, NULL, NULL );
-	}
-#endif
 	const ulong len = my_lstrlen(str.get());
 	if( rs != NULL )
 	{

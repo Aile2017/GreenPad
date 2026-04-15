@@ -278,21 +278,12 @@ String& String::operator = ( const String& obj )
 	return *this;
 }
 
-#ifdef _UNICODE
 String& String::operator = ( const char* s )
 {
 	long len = ::MultiByteToWideChar( CP_ACP, 0, s, -1, NULL, 0 );
 	TCHAR *ns = AllocMem(len+1);
 	if( !ns ) return *this;
 	::MultiByteToWideChar( CP_ACP, 0, s, -1, ns, len+1 );
-#else
-String& String::operator = ( const wchar_t* s )
-{
-	long len = ::WideCharToMultiByte(CP_ACP,0,s,-1,NULL,0,NULL,NULL);
-	TCHAR *ns = AllocMem(len+1);
-	if( !ns ) return *this;
-	::WideCharToMultiByte(CP_ACP,0,s,-1,ns,len+1,NULL,NULL);
-#endif
 	UnlockMem( len );
 	return *this;
 }
@@ -380,31 +371,19 @@ String& String::SetUlong( ulong n )
 
 const wchar_t* String::ConvToWChar() const
 {
-#ifdef _UNICODE
 	return c_str();
-#else
-	int ln = ::MultiByteToWideChar( CP_ACP,  0, c_str(), -1 , 0, 0 );
-	wchar_t* p = (wchar_t *)malloc( sizeof(wchar_t) * (ln+1) );
-	if( p ) ::MultiByteToWideChar( CP_ACP,  0, c_str(), -1 , p, ln+1 );
-	return p;
-#endif
 }
 
 const char* String::ConvToChar() const
 {
-#ifdef _UNICODE
 	int ln = ::WideCharToMultiByte( CP_ACP, 0, c_str(), -1, NULL, 0, NULL, NULL );
 	char* p = (char *)malloc( sizeof(char) * (ln+1) );
 	if( p )::WideCharToMultiByte( CP_ACP,  0, c_str(), -1 , p, ln+1, NULL, NULL );
 	return p;
-#else
-	return c_str();
-#endif
 }
 
 bool String::isCompatibleWithACP(const TCHAR *uni, size_t len)
 {
-#ifdef _UNICODE
 	if( len ==0 )
 		return true;
 
@@ -438,12 +417,8 @@ bool String::isCompatibleWithACP(const TCHAR *uni, size_t len)
 
 
 	return compatible;
-#else
-	return true;
-#endif
 }
 
-#ifdef _UNICODE
 String& String::operator+=( const char* s )
 {
 	int ln = ::MultiByteToWideChar( CP_ACP,  0, s, -1 , 0, 0 );
@@ -456,20 +431,6 @@ String& String::operator+=( const char* s )
 	}
 	return *this;
 }
-#else
-String& String::operator+=( const wchar_t* s )
-{
-	int ln = ::WideCharToMultiByte( CP_ACP,  0, s, -1 , 0, 0, NULL, NULL );
-	char* p = (char *)TS.alloc( sizeof(char) * (ln+1) );
-	if( p )
-	{
-		::WideCharToMultiByte( CP_ACP,  0, s, -1 , p, ln+1, NULL, NULL );
-		CatString(p, ln);
-		TS.freelast( p, sizeof(char) * (ln+1) );
-	}
-	return *this;
-}
-#endif
 
 //=========================================================================
 

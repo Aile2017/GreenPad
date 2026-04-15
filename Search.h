@@ -85,9 +85,6 @@ public:
 	//@{A last resort^^; //@}
 	bool TrapMsg(MSG* msg);
 
-	//@{ Not Found Dialog //@}
-	void NotFound(bool GoingDown=false);
-
 	//@{ Set readonly mode //@}
 	void SetReadOnly(bool ro) { readonly_ = ro; }
 

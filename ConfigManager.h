@@ -165,21 +165,16 @@ public:
 	inline int GetWndX() const { return rememberWindowPlace_ ? wndPos_.left : CW_USEDEFAULT; }
 	inline int GetWndY() const { return rememberWindowPlace_ ? wndPos_.top : CW_USEDEFAULT; }
 	inline int GetWndW() const {
-		if (rememberWindowSize_) {
+		// Restore stored width when size-restore is on.
+		// Also use as a hint when position-restore is on,
+		// since wndPos_ is populated by either restore path.
+		if (rememberWindowSize_ || rememberWindowPlace_)
 			return wndPos_.right - wndPos_.left;
-		}
-		if (wndPos_.right > wndPos_.left) {
-			return wndPos_.right - wndPos_.left;
-		}
 		return CW_USEDEFAULT;
 	}
 	inline int GetWndH() const {
-		if (rememberWindowSize_) {
+		if (rememberWindowSize_ || rememberWindowPlace_)
 			return wndPos_.bottom - wndPos_.top;
-		}
-		if (wndPos_.bottom > wndPos_.top) {
-			return wndPos_.bottom - wndPos_.top;
-		}
 		return CW_USEDEFAULT;
 	}
 	inline bool GetWndM() const { return rememberWindowSize_ && wndM_; }

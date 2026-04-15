@@ -61,9 +61,7 @@ void Logger::WriteLine( const TCHAR* str, int siz )
 	if( st_firsttime )
 	{
 		::SetEndOfFile( h );
-		#ifdef _UNICODE
-			::WriteFile( h, "\xff\xfe", 2, &dummy, NULL );
-		#endif
+		::WriteFile( h, "\xff\xfe", 2, &dummy, NULL );
 		st_firsttime = false;
 	}
 	else

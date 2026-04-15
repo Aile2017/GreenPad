@@ -130,18 +130,7 @@ void SearchManager::on_init()
 		}
 		else
 		{
-		#ifdef _UNICODE
 			SetItemText( IDC_FINDBOX, str.get() );
-		#else
-			char *ab = (char*)TS.alloc( (len+1) * 3 * sizeof(TCHAR) );
-			if( ab )
-			{
-				::WideCharToMultiByte( CP_ACP, 0, str.get(), -1,
-					ab, (len+1)*3, NULL, NULL );
-				SetItemText( IDC_FINDBOX, ab );
-				TS.freelast( ab, (len+1) * 3 * sizeof(TCHAR) );
-			}
-		#endif
 		}
 	}
 	else
@@ -444,18 +433,6 @@ void SearchManager::FindNextImpl(bool redo)
 	}
 }
 
-void SearchManager::NotFound(bool GoingDown)
-{
-	//MsgBox( RzsString(IDS_NOTFOUND).c_str() );
-	if (GoingDown) {
-		if (IDOK == MsgBox( RzsString(IDS_NOTFOUNDDOWN).c_str(), NULL, MB_OKCANCEL )) {
-			edit_.getCursor().MoveCur( DPos(0,0), false );
-			FindNextImpl(true);
-		}
-	} else {
-	    MsgBox(RzsString(IDS_NOTFOUND).c_str(), NULL, MB_OK);
-	}
-}
 
 void SearchManager::FindPrevImpl(bool redo)
 {
@@ -647,7 +624,7 @@ void SearchManager::ReplaceImpl()
 		}
 	}
 	// If not found
-	NotFound();
+	MsgBox( RzsString(IDS_NOTFOUND).c_str(), NULL, MB_OK );
 }
 
 void SearchManager::ReplaceAllImpl()

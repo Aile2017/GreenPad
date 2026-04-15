@@ -129,22 +129,6 @@ Path& Path::BeShortLongStyle()
 		return *this;
 	::FindClose( h );
 
-#ifndef _UNICODE
-    // Avoid using the long file name if it contains invalid chars.
-    // ie: the short path name is always ASCII on NT.
-    // Someone migh be using the short file name for a reason!
-	TCHAR fp[MAX_PATH*2];
-	if( my_lstrchr( fd.cFileName, TEXT('?') ) )
-		return *this; // Invalid long path name, do not set it
-
-	// Build full path and try to find the file.
-	my_lstrcpys( fp, countof(fp), c_str() );
-	my_lstrcpy( const_cast<char*>(name(fp)), fd.cFileName);
-	if( ::GetFileAttributes( fp ) == 0xFFFFFFFF )
-	{ // Unable to find long file name.
-		return *this;
-	}
-#endif
 	TCHAR  t;
 	TCHAR* buf = ReallocMem( MAX_PATH*2 );
 	if( !buf ) return *this;

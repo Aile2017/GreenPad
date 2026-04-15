@@ -76,9 +76,6 @@
 #include <dimm.h>
 #endif
 
-#ifdef _UNICODE
-#endif
-
 #ifndef NO_MLANG
 #include <mlang.h>
 #endif

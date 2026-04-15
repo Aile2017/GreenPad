@@ -70,30 +70,6 @@ Clipboard::Text Clipboard::GetUnicodeText() const
 		}
 	}
 
-	#ifndef _UNICODE
-	// ANSI text, not needed in Unicode/Unicows builds
-	else if( IsClipboardFormatAvailable(CF_TEXT) )
-	{
-		// Fallback to ANSI clipboard data.
-		// 9x requires conversion
-		HANDLE h = GetData( CF_TEXT );
-		if( h != NULL )
-		{
-			char* cstr = static_cast<char*>( ::GlobalLock( h ) );
-			if( cstr )
-			{
-				int Lu = my_lstrlenA( cstr ) * 3;
-				unicode* ustr = (unicode *)malloc( sizeof(unicode) * Lu );
-				if( ustr )
-				{
-					::MultiByteToWideChar( CP_ACP, 0, cstr, -1, ustr, Lu );
-					::GlobalUnlock( h );
-					return Text( ustr, Text::MALLOC );
-				}
-			}
-		}
-	}
-	#endif
 
 	else if( IsClipboardFormatAvailable(CF_HDROP) )
 	{
@@ -121,16 +97,7 @@ Clipboard::Text Clipboard::GetUnicodeText() const
 				for( UINT i=0; i < nf; i++ )
 				{
 					// Return the length without NULL and requires length with NULL
-					#ifdef UNICODE
 					ptr += myDragQueryFileW(h, i, ptr, Min(lenmap[i]+1, (UINT)MAX_PATH));
-					#else
-					{
-						char buf[MAX_PATH]; // MAX_PATH is the maximum in ANSI mode
-						UINT len = DragQueryFileA(h, i, buf, MAX_PATH);
-						::MultiByteToWideChar( CP_ACP, 0, buf, len, ptr, len );
-						ptr+=len;
-					}
-					#endif
 
 					*ptr++ = L'\r';
 					*ptr++ = L'\n';

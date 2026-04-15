@@ -124,7 +124,6 @@ TCHAR *IniFile::GetSStrHere(const TCHAR* key, const TCHAR* sect, const TCHAR *de
 
 Path IniFile::GetPath( const TCHAR* key, const TCHAR *defval ) const
 {
-#ifdef _UNICODE
 	String s = GetStr( key, defval );
 	if( s.len()==0 || s[0]!='#' )
 		return s;
@@ -149,9 +148,6 @@ Path IniFile::GetPath( const TCHAR* key, const TCHAR *defval ) const
 		buf += (wchar_t) v;
 	}
 	return buf;
-#else
-	return GetStr( key, defval );
-#endif
 }
 
 
@@ -204,7 +200,6 @@ bool IniFile::PutRect( const TCHAR* key, const RECT *rc  )
 
 bool IniFile::PutPath( const TCHAR* key, const Path& val )
 {
-#ifdef _UNICODE
 	if( val.isCompatibleWithACP() )
 		return PutStr( key , val.c_str() );
 
@@ -230,9 +225,6 @@ bool IniFile::PutPath( const TCHAR* key, const Path& val )
 		}
 	}
 	return PutStr( key, buf.c_str() );
-#else
-	return PutStr( key, val.c_str() );
-#endif
 }
 
 

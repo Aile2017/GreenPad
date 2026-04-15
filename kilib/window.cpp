@@ -219,11 +219,7 @@ void IMEManager::SetFont( HWND wnd, const LOGFONT& lf )
 	{
 		HIMC ime = NULL;
 		immApp_->GetContext( wnd, &ime );
-		#ifdef _UNICODE
-			immApp_->SetCompositionFontW( ime, plf );
-		#else
-			immApp_->SetCompositionFontA( ime, plf );
-		#endif
+		immApp_->SetCompositionFontW( ime, plf );
 		immApp_->ReleaseContext( wnd, ime );
 	}
 	else

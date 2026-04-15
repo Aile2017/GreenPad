@@ -731,11 +731,7 @@ void ViewImpl::DrawLNA( const VDrawInfo& v, Painter& p )
 			while( s[sl] )
 				numwidth += p.Wc( s[sl++] );
 
-			#ifdef UNICODE
 			p.StringOut( s, sl, edge - numwidth, y );
-			#else
-			p.StringOutA( s, sl, edge - numwidth, y );
-			#endif
 			y += p.H() * rln(i);
 		}
 	}
