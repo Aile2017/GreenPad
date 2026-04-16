@@ -165,15 +165,18 @@ public:
 	inline int GetWndX() const { return rememberWindowPlace_ ? wndPos_.left : CW_USEDEFAULT; }
 	inline int GetWndY() const { return rememberWindowPlace_ ? wndPos_.top : CW_USEDEFAULT; }
 	inline int GetWndW() const {
-		// Restore stored width when size-restore is on.
-		// Also use as a hint when position-restore is on,
-		// since wndPos_ is populated by either restore path.
 		if (rememberWindowSize_ || rememberWindowPlace_)
+			return wndPos_.right - wndPos_.left;
+		// Even when neither flag is set, use the ini-stored size if valid.
+		// This lets a previously saved size serve as the default.
+		if (wndPos_.right > wndPos_.left)
 			return wndPos_.right - wndPos_.left;
 		return CW_USEDEFAULT;
 	}
 	inline int GetWndH() const {
 		if (rememberWindowSize_ || rememberWindowPlace_)
+			return wndPos_.bottom - wndPos_.top;
+		if (wndPos_.bottom > wndPos_.top)
 			return wndPos_.bottom - wndPos_.top;
 		return CW_USEDEFAULT;
 	}
