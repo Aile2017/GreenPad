@@ -68,7 +68,7 @@
 #define IDC_UNDOLIM2                    1012
 #define IDC_UNDO_CT                     1013
 #define IDC_TXTFILT                     1014
-#define IDC_EXTGREP                     1015
+#define IDC_EXTCMD                      1015
 #define IDC_DT_PAT                      1018
 #define IDC_PAT_KWD                     1019
 #define IDC_DOCTYPELIST                 1020
@@ -146,7 +146,7 @@
 #define ID_MENUITEM40025                40025
 #define ID_CMD_NEXTWINDOW               40026
 #define ID_CMD_PREVWINDOW               40027
-#define ID_CMD_GREP                     40028
+#define ID_CMD_EXTCMD                   40028
 #define ID_MENUITEM40029                40029
 #define ID_MENUITEM40030                40030
 #define ID_CMD_STATUSBAR                40032

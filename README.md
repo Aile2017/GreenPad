@@ -136,7 +136,7 @@ C:/usr/msys64/usr/bin/bash.exe -c "export PATH=/clang64/bin:/usr/bin:$PATH; /usr
 | `F3` / `Shift+F3` | Find next / prev |
 | `Ctrl+H` | Replace |
 | `Ctrl+J` | Jump to line |
-| `Ctrl+G` | External grep |
+| `Ctrl+G` | External command |
 | `Ctrl+1/2/3` | Wrap: none / fixed width / window width |
 | `Ctrl+I` | Insert Unicode code point |
 | `Ctrl+B` | Go to matching brace |

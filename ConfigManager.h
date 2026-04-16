@@ -117,11 +117,11 @@ public:
 	//@{ Current document type name //@}
 	inline const ki::String& GetDocTypeName() const { return curDt_->name; }
 
-	//@{ External executable file name for Grep //@}
-	inline const ki::Path& grepExe() const { return grepExe_; }
+	//@{ External command executable //@}
+	inline const ki::Path& extCmd() const { return extCmd_; }
 
-	//@{Help external executable file name //@}
-	inline const ki::Path& helpExe() const { return helpExe_; }
+	//@{ Help external command executable //@}
+	inline const ki::Path& helpCmd() const { return helpCmd_; }
 
 	//@{ Open in same window mode //@}
 	inline bool openSame() const { return openSame_; }
@@ -196,8 +196,8 @@ private:
 	// Overall settings
 	int        undoLimit_;
 	ki::String txtFilter_;
-	ki::Path   grepExe_;
-	ki::Path   helpExe_;
+	ki::Path   extCmd_;
+	ki::Path   helpCmd_;
 	ki::String dateFormat_;
 //	ki::String timeFormat_;
 //	bool datePrior_;

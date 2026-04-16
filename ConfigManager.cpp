@@ -762,7 +762,7 @@ private:
 		}
 
 		SetItemText(IDC_TXTFILT, cfg_.txtFileFilter().c_str() );
-		SetItemText(IDC_EXTGREP, cfg_.grepExe().c_str() );
+		SetItemText(IDC_EXTCMD, cfg_.extCmd().c_str() );
 
 		if( cfg_.openSame() )
 			CheckItem(IDC_OPENSAME);
@@ -1015,8 +1015,8 @@ private:
 		GetItemText(IDC_TXTFILT, countof(buf), buf);
 		cfg_.txtFilter_ = buf;
 
-		GetItemText(IDC_EXTGREP, countof(buf), buf);
-		cfg_.grepExe_ = buf;
+		GetItemText(IDC_EXTCMD, countof(buf), buf);
+		cfg_.extCmd_ = buf;
 
 		cfg_.openSame_            = isItemChecked(IDC_OPENSAME);
 		cfg_.rememberWindowSize_  = isItemChecked(IDC_REMSIZE);
@@ -1283,8 +1283,8 @@ void ConfigManager::LoadIni()
 	undoLimit_ = ini_.GetInt( TEXT("UndoLimit"), -1 );
 	txtFilter_ = ini_.GetStr( TEXT("TxtFilter"),
 		TEXT("*.txt;*.htm;*.html;*.css;*.js;*.d;*.c;*.cpp;*.cc;*.cxx;*.h;*.hpp;*.php;*.php3;*.ini;*.log;*.inf") );
-	grepExe_   = ini_.GetStr( TEXT("GrepExe"), TEXT("cmd.exe /k cd \"%D\"") );
-	helpExe_   = ini_.GetStr( TEXT("HelpExe"), TEXT("") );
+	extCmd_    = ini_.GetStr( TEXT("ExtCmd"), TEXT("cmd.exe /k cd \"%D\"") );
+	helpCmd_   = ini_.GetStr( TEXT("HelpCmd"), TEXT("") );
 	openSame_  = ini_.GetBool( TEXT("OpenSame"), false );
 	countbyunicode_ = ini_.GetBool( TEXT("CountUni"), true );
 	bool havestb = true;
@@ -1492,7 +1492,7 @@ void ConfigManager::SaveIni()
 	ini_.PutInt( TEXT("Zoom"), zoom_ );
 	ini_.PutInt( TEXT("UndoLimit"), undoLimit_ );
 	ini_.PutStr( TEXT("TxtFilter"), txtFilter_.c_str() );
-	ini_.PutStr( TEXT("GrepExe"), grepExe_.c_str() );
+	ini_.PutStr( TEXT("ExtCmd"), extCmd_.c_str() );
 	ini_.PutBool( TEXT("OpenSame"), openSame_ );
 	ini_.PutBool( TEXT("CountUni"), countbyunicode_ );
 	ini_.PutBool( TEXT("StatusBar"), showStatusBar_ );

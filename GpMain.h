@@ -134,7 +134,7 @@ private:
 	void    on_jump();
 	void    on_openselection();
 	void    on_showselectionlen();
-	void    on_grep();
+	void    on_extcmd();
 	void    on_help();
 	void    on_exfilter();
 	void    on_external_exe_start(const ki::Path& g);

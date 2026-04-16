@@ -135,7 +135,7 @@ TODO:
       Shift+F3   Find prev
         Ctrl+H   Replace
         Ctrl+J   Jump to line #
-        Ctrl+G   Grep
+        Ctrl+G   External command
 
         Ctrl+1   No Wrapping
         Ctrl+2   Wrap by specified width
@@ -233,9 +233,9 @@ TODO:
       * No forward/backward references.
       * No shortest matches (every * is greedy)
 
-  * External Grep Program ?
+  * External Command (Ctrl+G) ?
 
-    You can enter some GUI grep program here. For example,
+    You can enter any external command here. For example,
       C:\Software\Gj\GrepJuice.exe "%D"
     is set in my environment.
       %D is automatically replaced by the current directory

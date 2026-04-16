@@ -189,7 +189,7 @@ static const NameIdPair kCommandNames[] = {
     {L"ID_MENUITEM40025",     40025},
     {L"ID_CMD_NEXTWINDOW",    40026},
     {L"ID_CMD_PREVWINDOW",    40027},
-    {L"ID_CMD_GREP",          40028},
+    {L"ID_CMD_EXTCMD",        40028},
     {L"ID_MENUITEM40030",     40030},
     {L"ID_CMD_STATUSBAR",     40032},
     {L"ID_CMD_SAVEEXIT",      40033},

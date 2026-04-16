@@ -492,7 +492,7 @@ bool GreenPadWnd::on_command( UINT id, HWND ctrl )
 	case ID_CMD_FINDNEXT:   search_.FindNext(); break;
 	case ID_CMD_FINDPREV:   search_.FindPrev(); break;
 	case ID_CMD_JUMP:       on_jump(); break;
-	case ID_CMD_GREP:       on_grep();break;
+	case ID_CMD_EXTCMD:     on_extcmd();break;
 	case ID_CMD_HELP:       on_help();break;
 	case ID_CMD_OPENSELECTION: on_openselection(); break;
 	case ID_CMD_SELECTIONLEN: on_showselectionlen(); break;
@@ -1019,7 +1019,7 @@ void GreenPadWnd::on_initmenu( HMENU menu, bool editmenu_only )
 	::EnableMenuItem( menu, ID_CMD_SAVEEXIT, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
 	// ::EnableMenuItem( menu, ID_CMD_REOPENFILE, MF_BYCOMMAND|(!isUntitled() ? MF_ENABLED : MF_GRAYED) );
 	::EnableMenuItem( menu, ID_CMD_OPENELEVATED, MF_BYCOMMAND|MF_ENABLED );
-	::EnableMenuItem( menu, ID_CMD_GREP, MF_BYCOMMAND|(cfg_.grepExe().len()>0 ? MF_ENABLED : MF_GRAYED) );
+	::EnableMenuItem( menu, ID_CMD_EXTCMD, MF_BYCOMMAND|(cfg_.extCmd().len()>0 ? MF_ENABLED : MF_GRAYED) );
 	::EnableMenuItem( menu, ID_CMD_OPENSELECTION, MF_BYCOMMAND|MF_ENABLED );
 	::EnableMenuItem( menu, ID_CMD_DATETIME, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
 	::EnableMenuItem( menu, ID_CMD_INSERTUNI, MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
@@ -1589,14 +1589,14 @@ void GreenPadWnd::on_exfilter()
 			wsprintf(header, TEXT("External filter failed (exit code: %d)"), (int)exitCode);
 		errMsg = header;
 
-		// Append stderr (interpret with system ANSI codepage)
+		// Append stderr (interpret as UTF-8)
 		if (stderrArgs.buf && stderrArgs.size > 0) {
-			int wlen = MultiByteToWideChar(CP_ACP, 0,
+			int wlen = MultiByteToWideChar(CP_UTF8, 0,
 			    (LPCSTR)stderrArgs.buf, (int)stderrArgs.size, NULL, 0);
 			if (wlen > 0) {
 				unicode* wbuf = new unicode[wlen + 1];
 				if (wbuf) {
-					MultiByteToWideChar(CP_ACP, 0,
+					MultiByteToWideChar(CP_UTF8, 0,
 					    (LPCSTR)stderrArgs.buf, (int)stderrArgs.size, wbuf, wlen);
 					wbuf[wlen] = 0;
 					errMsg += TEXT("\n");
@@ -1614,13 +1614,13 @@ void GreenPadWnd::on_exfilter()
 	DeleteFile(tmpIn);
 }
 
-void GreenPadWnd::on_grep()
+void GreenPadWnd::on_extcmd()
 {
-	on_external_exe_start( cfg_.grepExe() );
+	on_external_exe_start( cfg_.extCmd() );
 }
 void GreenPadWnd::on_help()
 {
-	on_external_exe_start( cfg_.helpExe() );
+	on_external_exe_start( cfg_.helpCmd() );
 }
 void GreenPadWnd::on_external_exe_start(const Path &g)
 {

@@ -76,7 +76,7 @@ Search
   F2                  Find previous
   Shift+F3            Find previous
   Ctrl+J              Jump to line (supports: 543  +10  3,8  etc.)
-  Ctrl+G              External grep
+  Ctrl+G              External command
   F7                  Open selection as file path or URL
   F8                  Show selection length in status bar
   Ctrl+B              Go to matching brace / bracket / quote
@@ -94,7 +94,7 @@ Window
   Ctrl+Shift+Tab      Previous GreenPad window
 
 Help
-  F1                  Context help (opens HelpExe with current file info)
+  F1                  Context help (opens HelpCmd with current file info)
 
 
 Command Line
@@ -366,7 +366,7 @@ External Programs
 -----------------
 Configure external programs in Settings (View > Settings).
 
-  GrepExe   Path and arguments for the external grep tool.
+  ExtCmd    Path and arguments for the external command (Ctrl+G).
             Placeholders:
               %D   current directory
               %F   full path of current file
@@ -376,7 +376,7 @@ Configure external programs in Settings (View > Settings).
             Example:
               C:\Tools\grep.exe -n "%S" "%F"
 
-  HelpExe   Path and arguments for the F1 context help tool.
+  HelpCmd   Path and arguments for the F1 context help tool.
             Same %D/%F/%N/%S placeholders apply.
 
   ExFilter  Path and arguments for the external filter (Ctrl+\).
@@ -395,8 +395,8 @@ Useful manual settings:
   Language=ja-JP       Force UI language (overrides OS display language).
                        Available: en-US  ja-JP  ko-KR  zh-CN  zh-TW  ru-RU
   WarnOnModified=0     Disable "file changed outside GreenPad" warning.
-  HelpExe=...          External help program (see above).
-  GrepExe=...          External grep program.
+  HelpCmd=...          External help program (see above).
+  ExtCmd=...           External command (Ctrl+G).
   NewfileCharset=65001 Default encoding for new files (UTF-8 with BOM).
 
   [SharedConfig]
