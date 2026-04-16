@@ -68,8 +68,8 @@ void Canvas::CalcWrapWidth()
 		wrapWidth_ = 0xffffffff;
 		break;
 	case RIGHTEDGE:
-		wrapWidth_ = txtZone_.right - txtZone_.left - font_.W()/2 - 1;
-		break; //Caret Min-3 Correction
+		wrapWidth_ = txtZone_.right - txtZone_.left - font_.W() - 1;
+		break; //Caret Min-3 Correction; use full W() to absorb GetCharWidthW rounding errors
 	default:
 		wrapWidth_ = wrapType_ * font_.W();
 		break;
