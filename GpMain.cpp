@@ -1628,9 +1628,14 @@ void GreenPadWnd::on_external_exe_start(const Path &g)
 	{
 		Path d;
 		if( filename_.len() )
-			(d = filename_).BeDirOnly().BeBackSlash(false);
+			(d = filename_).BeDirOnly();
 		else
 			d = Path(Path::Cur);
+
+		if( d.len() == 3 && d[1] == TEXT(':') && (d[2] == TEXT('\\') || d[2] == TEXT('/')) )
+			d += TEXT('.');
+		else
+			d.BeBackSlash(false);
 
 		String fcmd;
 		for( size_t i=0, e=g.len(); i<e; ++i )
