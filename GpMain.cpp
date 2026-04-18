@@ -1591,14 +1591,20 @@ void GreenPadWnd::on_exfilter()
 			wsprintf(header, TEXT("External filter failed (exit code: %d)"), (int)exitCode);
 		errMsg = header;
 
-		// Append stderr (interpret as UTF-8)
+		// Append stderr (try UTF-8 first; fall back to OEM code page for cmd.exe messages)
 		if (stderrArgs.buf && stderrArgs.size > 0) {
-			int wlen = MultiByteToWideChar(CP_UTF8, 0,
+			UINT cp = CP_UTF8;
+			int wlen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
 			    (LPCSTR)stderrArgs.buf, (int)stderrArgs.size, NULL, 0);
+			if (wlen == 0) {
+				cp = CP_OEMCP;
+				wlen = MultiByteToWideChar(CP_OEMCP, 0,
+				    (LPCSTR)stderrArgs.buf, (int)stderrArgs.size, NULL, 0);
+			}
 			if (wlen > 0) {
 				unicode* wbuf = new unicode[wlen + 1];
 				if (wbuf) {
-					MultiByteToWideChar(CP_UTF8, 0,
+					MultiByteToWideChar(cp, 0,
 					    (LPCSTR)stderrArgs.buf, (int)stderrArgs.size, wbuf, wlen);
 					wbuf[wlen] = 0;
 					errMsg += TEXT("\n");
