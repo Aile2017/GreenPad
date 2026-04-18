@@ -95,6 +95,7 @@ ID_CMD_READONLY = 읽기 전용 모드(&O)
 ID_CMD_HELP = 도움말(&C)...\tF1
 ID_CMD_HELPABOUT = 정보(&A)
 ID_CMD_CHOOSEFONT = 글꼴(&F)...
+ID_CMD_SHOWLINENO = 줄 번호 표시(&L)
 
 [Dialog.IDD_REOPENDLG]
 Caption = 다시 열기

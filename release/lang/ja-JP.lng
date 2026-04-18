@@ -95,6 +95,7 @@ ID_CMD_READONLY = 読み取り専用(&O)
 ID_CMD_HELP = ヘルプ(&C)...\tF1
 ID_CMD_HELPABOUT = バージョン情報(&A)
 ID_CMD_CHOOSEFONT = フォント(&F)...
+ID_CMD_SHOWLINENO = 行番号を表示(&L)
 
 [Dialog.IDD_REOPENDLG]
 Caption = 開き直す

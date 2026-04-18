@@ -217,6 +217,7 @@ static const NameIdPair kCommandNames[] = {
     {L"ID_CMD_ZOOMDN",        50024},
     {L"ID_CMD_EXFILTER",      50025},
     {L"ID_CMD_CHOOSEFONT",    50026},
+    {L"ID_CMD_SHOWLINENO",    50027},
 };
 
 static const NameIdPair kDialogNames[] = {

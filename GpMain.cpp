@@ -503,6 +503,7 @@ bool GreenPadWnd::on_command( UINT id, HWND ctrl )
 	case ID_CMD_WRAPWINDOW: edit_.getView().SetWrapType( wrap_=0 ); break;
 	case ID_CMD_CONFIG:     on_config();    break;
 	case ID_CMD_STATUSBAR:  on_statusBar(); break;
+	case ID_CMD_SHOWLINENO: edit_.getView().ShowLineNo( showLN_=!showLN_ ); break;
 	case ID_CMD_READONLY:   SetReadOnly( !readonly_ ); break;
 
 	// Help
@@ -1028,6 +1029,7 @@ void GreenPadWnd::on_initmenu( HMENU menu, bool editmenu_only )
 	::CheckMenuItem( menu, ID_CMD_WRAPWIDTH, MF_BYCOMMAND|(wrap_>0?MF_CHECKED:MF_UNCHECKED));
 	::CheckMenuItem( menu, ID_CMD_WRAPWINDOW, MF_BYCOMMAND|(wrap_==0?MF_CHECKED:MF_UNCHECKED));
 	::CheckMenuItem( menu, ID_CMD_STATUSBAR, cfg_.showStatusBar()?MF_CHECKED:MF_UNCHECKED );
+	::CheckMenuItem( menu, ID_CMD_SHOWLINENO, showLN_ ? MF_CHECKED : MF_UNCHECKED );
 	::CheckMenuItem( menu, ID_CMD_READONLY, readonly_ ? MF_CHECKED : MF_UNCHECKED );
 
 	LOGGER("GreenPadWnd::on_initmenu end (full init)");
@@ -2153,8 +2155,9 @@ void GreenPadWnd::ReloadConfig( bool noSetDocType )
 	// Undo count limit, limit undo
 	edit_.getDoc().SetUndoLimit( cfg_.undoLimit() );
 
-	wrap_ = cfg_.wrapType(); //       wt,    smart wrap,      line number,    Font...
-	edit_.getView().SetWrapLNandFont( wrap_, cfg_.wrapSmart(), cfg_.showLN(), CurrentVConfig(), cfg_.GetZoom() );
+	wrap_   = cfg_.wrapType();
+	showLN_ = cfg_.showLN(); //       wt,    smart wrap,      line number,    Font...
+	edit_.getView().SetWrapLNandFont( wrap_, cfg_.wrapSmart(), showLN_, CurrentVConfig(), cfg_.GetZoom() );
 	LOGGER("GreenPadWnd::ReloadConfig ViewConfigLoaded");
 
 	// keyword file, keyword file

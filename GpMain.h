@@ -103,6 +103,7 @@ private:
 	int              csi_;
 	short            lb_;
 	short            wrap_;
+	bool             showLN_;
 	bool             readonly_;
 //	int              clickHT_;
 //	short            clickX_;

@@ -245,6 +245,7 @@ BEGIN
         MENUITEM "&Settings...",                ID_CMD_CONFIG
         MENUITEM SEPARATOR
         MENUITEM "Status&Bar",                  ID_CMD_STATUSBAR
+        MENUITEM "Show &Line Numbers",          ID_CMD_SHOWLINENO
         MENUITEM "Read &Only Mode",             ID_CMD_READONLY
     END
     POPUP "&Help"

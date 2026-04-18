@@ -95,6 +95,7 @@ ID_CMD_READONLY = 唯讀模式(&O)
 ID_CMD_HELP = 關聯說明(&C)...\tF1
 ID_CMD_HELPABOUT = 關於(&A)
 ID_CMD_CHOOSEFONT = 字型(&F)...
+ID_CMD_SHOWLINENO = 顯示行號(&L)
 
 [Dialog.IDD_REOPENDLG]
 Caption = 重新載入

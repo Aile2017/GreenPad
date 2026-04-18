@@ -185,6 +185,7 @@
 #define ID_CMD_ZOOMDN                   50024
 #define ID_CMD_EXFILTER                 50025
 #define ID_CMD_CHOOSEFONT               50026
+#define ID_CMD_SHOWLINENO               50027
 
 #define IDS_EXFILTER_FAILED             25
 #define IDD_EXFILTER                    114
