@@ -89,7 +89,6 @@
 #pragma warning( disable: 4355 )
 #endif
 
-#define myDragQueryFile  DragQueryFileW
-#define myDragQueryFileW DragQueryFileW
+#define myDragQueryFile DragQueryFileW
 
 #endif // _KILIB_STDAFX_H_

@@ -16,7 +16,6 @@ void BootNewProcess( const TCHAR* cmd = TEXT("") )
 	fcmd += Path(Path::ExeName);
 	fcmd += TEXT("\" ");
 	fcmd += cmd;
-//	MessageBox(NULL, fcmd.c_str(), Path(Path::ExeName).c_str(), MB_OK);
 
 	PROCESS_INFORMATION psi;
 	STARTUPINFO         sti;
@@ -273,16 +272,6 @@ LRESULT GreenPadWnd::on_message( UINT msg, WPARAM wp, LPARAM lp )
 		}
 		break;
 
-//	case WM_ERASEBKGND:{
-//		// Uncomment to see in black the area that will be repainted
-//		Sleep(200);
-//		RECT rc;
-//		GetClientRect(hwnd(), &rc);
-//		FillRect((HDC)wp, &rc,  (HBRUSH)GetStockObject(BLACK_BRUSH));
-//		Sleep(200);
-//		return 1;
-//		}break;
-
 	// System command. An end button.
 	case WM_SYSCOMMAND:
 		if( wp==SC_CLOSE || wp==SC_DEFAULT )
@@ -329,10 +318,6 @@ LRESULT GreenPadWnd::on_message( UINT msg, WPARAM wp, LPARAM lp )
 			break;
 		}
 	} return WndImpl::on_message( msg, wp, lp );
-
-//	case WM_NCRBUTTONUP:
-//		LOGGER( "WM_NCRBUTTONUP" );
-//		return WndImpl::on_message( msg, wp, lp );
 
 	#endif // NO_OLEDNDSRC
 
@@ -746,13 +731,12 @@ void GreenPadWnd::on_openelevated(const ki::Path& fn)
 	TCHAR exename[MAX_PATH];
 	Path::GetExeName( exename );
 
-//	MsgBox( cmdl.c_str(), exename );
 	HINSTANCE ret = ShellExecute(NULL, TEXT("runas"), exename, cmdl.c_str(), NULL, SW_SHOWNORMAL);
 	if( (LONG_PTR)ret > 32 )
 		::ExitProcess(0); // Dirty quick exit.
 }
 // Keeps cursor position...
-// TOTO: also set VPos so that it does not scroll...
+// TODO: also set VPos so that it does not scroll...
 void GreenPadWnd::on_refreshfile()
 {
 	if( !isUntitled() )
@@ -809,7 +793,7 @@ void GreenPadWnd::on_print()
 {
 	doc::Document& d = edit_.getDoc();
 	const unicode* buf;
-	ulong /*dpStart = 0,*/ len = 0;
+	ulong len = 0;
 	short procCopies = 0, totalCopies = 0;
 
 	// Setup print dialog
@@ -873,8 +857,8 @@ void GreenPadWnd::on_print()
 	const RECT rcMargins = {
 		(cfg_.PMargins()->left  * logpxx)/1000,
 		(cfg_.PMargins()->top   * logpxy)/1000,
-		(cfg_.PMargins()->right * logpxx)/1000,
-		(cfg_.PMargins()->left  * logpxy)/1000,
+		(cfg_.PMargins()->right  * logpxx)/1000,
+		(cfg_.PMargins()->bottom * logpxy)/1000,
 	};
 	const RECT rcFullPage = {
 		rcMargins.left , rcMargins.top,
@@ -1883,7 +1867,6 @@ void GreenPadWnd::on_config()
 		ReloadConfig(false);
 	}
 }
-#define MyFindWindowEx FindWindowEx
 static void MyShowWnd( HWND wnd )
 {
 	if( ::IsIconic(wnd) )
@@ -1893,12 +1876,12 @@ static void MyShowWnd( HWND wnd )
 
 void GreenPadWnd::on_nextwnd()
 {
-	if( HWND next = ::MyFindWindowEx( NULL, hwnd(), className_, NULL ) )
+	if( HWND next = ::FindWindowEx( NULL, hwnd(), className_, NULL ) )
 	{
 		int i=0;;
 		HWND last=next, pos=NULL;
 		while( last != NULL && i++ < 1024 )
-			last = ::MyFindWindowEx( NULL, pos=last, className_, NULL );
+			last = ::FindWindowEx( NULL, pos=last, className_, NULL );
 		if( pos != next )
 			::SetWindowPos( hwnd(), pos,
 				0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_SHOWWINDOW );
@@ -1908,19 +1891,19 @@ void GreenPadWnd::on_nextwnd()
 
 void GreenPadWnd::on_prevwnd()
 {
-	HWND pos=NULL, next=::MyFindWindowEx( NULL,NULL,className_,NULL );
+	HWND pos=NULL, next=::FindWindowEx( NULL,NULL,className_,NULL );
 	int i=0;
 	if( next==hwnd() )
 	{
 		while( next != NULL && i++ < 1024 )
-			next = ::MyFindWindowEx( NULL,pos=next,className_,NULL );
+			next = ::FindWindowEx( NULL,pos=next,className_,NULL );
 		if( pos!=hwnd())
 			MyShowWnd( pos );
 	}
 	else
 	{
 		while( next!=hwnd() && next!=NULL && i++ < 1024)
-			next = ::MyFindWindowEx( NULL,pos=next,className_,NULL );
+			next = ::FindWindowEx( NULL,pos=next,className_,NULL );
 		if( next!=NULL )
 			MyShowWnd( pos );
 	}
@@ -2249,7 +2232,6 @@ BOOL GreenPadWnd::PostMsgToAllFriends(UINT msg)
 }
 bool GreenPadWnd::OpenByMyself( const ki::Path& fn, int cs, bool needReConf, bool always )
 {
-	//MsgBox(fn.c_str(), TEXT("File:"), 0);
 	LOGGERS( fn.c_str() );
 	// If you can't open the file, that's it.
 	TextFileR tf(cs);
@@ -2285,7 +2267,7 @@ bool GreenPadWnd::OpenByMyself( const ki::Path& fn, int cs, bool needReConf, boo
 		// if he would like to elevate so the file can be written.
 		// Detect netwrk path \\... \\?\UNC
 		int drivestart=0;
-		bool networkpath = false;;
+		bool networkpath = false;
 		if( fn[0] == TEXT('\\') && fn[1] == TEXT('\\') )
 		{
 			if( fn[2] != '?' && fn[2] != '.' ) // \\server style
@@ -2320,7 +2302,7 @@ bool GreenPadWnd::OpenByMyself( const ki::Path& fn, int cs, bool needReConf, boo
 			drive[2] = fn[drivestart+2];
 			drive[3] = TEXT('\0');
 			UINT DT = GetDriveType(drive);
-			notry = !(DT&DRIVE_REMOTE) || !(DT&DRIVE_CDROM);
+			notry = (DT == DRIVE_REMOTE) || (DT == DRIVE_CDROM);
 		}
 
 		TextFileW tfw( cs, lb_ );

@@ -105,9 +105,6 @@ private:
 	short            wrap_;
 	bool             showLN_;
 	bool             readonly_;
-//	int              clickHT_;
-//	short            clickX_;
-//	short            clickY_;
 
 	static ClsName   className_;
 
