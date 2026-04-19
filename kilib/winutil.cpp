@@ -97,7 +97,7 @@ Clipboard::Text Clipboard::GetUnicodeText() const
 				for( UINT i=0; i < nf; i++ )
 				{
 					// Return the length without NULL and requires length with NULL
-					ptr += myDragQueryFileW(h, i, ptr, Min(lenmap[i]+1, (UINT)MAX_PATH));
+					ptr += myDragQueryFile(h, i, ptr, Min(lenmap[i]+1, (UINT)MAX_PATH));
 
 					*ptr++ = L'\r';
 					*ptr++ = L'\n';
