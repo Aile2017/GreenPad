@@ -1298,6 +1298,27 @@ void ConfigManager::LoadIni()
 
 	static const RECT defpos = { CW_USEDEFAULT, CW_USEDEFAULT, 0, 0 };
 	ini_.GetRect( TEXT("WndPos"), &wndPos_, &defpos );
+	// If the saved position is off all current monitors (e.g. after removing a
+	// secondary display), discard the position but preserve the window size.
+	if( rememberWindowPlace_ && wndPos_.left != (LONG)CW_USEDEFAULT )
+	{
+		const int w = wndPos_.right  - wndPos_.left;
+		const int h = wndPos_.bottom - wndPos_.top;
+		RECT titleStrip = {
+			wndPos_.left,
+			wndPos_.top,
+			wndPos_.right,
+			wndPos_.top + ::GetSystemMetrics(SM_CYCAPTION)
+		};
+		if( ::MonitorFromRect(&titleStrip, MONITOR_DEFAULTTONULL) == NULL )
+		{
+			// Position is off-screen: reset to default, keep size if valid.
+			wndPos_.left   = (w > 0 && h > 0) ? 0 : (LONG)CW_USEDEFAULT;
+			wndPos_.top    = (w > 0 && h > 0) ? 0 : (LONG)CW_USEDEFAULT;
+			wndPos_.right  = (w > 0 && h > 0) ? w : 0;
+			wndPos_.bottom = (w > 0 && h > 0) ? h : 0;
+		}
+	}
 	if( rememberWindowSize_ )
 		wndM_ = ini_.GetBool( TEXT("WndM"), false );
 	// Exit with the ESC key?
