@@ -71,7 +71,8 @@
    |        Ctrl+J ジャンプ
    |            F3 次を検索
    |      Shift+F3 前を検索
-   |        Ctrl+G Grep
+   |        Ctrl+G 外部フィルタ
+   |  Shift+Ctrl+G 外部コマンド
    |
    |        Ctrl+1 折り返しなし
    |        Ctrl+2 指定幅折り返し

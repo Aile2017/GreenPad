@@ -158,17 +158,9 @@
 #define ID_CMD_MRU                      40200
 #define ID_CMD_DOCTYPE                  40300
 
-#define ID_CMD_UPPERCASE                50001
-#define ID_CMD_LOWERCASE                50002
-#define ID_CMD_INVERTCASE               50003
-#define ID_CMD_TTSPACES                 50004
 #define ID_CMD_REFRESHFILE              50005
 #define ID_CMD_PAGESETUP                50006
 #define ID_CMD_QUICKEXIT                50007
-#define ID_CMD_SFCHAR                   50008
-#define ID_CMD_QUOTE                    50009
-#define ID_CMD_UNQUOTE                  50010
-#define ID_CMD_SLCHAR                   50011
 #define ID_CMD_DELENDLINE               50012
 #define ID_CMD_DELSTALINE               50013
 #define ID_CMD_DELENDFILE               50014
@@ -176,7 +168,6 @@
 #define ID_CMD_HELP                     50016
 #define ID_CMD_OPENSELECTION            50017
 #define ID_CMD_SELECTIONLEN             50018
-#define ID_CMD_ASCIIFY                  50019
 #define ID_CMD_INSERTUNI                50020
 
 #define ID_CMD_ZOOMDLG                  50021

@@ -89,7 +89,7 @@ BEGIN
     "E",            ID_CMD_SAVEEXIT,        VIRTKEY, CONTROL, NOINVERT
     "E",            ID_CMD_DISCARDEXIT,     VIRTKEY, SHIFT, CONTROL, NOINVERT
     "F",            ID_CMD_FIND,            VIRTKEY, CONTROL, NOINVERT
-    "G",            ID_CMD_EXTCMD,          VIRTKEY, CONTROL, NOINVERT
+    "G",            ID_CMD_EXFILTER,        VIRTKEY, CONTROL, NOINVERT
     VK_F1,          ID_CMD_HELP,            VIRTKEY, NOINVERT
     VK_F7,          ID_CMD_OPENSELECTION,   VIRTKEY, NOINVERT
     VK_F8,          ID_CMD_SELECTIONLEN,    VIRTKEY, NOINVERT
@@ -103,15 +103,6 @@ BEGIN
     "S",            ID_CMD_SAVEFILE,        VIRTKEY, CONTROL, NOINVERT
     "S",            ID_CMD_SAVEFILEAS,      VIRTKEY, SHIFT, CONTROL, NOINVERT
     "V",            ID_CMD_PASTE,           VIRTKEY, CONTROL, NOINVERT
-    "L",            ID_CMD_LOWERCASE,       VIRTKEY, ALT, NOINVERT
-    "U",            ID_CMD_UPPERCASE,       VIRTKEY, ALT, NOINVERT
-    "I",            ID_CMD_INVERTCASE,      VIRTKEY, ALT, NOINVERT
-    "R",            ID_CMD_ASCIIFY,         VIRTKEY, ALT, NOINVERT
-    "W",            ID_CMD_TTSPACES,        VIRTKEY, ALT, NOINVERT
-    "Z",            ID_CMD_SFCHAR,          VIRTKEY, ALT, NOINVERT
-    "A",            ID_CMD_SLCHAR,          VIRTKEY, ALT, NOINVERT
-    "Q",            ID_CMD_QUOTE,           VIRTKEY, ALT, NOINVERT
-    "N",            ID_CMD_UNQUOTE,         VIRTKEY, ALT, NOINVERT
     "K",            ID_CMD_DELENDLINE,      VIRTKEY, CONTROL, NOINVERT
     "U",            ID_CMD_DELSTALINE,      VIRTKEY, CONTROL, NOINVERT
     "K",            ID_CMD_DELENDFILE,      VIRTKEY, SHIFT, CONTROL, NOINVERT
@@ -138,7 +129,7 @@ BEGIN
     "0",            ID_CMD_ZOOMRZ,          VIRTKEY, CONTROL, NOINVERT
     VK_UP,          ID_CMD_ZOOMUP,          VIRTKEY, CONTROL, NOINVERT
     VK_DOWN,        ID_CMD_ZOOMDN,          VIRTKEY, CONTROL, NOINVERT
-    VK_OEM_5,       ID_CMD_EXFILTER,        VIRTKEY, CONTROL, NOINVERT
+    "G",            ID_CMD_EXTCMD,          VIRTKEY, SHIFT, CONTROL, NOINVERT
 END
 
 /////////////////////////////////////////////////////////////////////////////
@@ -197,21 +188,8 @@ BEGIN
         MENUITEM "Insert Date&&&Time\tF6",      ID_CMD_DATETIME
         MENUITEM "Insert U&nicode...\tCtrl+I",  ID_CMD_INSERTUNI
         MENUITEM SEPARATOR
-        POPUP "&Modify"
-        BEGIN
-            MENUITEM "&Upper Case\tAlt+U",          ID_CMD_UPPERCASE
-            MENUITEM "&Lower Case\tAlt+L",          ID_CMD_LOWERCASE
-            MENUITEM "&Invert Case\tAlt+I",         ID_CMD_INVERTCASE
-            MENUITEM "&Reduce to ASCII\tAlt+R",     ID_CMD_ASCIIFY
-            MENUITEM "Trim &Trailing Spaces\tAlt+W",ID_CMD_TTSPACES
-            MENUITEM "Strip &First Characters\tAlt+Z",ID_CMD_SFCHAR
-            MENUITEM "Strip L&ast Characters\tAlt+A",ID_CMD_SLCHAR
-            MENUITEM "&Quote\tAlt+Q",               ID_CMD_QUOTE
-            MENUITEM "U&nquote\tAlt+N",             ID_CMD_UNQUOTE
-            MENUITEM SEPARATOR
-            MENUITEM "E&xternal Filter...\tCtrl+\\",ID_CMD_EXFILTER
-        END
-
+        MENUITEM "E&xternal Filter...\tCtrl+G", ID_CMD_EXFILTER
+        MENUITEM "E&xternal Command\tCtrl+Shift+G", ID_CMD_EXTCMD
     END
     POPUP "&Search"
     BEGIN
@@ -220,8 +198,6 @@ BEGIN
         MENUITEM "Find &Prev\tShift+F3",        ID_CMD_FINDPREV
         MENUITEM SEPARATOR
         MENUITEM "&Jump to Line\tCtrl+J",       ID_CMD_JUMP
-        MENUITEM SEPARATOR
-        MENUITEM "E&xternal Command\tCtrl+G",   ID_CMD_EXTCMD
         MENUITEM "&Tag Jump\tF7",               ID_CMD_OPENSELECTION
     END
     POPUP "&View"

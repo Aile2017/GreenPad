@@ -135,7 +135,8 @@ TODO:
       Shift+F3   Find prev
         Ctrl+H   Replace
         Ctrl+J   Jump to line #
-        Ctrl+G   External command
+        Ctrl+G   External filter
+  Shift+Ctrl+G   External command
 
         Ctrl+1   No Wrapping
         Ctrl+2   Wrap by specified width
@@ -233,7 +234,7 @@ TODO:
       * No forward/backward references.
       * No shortest matches (every * is greedy)
 
-  * External Command (Ctrl+G) ?
+  * External Command (Ctrl+Shift+G) ?
 
     You can enter any external command here. For example,
       C:\Software\Gj\GrepJuice.exe "%D"

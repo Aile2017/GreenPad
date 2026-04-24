@@ -11,8 +11,8 @@ A feature that passes the text being edited to an external program and replaces 
 
 ### How to Invoke
 
-- Menu: added to the Edit > Modify submenu
-- Shortcut: `Ctrl+\`
+- Menu: added directly to the Edit menu
+- Shortcut: `Ctrl+G`
 - The shortcut opens a command-line input dialog; the entered command is executed via `cmd.exe /c`.
 
 ### Encoding / Line Endings
@@ -67,12 +67,12 @@ Add the following entries to each language file.
 
 | Language | String |
 |---|---|
-| en-US | `E&xternal Filter...\tCtrl+\` |
-| ja-JP | `外部フィルタ(&X)...\tCtrl+\` |
-| zh-CN | `外部过滤器(&X)...\tCtrl+\` |
-| zh-TW | `外部篩選器(&X)...\tCtrl+\` |
-| ko-KR | `외부 필터(&X)...\tCtrl+\` |
-| ru-RU | `Внешний фильтр(&X)...\tCtrl+\` |
+| en-US | `E&xternal Filter...\tCtrl+G` |
+| ja-JP | `外部フィルタ(&X)...\tCtrl+G` |
+| zh-CN | `外部过滤器(&X)...\tCtrl+G` |
+| zh-TW | `外部篩選器(&X)...\tCtrl+G` |
+| ko-KR | `외부 필터(&X)...\tCtrl+G` |
+| ru-RU | `Внешний фильтр(&X)...\tCtrl+G` |
 
 #### `[Dialog.IDD_EXFILTER]` — Dialog strings
 

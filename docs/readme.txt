@@ -109,7 +109,7 @@
   * Added UTF-EBCDIC, Unicode IBM encoding, both save and read.
   * Added F1 for contextual help, command line can be configured with the
     `HelpExe` string in the ini file (similar to GrepExe).
-  * Added the %S parameter to command line (Ctrl+G or F1) that expands to
+  * Added the %S parameter to command line (Ctrl+Shift+G or F1) that expands to
     the current selection.
   * Added the F7 command to open the selection in GreenPad, handles
     relative or full path names. Also opens URLs in default browser.
@@ -251,7 +251,7 @@
   * Now the selection will remain active when user presses the Replace &All
     option in the Find/Replace dialog.
   * Now Latin words will no longer be split when using extended alphabet
-    ie: the word éléphant can be selected as a single word instead of 3.
+    ie: the word ï¿½lï¿½phant can be selected as a single word instead of 3.
   * Avoid synchronous painting when scrolling.
   * Scroll wheel with small steps are now properly supported.
   * The number of lines to scroll per wheel step now takes into in account
@@ -287,7 +287,7 @@
 
 < FIXED >
   * LTN1 (code page 1252) will no longer be treated internally, this removes
-    redundant code and allows proper display of special chars such as 'œ'.
+    redundant code and allows proper display of special chars such as 'ï¿½'.
     because the internal handling was not correct.
   * Fixed: Use GetClassInfo() function to determine how to enable status bar
     instead of relying on windows versions.
@@ -488,7 +488,8 @@ TODO:
       Shift+F3   Find prev
         Ctrl+H   Replace
         Ctrl+J   Jump to line #
-        Ctrl+G   Grep
+        Ctrl+G   External filter
+  Shift+Ctrl+G   External command
 
         Ctrl+1   No Wrapping
         Ctrl+2   Wrap by specified width

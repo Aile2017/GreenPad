@@ -57,18 +57,6 @@ Edit
   Ctrl+Shift+K        Delete to end of file
   Ctrl+Shift+U        Delete to start of file
 
-Modify (Edit > Modify)
-  Alt+U               Upper case selection
-  Alt+L               Lower case selection
-  Alt+I               Invert case selection
-  Alt+R               Reduce to ASCII (replace non-ASCII with '?')
-  Alt+W               Trim trailing spaces
-  Alt+Z               Strip first character of each selected line
-  Alt+A               Strip last character of each selected line
-  Alt+Q               Quote (add comment character to each selected line)
-  Alt+N               Unquote (remove comment character)
-  Ctrl+\              External filter...
-
 Search
   Ctrl+F              Find / Replace
   Ctrl+H              Find / Replace (same dialog)
@@ -76,10 +64,13 @@ Search
   F2                  Find previous
   Shift+F3            Find previous
   Ctrl+J              Jump to line (supports: 543  +10  3,8  etc.)
-  Ctrl+G              External command
   F7                  Open selection as file path or URL
   F8                  Show selection length in status bar
   Ctrl+B              Go to matching brace / bracket / quote
+
+External Tools
+  Ctrl+G              External filter...
+  Ctrl+Shift+G        External command
 
 View
   Ctrl+1              No wrapping
@@ -366,20 +357,28 @@ External Programs
 -----------------
 Configure external programs in Settings (View > Settings).
 
-  ExtCmd    Path and arguments for the external command (Ctrl+G).
+  ExtCmd    Path and arguments for the external command (Ctrl+Shift+G).
+            GreenPad prepends its own executable directory to PATH
+            before launching this command.
             Placeholders:
               %D   current directory
               %F   full path of current file
               %N   filename only (no path)
               %S   current selection text
+              %G   directory containing GreenPad.exe
+              %1   legacy alias for %D
 
             Example:
               C:\Tools\grep.exe -n "%S" "%F"
 
   HelpCmd   Path and arguments for the F1 context help tool.
-            Same %D/%F/%N/%S placeholders apply.
+            GreenPad prepends its own executable directory to PATH
+            before launching this command.
+            Same %D/%F/%N/%S/%G/%1 placeholders apply.
 
-  ExFilter  Path and arguments for the external filter (Ctrl+\).
+  ExFilter  Path and arguments for the external filter (Ctrl+G).
+            GreenPad prepends its own executable directory to PATH
+            before launching this command.
             The selected text is piped to stdin; stdout replaces
             the selection.
 
@@ -396,7 +395,7 @@ Useful manual settings:
                        Available: en-US  ja-JP  ko-KR  zh-CN  zh-TW  ru-RU
   WarnOnModified=0     Disable "file changed outside GreenPad" warning.
   HelpCmd=...          External help program (see above).
-  ExtCmd=...           External command (Ctrl+G).
+  ExtCmd=...           External command (Ctrl+Shift+G).
   NewfileCharset=65001 Default encoding for new files (UTF-8 with BOM).
 
   [SharedConfig]

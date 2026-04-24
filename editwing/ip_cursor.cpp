@@ -667,10 +667,6 @@ void Cursor::QuoteSelectionW(const unicode *qs, bool shi)
 		MoveCur(ocur, true);
 	}
 }
-void Cursor::QuoteSelection(bool unquote)
-{
-	QuoteSelectionW(doc_.getCommentStr(), unquote);
-}
 //-------------------------------------------------------------------------
 // Indent/Un-indent selection with Tab/Shit+Tab.
 //-------------------------------------------------------------------------
@@ -769,93 +765,6 @@ void Cursor::Paste()
 //-------------------------------------------------------------------------
 // More Edit functions
 //-------------------------------------------------------------------------
-unicode* WINAPI Cursor::InvertCaseW(unicode *str, size_t *lenp, LPARAM param)
-{
-	if(!str) return NULL;
-	size_t len = *lenp;
-	for(size_t i=0; i<len; i++)
-	{
-		if(my_IsCharLowerW(str[i]))
-			str[i] = my_CharUpperSingleW(str[i]);
-		else
-			str[i] = my_CharLowerSingleW(str[i]);
-	}
-	return str;
-}
-
-unicode* WINAPI Cursor::UpperCaseW(unicode *str, size_t *lenp, LPARAM param)
-{
-	if(!str) return NULL;
-	const size_t len = *lenp;
-	CharUpperBuffW(str, len);
-	return str;
-}
-
-unicode* WINAPI Cursor::LowerCaseW(unicode *str, size_t *lenp, LPARAM param)
-{
-	if(!str) return NULL;
-	const size_t len = *lenp;
-	CharLowerBuffW(str, len);
-	return str;
-}
-
-unicode* WINAPI Cursor::TrimTrailingSpacesW(unicode *str, size_t *lenp, LPARAM param)
-{
-
-	long i, j, len=*lenp, new_len=0;
-	bool trim = true;
-	// Go through the string backward
-	for (i = len-1, j = i; i >= 0; i--)
-	{
-		if (trim) { // we trim
-			if (str[i] == ' ' || str[i] == '\t') {
-				continue; // next i.
-			} else if (str[i] != '\n' && str[i] != '\r') {
-				trim = false; // stop trimming
-			}
-		} else { // If we stopped trimming
-			if (str[i] == '\n' || str[i] == '\r') {
-				trim = true; // restart just after the CR|LF
-			}
-		}
-		++new_len;
-		str[j--] = str[i];
-	}
-	j++;
-	*lenp = new_len;
-	return j!=0 ? &str[j]: NULL; // New string start
-}
-
-unicode* WINAPI Cursor::StripLastCharsW(unicode *p, size_t *lenp, LPARAM param)
-{	// Remove last char of each line
-
-	size_t  i, j, len=*lenp;
-	for (i=0, j=0; i < len; )
-	{
-		// Skip if the next character is a CR or LF, while preserving CRLF
-		i += p[i+1] != '\0' && ((p[i+1] == '\n' || p[i+1] == '\r') && p[i+2] != '\r');
-
-		p[j++] = p[i++];
-	}
-	p[j] = L'\0';
-	*lenp = j-1;
-	return p;
-}
-
-unicode* WINAPI Cursor::ASCIIOnlyW(unicode *str, size_t *lenp, LPARAM param)
-{
-	size_t cnt = 0, len = *lenp;
-	for(ulong i=0; i<len; i++)
-	{
-		if( str[i] > 0x007f )
-		{
-			str[i] = L'?';
-			cnt++;
-		}
-	}
-	return cnt? str: NULL;
-}
-
 //unicode *WINAPI Cursor::MapStringW(unicode *str, size_t *lenp, LPARAM param)
 //{
 //	//#define FLAGS MAP_FOLDCZONE|MAP_FOLDDIGITS|MAP_PRECOMPOSED
@@ -956,36 +865,6 @@ void Cursor::ModSelection(ModProc mfunk, LPARAM param)
 void Cursor::UnicodeNormalize(int mode)
 {
 	ModSelection(UnicodeNormalizeW, mode);
-}
-
-void Cursor::UpperCaseSel()
-{
-	ModSelection(UpperCaseW);
-}
-void Cursor::LowerCaseSel()
-{
-	ModSelection(LowerCaseW);
-}
-void Cursor::InvertCaseSel()
-{
-	ModSelection(InvertCaseW);
-}
-void Cursor::TTSpacesSel()
-{
-	ModSelection(TrimTrailingSpacesW);
-}
-void Cursor::StripFirstChar()
-{
-	QuoteSelectionW( NULL, true );
-}
-void Cursor::StripLastChar()
-{
-	ModSelection(StripLastCharsW);
-}
-
-void Cursor::ASCIIFy()
-{
-	ModSelection( ASCIIOnlyW );
 }
 //-------------------------------------------------------------------------
 // cursor movement

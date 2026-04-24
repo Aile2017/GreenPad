@@ -10,6 +10,147 @@ using namespace editwing;
 // Start new process
 //-------------------------------------------------------------------------
 
+static bool IsDriveRootDir(const Path& dir)
+{
+	return dir.len() == 3 && dir[1] == TEXT(':')
+		&& (dir[2] == TEXT('\\') || dir[2] == TEXT('/'));
+}
+
+static void NormalizeDirForCommand(Path& dir)
+{
+	if( IsDriveRootDir(dir) )
+		dir += TEXT('.');
+	else
+		dir.BeBackSlash(false);
+}
+
+static Path GetGreenPadDirForCommand()
+{
+	Path dir(Path::Exe);
+	NormalizeDirForCommand(dir);
+	return dir;
+}
+
+static Path GetGreenPadDirForPath()
+{
+	Path dir(Path::Exe);
+	if( !IsDriveRootDir(dir) )
+		dir.BeBackSlash(false);
+	return dir;
+}
+
+static bool IsPathEnvironmentEntry(const TCHAR* entry)
+{
+	return entry[0]
+		&& tolowerASCII(entry[0]) == TEXT('p')
+		&& tolowerASCII(entry[1]) == TEXT('a')
+		&& tolowerASCII(entry[2]) == TEXT('t')
+		&& tolowerASCII(entry[3]) == TEXT('h')
+		&& entry[4] == TEXT('=');
+}
+
+static TCHAR* BuildExternalProcessEnvironment()
+{
+	enum { PATH_EQ_LEN = 5 };
+
+	LPTCH env = ::GetEnvironmentStrings();
+	if( !env )
+		return NULL;
+
+	Path greenPadDir = GetGreenPadDirForPath();
+	size_t gpLen = greenPadDir.len();
+	size_t totalChars = 1; // Final double-NUL terminator
+	bool hasPath = false;
+
+	for( const TCHAR* p = env; *p; p += my_lstrlen(p) + 1 )
+	{
+		size_t len = my_lstrlen(p);
+		if( IsPathEnvironmentEntry(p) )
+		{
+			hasPath = true;
+			totalChars += PATH_EQ_LEN + gpLen + (len > PATH_EQ_LEN ? 1 + len - PATH_EQ_LEN : 0) + 1;
+		}
+		else
+		{
+			totalChars += len + 1;
+		}
+	}
+
+	if( !hasPath )
+		totalChars += PATH_EQ_LEN + gpLen + 1;
+
+	TCHAR* out = (TCHAR*)HeapAlloc(GetProcessHeap(), 0, totalChars * sizeof(TCHAR));
+	if( !out )
+	{
+		::FreeEnvironmentStrings(env);
+		return NULL;
+	}
+
+	TCHAR* dst = out;
+	bool wrotePath = false;
+	for( const TCHAR* p = env; *p; p += my_lstrlen(p) + 1 )
+	{
+		size_t len = my_lstrlen(p);
+		if( IsPathEnvironmentEntry(p) )
+		{
+			const TCHAR* oldPath = p + PATH_EQ_LEN;
+			*dst++ = TEXT('P');
+			*dst++ = TEXT('A');
+			*dst++ = TEXT('T');
+			*dst++ = TEXT('H');
+			*dst++ = TEXT('=');
+			for( const TCHAR* s = greenPadDir.c_str(); *s; ++s )
+				*dst++ = *s;
+			if( *oldPath )
+			{
+				*dst++ = TEXT(';');
+				for( const TCHAR* s = oldPath; *s; ++s )
+					*dst++ = *s;
+			}
+			*dst++ = TEXT('\0');
+			wrotePath = true;
+		}
+		else
+		{
+			for( size_t i = 0; i <= len; ++i )
+				*dst++ = p[i];
+		}
+	}
+
+	if( !wrotePath )
+	{
+		*dst++ = TEXT('P');
+		*dst++ = TEXT('A');
+		*dst++ = TEXT('T');
+		*dst++ = TEXT('H');
+		*dst++ = TEXT('=');
+		for( const TCHAR* s = greenPadDir.c_str(); *s; ++s )
+			*dst++ = *s;
+		*dst++ = TEXT('\0');
+	}
+	*dst++ = TEXT('\0');
+
+	::FreeEnvironmentStrings(env);
+	return out;
+}
+
+static BOOL CreateExternalProcess(
+	LPTSTR cmdLine, BOOL inheritHandles, DWORD creationFlags,
+	LPSTARTUPINFO startupInfo, LPPROCESS_INFORMATION processInfo)
+{
+	TCHAR* env = BuildExternalProcessEnvironment();
+	DWORD flags = creationFlags;
+	if( env )
+		flags |= CREATE_UNICODE_ENVIRONMENT;
+
+	BOOL ret = ::CreateProcess(
+		NULL, cmdLine, NULL, NULL, inheritHandles, flags, env, NULL, startupInfo, processInfo);
+
+	if( env )
+		HeapFree(GetProcessHeap(), 0, env);
+	return ret;
+}
+
 void BootNewProcess( const TCHAR* cmd = TEXT("") )
 {
 	String fcmd = TEXT("\"");
@@ -435,35 +576,6 @@ bool GreenPadWnd::on_command( UINT id, HWND ctrl )
 	case ID_CMD_ZOOMUP:     on_setzoom( cfg_.GetZoom() + 10 );  break;
 	case ID_CMD_ZOOMDN:     on_setzoom( cfg_.GetZoom() - 10 );  break;
 	case ID_CMD_CHOOSEFONT: on_choosefont();                    break;
-    // More edit
-	case ID_CMD_UPPERCASE:
-		if( !readonly_ ) edit_.getCursor().UpperCaseSel();
-		break;
-	case ID_CMD_LOWERCASE:
-		if( !readonly_ ) edit_.getCursor().LowerCaseSel();
-		break;
-	case ID_CMD_INVERTCASE:
-		if( !readonly_ ) edit_.getCursor().InvertCaseSel();
-		break;
-	case ID_CMD_TTSPACES:
-		if( !readonly_ ) edit_.getCursor().TTSpacesSel();
-		break;
-	case ID_CMD_SFCHAR:
-		if( !readonly_ ) edit_.getCursor().StripFirstChar();
-		break;
-	case ID_CMD_SLCHAR:
-		if( !readonly_ ) edit_.getCursor().StripLastChar();
-		break;
-	case ID_CMD_ASCIIFY:
-		if( !readonly_ ) edit_.getCursor().ASCIIFy();
-		break;
-
-	case ID_CMD_QUOTE:
-		if( !readonly_ ) edit_.getCursor().QuoteSelection(false);
-		break;
-	case ID_CMD_UNQUOTE:
-		if( !readonly_ ) edit_.getCursor().QuoteSelection(true);
-		break;
 	case ID_CMD_EXFILTER:
 		if( !readonly_ ) on_exfilter();
 		break;
@@ -967,34 +1079,9 @@ void GreenPadWnd::on_initmenu( HMENU menu, bool editmenu_only )
 	::EnableMenuItem( menu, ID_CMD_REDO,   MF_BYCOMMAND|(readonly_ ? MF_GRAYED : (edit_.getDoc().isRedoAble()? MF_ENABLED: MF_GRAYED)) );
 	::EnableMenuItem( menu, ID_CMD_PASTE,  MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
 
-	::EnableMenuItem( menu, ID_CMD_UPPERCASE, readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_LOWERCASE, readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_INVERTCASE,readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_TTSPACES,  readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_ASCIIFY,   readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_SFCHAR,    readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_SLCHAR,    readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_QUOTE,     readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
-	::EnableMenuItem( menu, ID_CMD_UNQUOTE,   readonly_ ? MF_BYCOMMAND|MF_GRAYED : gray_when_unselected );
 	::EnableMenuItem( menu, ID_CMD_EXFILTER,  MF_BYCOMMAND|(readonly_ ? MF_GRAYED : MF_ENABLED) );
 	if( editmenu_only )
 	{
-		HMENU hMain = ::GetMenu( hwnd() );
-		if( hMain && menu == ::GetSubMenu(hMain, 1) )
-		{
-			// Gray out parent popup items in Edit menu: Modify / Unicode NF.
-			// Detect popup positions dynamically to avoid index mismatch.
-			int cnt = ::GetMenuItemCount( menu );
-			for( int i=0; i<cnt; ++i )
-			{
-				HMENU sub = ::GetSubMenu( menu, i );
-				if( !sub )
-					continue;
-				UINT first_cmd = ::GetMenuItemID( sub, 0 );
-				if( first_cmd == ID_CMD_UPPERCASE )
-					::EnableMenuItem( menu, i, MF_BYPOSITION | (readonly_ ? MF_GRAYED : MF_ENABLED) );
-			}
-		}
 		LOGGER("GreenPadWnd::on_initmenu end (edit menu only)");
 		return;
 	}
@@ -1460,8 +1547,9 @@ void GreenPadWnd::on_exfilter()
 	sti.wShowWindow = SW_HIDE;
 
 	PROCESS_INFORMATION psi;
-	bool launched = ::CreateProcess(NULL, const_cast<TCHAR*>(cmdLine.c_str()),
-		NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &sti, &psi) != FALSE;
+	bool launched = CreateExternalProcess(
+		const_cast<TCHAR*>(cmdLine.c_str()),
+		TRUE, CREATE_NO_WINDOW, &sti, &psi) != FALSE;
 
 	CloseHandle(hStdinR);
 	CloseHandle(hStdoutW);
@@ -1619,15 +1707,12 @@ void GreenPadWnd::on_external_exe_start(const Path &g)
 	if( g.len() != 0 )
 	{
 		Path d;
+		Path gdir = GetGreenPadDirForCommand();
 		if( filename_.len() )
 			(d = filename_).BeDirOnly();
 		else
 			d = Path(Path::Cur);
-
-		if( d.len() == 3 && d[1] == TEXT(':') && (d[2] == TEXT('\\') || d[2] == TEXT('/')) )
-			d += TEXT('.');
-		else
-			d.BeBackSlash(false);
+		NormalizeDirForCommand(d);
 
 		String fcmd;
 		for( size_t i=0, e=g.len(); i<e; ++i )
@@ -1640,6 +1725,8 @@ void GreenPadWnd::on_external_exe_start(const Path &g)
 					++i, fcmd += filename_;
 				else if( g[i+1]==TEXT('N') ) // File name only
 					++i, fcmd += filename_.name();
+				else if( g[i+1]==TEXT('G') ) // GreenPad.exe directory
+					++i, fcmd += gdir;
 				else if( g[i+1]==TEXT('S') ) // Current selection
 					++i, fcmd += edit_.getCursor().getSelectedStr().get();
 			}
@@ -1653,9 +1740,9 @@ void GreenPadWnd::on_external_exe_start(const Path &g)
 		STARTUPINFO         sti = {sizeof(STARTUPINFO)};
 		//sti.dwFlags = STARTF_USESHOWWINDOW;
 		//sti.wShowWindow = SW_SHOWNORMAL;
-		if( ::CreateProcess( NULL, const_cast<TCHAR*>(fcmd.c_str()),
-				NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS, NULL, NULL,
-				&sti, &psi ) )
+		if( CreateExternalProcess(
+				const_cast<TCHAR*>(fcmd.c_str()),
+				FALSE, NORMAL_PRIORITY_CLASS, &sti, &psi ) )
 		{
 			::CloseHandle( psi.hThread );
 			::CloseHandle( psi.hProcess );

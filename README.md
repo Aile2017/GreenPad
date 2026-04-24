@@ -21,7 +21,7 @@ This fork targets 64-bit Windows only and drops all legacy compatibility code, r
 - Smart indentation
 - UAC elevation support
 - UI languages: English, Japanese, Simplified Chinese, Traditional Chinese, Korean, Russian — extensible via `.lng` files (see [Command line](#command-line))
-- External filter (`Ctrl+\`): pipe selected text (or the whole file) through any command-line program and replace it with the output — enables on-the-fly text transformation via `sort`, `sed`, `awk`, Perl, Python, Ruby, and more (see [docs/external-filter-spec.md](docs/external-filter-spec.md))
+- External filter (`Ctrl+G`): pipe selected text (or the whole file) through any command-line program and replace it with the output — enables on-the-fly text transformation via `sort`, `sed`, `awk`, Perl, Python, Ruby, and more (see [docs/external-filter-spec.md](docs/external-filter-spec.md))
 
 ## System Requirements
 
@@ -136,7 +136,8 @@ C:/usr/msys64/usr/bin/bash.exe -c "export PATH=/clang64/bin:/usr/bin:$PATH; /usr
 | `F3` / `Shift+F3` | Find next / prev |
 | `Ctrl+H` | Replace |
 | `Ctrl+J` | Jump to line |
-| `Ctrl+G` | External command |
+| `Ctrl+G` | External filter |
+| `Ctrl+Shift+G` | External command |
 | `Ctrl+1/2/3` | Wrap: none / fixed width / window width |
 | `Ctrl+I` | Insert Unicode code point |
 | `Ctrl+B` | Go to matching brace |
@@ -144,6 +145,39 @@ C:/usr/msys64/usr/bin/bash.exe -c "export PATH=/clang64/bin:/usr/bin:$PATH; /usr
 For a complete list of all keyboard shortcuts, see [docs/keybindings.md](docs/keybindings.md).
 
 ## Configuration
+
+### External tools in `GreenPad.ini`
+
+The `GreenPad` section can define external tools:
+
+```ini
+[GreenPad]
+ExtCmd=...
+HelpCmd=...
+```
+
+- `ExtCmd` runs the **External Command** action (`Ctrl+Shift+G`).
+- `HelpCmd` runs the **Context Help** action (`F1`).
+- GreenPad prepends its own executable directory to `PATH` when launching
+  `ExtCmd`, `HelpCmd`, and the external filter.
+
+The following placeholders can be used in both values:
+
+| Placeholder | Meaning |
+|---|---|
+| `%D` | Directory of the current file |
+| `%F` | Full path of the current file |
+| `%N` | File name only of the current file |
+| `%S` | Current selection text |
+| `%G` | Directory containing `GreenPad.exe` |
+| `%1` | Legacy alias for `%D` |
+
+Examples:
+
+```ini
+ExtCmd=wt.exe -d "%D" C:\usr\tools\common\BusyBox ash
+HelpCmd=GreenPad.exe -r "%G\GreenPad.hlp"
+```
 
 ### Layout files (`.lay`)
 
