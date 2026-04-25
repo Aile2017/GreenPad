@@ -47,7 +47,6 @@ Complete reference of all keyboard shortcuts, organized by category.
 | `Shift+F3` / `F2` | Find previous |
 | `Ctrl+J` | Jump to line number |
 | `Ctrl+G` | External filter |
-| `Ctrl+Shift+G` | External command |
 | `F7` | Open selection as file path or URL |
 | `F8` | Show selection length |
 
@@ -91,7 +90,6 @@ Complete reference of all keyboard shortcuts, organized by category.
 | Key | Action |
 |-----|--------|
 | `Ctrl+G` | Run external filter on selection (see [External Filter Feature](external-filter-spec.md)) |
-| `Ctrl+Shift+G` | External command |
 | `F1` | Help |
 
 ---

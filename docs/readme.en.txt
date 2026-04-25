@@ -234,7 +234,7 @@ TODO:
       * No forward/backward references.
       * No shortest matches (every * is greedy)
 
-  * External Command (Ctrl+Shift+G) ?
+  * External Command (Edit menu) ?
 
     You can enter any external command here. For example,
       C:\Software\Gj\GrepJuice.exe "%D"

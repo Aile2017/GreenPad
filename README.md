@@ -137,7 +137,6 @@ C:/usr/msys64/usr/bin/bash.exe -c "export PATH=/clang64/bin:/usr/bin:$PATH; /usr
 | `Ctrl+H` | Replace |
 | `Ctrl+J` | Jump to line |
 | `Ctrl+G` | External filter |
-| `Ctrl+Shift+G` | External command |
 | `Ctrl+1/2/3` | Wrap: none / fixed width / window width |
 | `Ctrl+I` | Insert Unicode code point |
 | `Ctrl+B` | Go to matching brace |
@@ -156,7 +155,7 @@ ExtCmd=...
 HelpCmd=...
 ```
 
-- `ExtCmd` runs the **External Command** action (`Ctrl+Shift+G`).
+- `ExtCmd` runs the **External Command** action (menu only).
 - `HelpCmd` runs the **Context Help** action (`F1`).
 - GreenPad prepends its own executable directory to `PATH` when launching
   `ExtCmd`, `HelpCmd`, and the external filter.

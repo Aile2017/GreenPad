@@ -70,7 +70,7 @@ Search
 
 External Tools
   Ctrl+G              External filter...
-  Ctrl+Shift+G        External command
+                      External command (Edit menu only, no shortcut)
 
 View
   Ctrl+1              No wrapping
@@ -357,7 +357,7 @@ External Programs
 -----------------
 Configure external programs in Settings (View > Settings).
 
-  ExtCmd    Path and arguments for the external command (Ctrl+Shift+G).
+  ExtCmd    Path and arguments for the external command (Edit menu).
             GreenPad prepends its own executable directory to PATH
             before launching this command.
             Placeholders:
@@ -395,7 +395,7 @@ Useful manual settings:
                        Available: en-US  ja-JP  ko-KR  zh-CN  zh-TW  ru-RU
   WarnOnModified=0     Disable "file changed outside GreenPad" warning.
   HelpCmd=...          External help program (see above).
-  ExtCmd=...           External command (Ctrl+Shift+G).
+  ExtCmd=...           External command (Edit menu only).
   NewfileCharset=65001 Default encoding for new files (UTF-8 with BOM).
 
   [SharedConfig]

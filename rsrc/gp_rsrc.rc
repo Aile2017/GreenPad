@@ -129,7 +129,6 @@ BEGIN
     "0",            ID_CMD_ZOOMRZ,          VIRTKEY, CONTROL, NOINVERT
     VK_UP,          ID_CMD_ZOOMUP,          VIRTKEY, CONTROL, NOINVERT
     VK_DOWN,        ID_CMD_ZOOMDN,          VIRTKEY, CONTROL, NOINVERT
-    "G",            ID_CMD_EXTCMD,          VIRTKEY, SHIFT, CONTROL, NOINVERT
 END
 
 /////////////////////////////////////////////////////////////////////////////
@@ -189,7 +188,7 @@ BEGIN
         MENUITEM "Insert U&nicode...\tCtrl+I",  ID_CMD_INSERTUNI
         MENUITEM SEPARATOR
         MENUITEM "E&xternal Filter...\tCtrl+G", ID_CMD_EXFILTER
-        MENUITEM "E&xternal Command\tCtrl+Shift+G", ID_CMD_EXTCMD
+        MENUITEM "E&xternal Command",           ID_CMD_EXTCMD
     END
     POPUP "&Search"
     BEGIN
