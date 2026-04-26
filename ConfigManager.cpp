@@ -1505,6 +1505,21 @@ void ConfigManager::SaveIni()
 	}
 	ini_.PutStrinSect( Ulong2lStr(strnum, ct), TEXT("DocType"), TEXT("") );
 
+	// Remove stale entries left over from a previously longer list.
+	{
+		TCHAR nextnum[ULONG_DIGITS+1];
+		TCHAR val[16];
+		static const TCHAR kSentinel[] = TEXT("\x01");
+		for (ulong del = ct + 1; ; ++del)
+		{
+			::GetPrivateProfileString(TEXT("DocType"), Ulong2lStr(nextnum, del),
+			                         kSentinel, val, countof(val), ini_.getName());
+			if (lstrcmp(val, kSentinel) == 0)
+				break;
+			::WritePrivateProfileString(TEXT("DocType"), nextnum, NULL, ini_.getName());
+		}
+	}
+
 
 	// Write section for common settings
 	ini_.SetSectionAsUserNameIfNotShared( s_sharedConfigSection );
