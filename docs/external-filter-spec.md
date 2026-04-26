@@ -22,8 +22,12 @@ A feature that passes the text being edited to an external program and replaces 
 
 ### Error Handling
 
-- If the filter program exits with a non-zero exit code, the original text is preserved.
-- An error dialog is shown on non-zero exit:
+Exit code handling follows the grep convention:
+
+- **Exit code 0**: success — stdout replaces the selection (or the whole file if no selection was active).
+- **Exit code 1 with no stderr output**: treated as success with no output — the selection is left unchanged and no error dialog is shown.
+  This covers tools such as `grep` that use exit code 1 to mean "no matches found" rather than a runtime error.
+- **Any other exit code, or exit code 1 with stderr output**: the original text is preserved and an error dialog is shown.
   - If stderr has output, it is included in the dialog message.
   - If stderr is empty, only `Exit code: N` is shown.
 
