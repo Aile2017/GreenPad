@@ -34,6 +34,7 @@ IDS_UNTITLED = без имени
 IDS_CHARSET_CAPTION = Кодировка:
 IDS_CRLF_CAPTION = Конец строки:
 IDS_EXFILTER_FAILED = Внешний фильтр завершился с ошибкой (код завершения: %d)
+IDS_EXFILTER_PINFULL = Список закреплённых команд заполнен (макс.: %d).
 
 [Menu]
 popup.0 = &Файл
@@ -126,6 +127,8 @@ IDCANCEL = Отмена
 IDC_FILTERDELBTN = Удал.
 IDC_FILTERUPBTN = Вверх
 IDC_FILTERDOWNBTN = Вниз
+IDC_FILTERPINBTN = Закр.
+IDC_FILTERPINBTN.unpin = Откр.
 
 [Dialog.IDD_ABOUTDLG]
 Caption = О GreenPad

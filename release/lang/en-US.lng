@@ -34,6 +34,7 @@ IDS_UNTITLED = untitled
 IDS_CHARSET_CAPTION = Character Encoding:
 IDS_CRLF_CAPTION = Line ending:
 IDS_EXFILTER_FAILED = External filter failed (exit code: %d)
+IDS_EXFILTER_PINFULL = Pinned list is full (max: %d).
 
 [Menu]
 popup.0 = &File
@@ -126,6 +127,8 @@ IDCANCEL = Cancel
 IDC_FILTERDELBTN = Del
 IDC_FILTERUPBTN = Up
 IDC_FILTERDOWNBTN = Down
+IDC_FILTERPINBTN = Pin
+IDC_FILTERPINBTN.unpin = Unpin
 
 [Dialog.IDD_ABOUTDLG]
 Caption = About GreenPad

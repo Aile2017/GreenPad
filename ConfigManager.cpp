@@ -1340,6 +1340,11 @@ void ConfigManager::LoadIni()
 		wsprintf(key, TEXT("FilterCmd%d"), i + 1);
 		filterHistory_[i] = ini_.GetStr(key, TEXT(""));
 	}
+	for (int i = 0; i < kFilterPinnedMax; ++i) {
+		TCHAR key[20];
+		wsprintf(key, TEXT("FilterPin%d"), i + 1);
+		pinnedHistory_[i] = ini_.GetStr(key, TEXT(""));
+	}
 
 	language_ = ini_.GetStr( TEXT("Language"), TEXT("") );
 
@@ -1567,6 +1572,11 @@ void ConfigManager::SaveIni()
 		wsprintf(key, TEXT("FilterCmd%d"), i + 1);
 		ini_.PutStr(key, filterHistory_[i].c_str());
 	}
+	for (int i = 0; i < kFilterPinnedMax; ++i) {
+		TCHAR key[20];
+		wsprintf(key, TEXT("FilterPin%d"), i + 1);
+		ini_.PutStr(key, pinnedHistory_[i].c_str());
+	}
 }
 
 
@@ -1617,6 +1627,9 @@ bool ConfigManager::AddMRU( const ki::Path& fname )
 
 void ConfigManager::AddFilterHistory( const ki::String& cmd )
 {
+	// Skip if already in the pinned list
+	if (IsFilterPinned(cmd)) return;
+
 	// Find existing entry
 	int found = -1;
 	for (int i = 0; i < kFilterHistoryMax; ++i) {
@@ -1663,6 +1676,72 @@ void ConfigManager::SwapFilterHistory( int i, int j )
 	ki::String tmp = filterHistory_[i];
 	filterHistory_[i] = filterHistory_[j];
 	filterHistory_[j] = tmp;
+	inichanged_ = 1;
+	SaveIni();
+}
+
+bool ConfigManager::IsFilterPinned( const ki::String& cmd ) const
+{
+	for (int i = 0; i < kFilterPinnedMax; ++i)
+		if (pinnedHistory_[i].len() > 0 &&
+		    lstrcmp(pinnedHistory_[i].c_str(), cmd.c_str()) == 0)
+			return true;
+	return false;
+}
+
+void ConfigManager::AddPinned( const ki::String& cmd )
+{
+	if (IsFilterPinned(cmd)) return;
+
+	// Remove from regular history without a separate SaveIni call
+	int found = -1;
+	for (int i = 0; i < kFilterHistoryMax; ++i) {
+		if (lstrcmp(filterHistory_[i].c_str(), cmd.c_str()) == 0) {
+			found = i;
+			break;
+		}
+	}
+	if (found >= 0) {
+		for (int i = found; i < kFilterHistoryMax - 1; ++i)
+			filterHistory_[i] = filterHistory_[i+1];
+		filterHistory_[kFilterHistoryMax - 1] = ki::String();
+	}
+
+	// Insert at front of pinned list
+	for (int i = kFilterPinnedMax - 1; i > 0; --i)
+		pinnedHistory_[i] = pinnedHistory_[i-1];
+	pinnedHistory_[0] = cmd;
+
+	inichanged_ = 1;
+	SaveIni();
+}
+
+void ConfigManager::RemovePinned( const ki::String& cmd )
+{
+	int found = -1;
+	for (int i = 0; i < kFilterPinnedMax; ++i) {
+		if (lstrcmp(pinnedHistory_[i].c_str(), cmd.c_str()) == 0) {
+			found = i;
+			break;
+		}
+	}
+	if (found < 0) return;
+
+	for (int i = found; i < kFilterPinnedMax - 1; ++i)
+		pinnedHistory_[i] = pinnedHistory_[i+1];
+	pinnedHistory_[kFilterPinnedMax - 1] = ki::String();
+
+	inichanged_ = 1;
+	SaveIni();
+}
+
+void ConfigManager::SwapPinned( int i, int j )
+{
+	if (i < 0 || i >= kFilterPinnedMax) return;
+	if (j < 0 || j >= kFilterPinnedMax) return;
+	ki::String tmp = pinnedHistory_[i];
+	pinnedHistory_[i] = pinnedHistory_[j];
+	pinnedHistory_[j] = tmp;
 	inichanged_ = 1;
 	SaveIni();
 }

@@ -34,6 +34,7 @@ IDS_UNTITLED = 제목 없음
 IDS_CHARSET_CAPTION = 문자 인코딩:
 IDS_CRLF_CAPTION = 줄 끝:
 IDS_EXFILTER_FAILED = 외부 필터가 실패했습니다 (종료 코드: %d)
+IDS_EXFILTER_PINFULL = 고정 목록이 가득 찼습니다 (최대: %d).
 
 [Menu]
 popup.0 = 파일(&F)
@@ -126,6 +127,8 @@ IDCANCEL = 취소
 IDC_FILTERDELBTN = 삭제
 IDC_FILTERUPBTN = 위
 IDC_FILTERDOWNBTN = 아래
+IDC_FILTERPINBTN = 고정
+IDC_FILTERPINBTN.unpin = 고정 해제
 
 [Dialog.IDD_ABOUTDLG]
 Caption = 정보

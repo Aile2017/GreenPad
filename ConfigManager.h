@@ -151,11 +151,16 @@ public:
 	ki::Path GetMRU( int no ) const A_COLD;
 
 	//@{ External filter command history //@}
-	enum { kFilterHistoryMax = 20 };
+	enum { kFilterHistoryMax = 20, kFilterPinnedMax = 10 };
 	inline const ki::String& filterHistory(int i) const { return filterHistory_[i]; }
+	inline const ki::String& filterPinned(int i)  const { return pinnedHistory_[i]; }
 	void AddFilterHistory( const ki::String& cmd ) A_COLD;
 	void RemoveFilterHistory( const ki::String& cmd ) A_COLD;
 	void SwapFilterHistory( int i, int j ) A_COLD;
+	void AddPinned( const ki::String& cmd ) A_COLD;
+	void RemovePinned( const ki::String& cmd ) A_COLD;
+	bool IsFilterPinned( const ki::String& cmd ) const;
+	void SwapPinned( int i, int j ) A_COLD;
 
 	//@{ Get list of supported character sets //@}
 	inline CharSetList& GetCharSetList() { return charSets_; }
@@ -255,6 +260,7 @@ private:
 
 	// external filter command history
 	ki::String filterHistory_[kFilterHistoryMax];
+	ki::String pinnedHistory_[kFilterPinnedMax];
 
 	// New file related
 	int        newfileCharset_;

@@ -34,6 +34,7 @@ IDS_UNTITLED = 無題
 IDS_CHARSET_CAPTION = 文字コード:
 IDS_CRLF_CAPTION = 改行コード:
 IDS_EXFILTER_FAILED = 外部フィルタが失敗しました (終了コード: %d)
+IDS_EXFILTER_PINFULL = 固定リストが満杯です (上限: %d)。
 
 [Menu]
 popup.0 = ファイル(&F)
@@ -126,6 +127,8 @@ IDCANCEL = キャンセル
 IDC_FILTERDELBTN = 削除
 IDC_FILTERUPBTN = 上へ
 IDC_FILTERDOWNBTN = 下へ
+IDC_FILTERPINBTN = 固定
+IDC_FILTERPINBTN.unpin = 固定解除
 
 [Dialog.IDD_ABOUTDLG]
 Caption = バージョン情報

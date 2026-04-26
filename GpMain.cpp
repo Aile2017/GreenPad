@@ -1410,39 +1410,123 @@ void GreenPadWnd::on_exfilter()
 {
 	// --- Show command-input dialog ---
 	struct ExFilterDlg A_FINAL : public DlgImpl {
-		ExFilterDlg(HWND parent, const ki::String* hist, int histLen, ConfigManager& cfg)
+		ExFilterDlg(HWND parent,
+		            const ki::String* hist,   int histLen,
+		            const ki::String* pinned, int pinnedLen,
+		            ConfigManager& cfg)
 			: DlgImpl(IDD_EXFILTER)
-			, hist_(hist), histLen_(histLen), parent_(parent), cfg_(cfg)
+			, hist_(hist), histLen_(histLen)
+			, pinned_(pinned), pinnedLen_(pinnedLen), pinnedCount_(0)
+			, parent_(parent), cfg_(cfg)
 		{ GoModal(parent_); }
+
+		void SelectAndShowRaw(int idx) {
+			SendMsgToItem(IDC_FILTERCMDBOX, CB_SETCURSEL, (WPARAM)idx, 0);
+			if (idx < pinnedCount_) {
+				TCHAR buf[2048];
+				SendMsgToItem(IDC_FILTERCMDBOX, CB_GETLBTEXT, (WPARAM)idx, (LPARAM)buf);
+				::SetWindowText(item(IDC_FILTERCMDBOX), buf + 2);
+			}
+		}
+
+		void UpdatePinBtn() {
+			TCHAR buf[2048]; buf[0] = 0;
+			GetItemText(IDC_FILTERCMDBOX, countof(buf), buf);
+			bool pinned = cfg_.IsFilterPinned(ki::String(buf));
+			const wchar_t* label;
+			if (pinned) {
+				label = LangManager::Get().GetDlgText(IDD_EXFILTER, L"IDC_FILTERPINBTN.unpin");
+				if (!label) label = TEXT("Unpin");
+			} else {
+				label = LangManager::Get().GetDlgCtrlText(IDD_EXFILTER, IDC_FILTERPINBTN);
+				if (!label) label = TEXT("Pin");
+			}
+			::SetWindowText(item(IDC_FILTERPINBTN), label);
+		}
+
+		void RebuildComboList(const TCHAR* selectCmd, bool selectAsPinned) {
+			SendMsgToItem(IDC_FILTERCMDBOX, CB_RESETCONTENT, 0, 0);
+			pinnedCount_ = 0;
+			for (int i = 0; i < pinnedLen_; ++i) {
+				if (pinned_[i].len() == 0) break;
+				ki::String prefixed = TEXT("* "); prefixed += pinned_[i];
+				SendMsgToItem(IDC_FILTERCMDBOX, CB_ADDSTRING, 0, (LPARAM)prefixed.c_str());
+				++pinnedCount_;
+			}
+			for (int i = 0; i < histLen_; ++i)
+				if (hist_[i].len() > 0)
+					SendMsgToItem(IDC_FILTERCMDBOX, CB_ADDSTRING, 0, (LPARAM)hist_[i].c_str());
+			if (selectCmd && selectCmd[0]) {
+				ki::String target;
+				if (selectAsPinned) { target = TEXT("* "); target += selectCmd; }
+				else target = selectCmd;
+				int idx = (int)SendMsgToItem(IDC_FILTERCMDBOX, CB_FINDSTRINGEXACT,
+				                             (WPARAM)-1, (LPARAM)target.c_str());
+				if (idx != CB_ERR)
+					SelectAndShowRaw(idx);
+				else
+					::SetWindowText(item(IDC_FILTERCMDBOX), selectCmd);
+			}
+			UpdatePinBtn();
+		}
 
 		void on_init() override {
 			LangManager::Get().ApplyToDialog(hwnd(), IDD_EXFILTER);
 			SetCenter(hwnd(), parent_);
+			pinnedCount_ = 0;
+			for (int i = 0; i < pinnedLen_; ++i) {
+				if (pinned_[i].len() == 0) break;
+				ki::String prefixed = TEXT("* "); prefixed += pinned_[i];
+				SendMsgToItem(IDC_FILTERCMDBOX, CB_ADDSTRING, 0, (LPARAM)prefixed.c_str());
+				++pinnedCount_;
+			}
 			for (int i = 0; i < histLen_; ++i)
 				if (hist_[i].len() > 0)
 					SendMsgToItem(IDC_FILTERCMDBOX, CB_ADDSTRING, 0, (LPARAM)hist_[i].c_str());
-			if (hist_[0].len() > 0)
-				SendMsgToItem(IDC_FILTERCMDBOX, CB_SETCURSEL, 0, 0);
+			if (pinnedCount_ > 0 || hist_[0].len() > 0)
+				SelectAndShowRaw(0);
+			UpdatePinBtn();
 			::SetFocus(item(IDC_FILTERCMDBOX));
 		}
+
 		bool on_ok() override {
 			TCHAR buf[2048];
 			GetItemText(IDC_FILTERCMDBOX, countof(buf), buf);
 			cmd_ = buf;
 			return true;
 		}
-		bool on_command( UINT /*notif*/, UINT id, HWND ) override {
+
+		bool on_command( UINT notif, UINT id, HWND ) override {
+			if (id == IDC_FILTERCMDBOX && notif == CBN_SELCHANGE) {
+				int sel = (int)SendMsgToItem(IDC_FILTERCMDBOX, CB_GETCURSEL, 0, 0);
+				if (sel != CB_ERR && sel < pinnedCount_) {
+					TCHAR buf[2048];
+					SendMsgToItem(IDC_FILTERCMDBOX, CB_GETLBTEXT, (WPARAM)sel, (LPARAM)buf);
+					::SetWindowText(item(IDC_FILTERCMDBOX), buf + 2);
+				}
+				UpdatePinBtn();
+				return false;
+			}
+			if (id == IDC_FILTERCMDBOX && notif == CBN_EDITCHANGE) {
+				UpdatePinBtn();
+				return false;
+			}
 			if (id == IDC_FILTERDELBTN) {
 				int sel = (int)SendMsgToItem(IDC_FILTERCMDBOX, CB_GETCURSEL, 0, 0);
 				if (sel == CB_ERR) return true;
 				TCHAR buf[2048];
 				SendMsgToItem(IDC_FILTERCMDBOX, CB_GETLBTEXT, (WPARAM)sel, (LPARAM)buf);
-				cfg_.RemoveFilterHistory(buf);
+				if (sel < pinnedCount_) {
+					cfg_.RemovePinned(ki::String(buf + 2));
+					--pinnedCount_;
+				} else {
+					cfg_.RemoveFilterHistory(ki::String(buf));
+				}
 				SendMsgToItem(IDC_FILTERCMDBOX, CB_DELETESTRING, (WPARAM)sel, 0);
 				int count = (int)SendMsgToItem(IDC_FILTERCMDBOX, CB_GETCOUNT, 0, 0);
 				if (count > 0)
-					SendMsgToItem(IDC_FILTERCMDBOX, CB_SETCURSEL,
-						(WPARAM)(sel < count ? sel : count - 1), 0);
+					SelectAndShowRaw(sel < count ? sel : count - 1);
+				UpdatePinBtn();
 				return true;
 			}
 			if (id == IDC_FILTERUPBTN || id == IDC_FILTERDOWNBTN) {
@@ -1451,6 +1535,7 @@ void GreenPadWnd::on_exfilter()
 				if (sel == CB_ERR) return true;
 				int other = (id == IDC_FILTERUPBTN) ? sel - 1 : sel + 1;
 				if (other < 0 || other >= count) return true;
+				if ((sel < pinnedCount_) != (other < pinnedCount_)) return true;
 				TCHAR a[2048], b[2048];
 				SendMsgToItem(IDC_FILTERCMDBOX, CB_GETLBTEXT, (WPARAM)sel,   (LPARAM)a);
 				SendMsgToItem(IDC_FILTERCMDBOX, CB_GETLBTEXT, (WPARAM)other, (LPARAM)b);
@@ -1460,18 +1545,53 @@ void GreenPadWnd::on_exfilter()
 				SendMsgToItem(IDC_FILTERCMDBOX, CB_DELETESTRING,  (WPARAM)lo, 0);
 				SendMsgToItem(IDC_FILTERCMDBOX, CB_INSERTSTRING, (WPARAM)lo, (LPARAM)(hi == sel ? a : b));
 				SendMsgToItem(IDC_FILTERCMDBOX, CB_INSERTSTRING, (WPARAM)hi, (LPARAM)(lo == sel ? a : b));
-				cfg_.SwapFilterHistory(sel, other);
-				SendMsgToItem(IDC_FILTERCMDBOX, CB_SETCURSEL, (WPARAM)other, 0);
+				if (sel < pinnedCount_)
+					cfg_.SwapPinned(sel, other);
+				else
+					cfg_.SwapFilterHistory(sel - pinnedCount_, other - pinnedCount_);
+				SelectAndShowRaw(other);
+				return true;
+			}
+			if (id == IDC_FILTERPINBTN) {
+				TCHAR buf[2048]; buf[0] = 0;
+				GetItemText(IDC_FILTERCMDBOX, countof(buf), buf);
+				if (buf[0] == 0) return true;
+				if (cfg_.IsFilterPinned(ki::String(buf))) {
+					cfg_.RemovePinned(ki::String(buf));
+					cfg_.AddFilterHistory(ki::String(buf));
+					RebuildComboList(buf, false);
+				} else {
+					int pinCount = 0;
+					for (int i = 0; i < pinnedLen_; ++i)
+						if (pinned_[i].len() > 0) ++pinCount;
+					if (pinCount >= pinnedLen_) {
+						TCHAR msg[256];
+						const wchar_t* fmt = LangManager::Get().GetString(IDS_EXFILTER_PINFULL);
+						if (!fmt) fmt = TEXT("Pinned list is full (max: %d).");
+						wsprintf(msg, fmt, pinnedLen_);
+						::MessageBox(hwnd(), msg, NULL, MB_OK | MB_ICONWARNING);
+						return true;
+					}
+					cfg_.AddPinned(ki::String(buf));
+					RebuildComboList(buf, true);
+				}
 				return true;
 			}
 			return false;
 		}
+
 		const ki::String* hist_;
-		int histLen_;
-		HWND parent_;
-		ConfigManager& cfg_;
-		ki::String cmd_;
-	} dlg(hwnd(), &cfg_.filterHistory(0), ConfigManager::kFilterHistoryMax, cfg_);
+		int               histLen_;
+		const ki::String* pinned_;
+		int               pinnedLen_;
+		int               pinnedCount_;
+		HWND              parent_;
+		ConfigManager&    cfg_;
+		ki::String        cmd_;
+	} dlg(hwnd(),
+	      &cfg_.filterHistory(0), ConfigManager::kFilterHistoryMax,
+	      &cfg_.filterPinned(0),  ConfigManager::kFilterPinnedMax,
+	      cfg_);
 
 	if (dlg.endcode() != IDOK || dlg.cmd_.len() == 0)
 		return;

@@ -34,6 +34,7 @@ IDS_UNTITLED = 无标题
 IDS_CHARSET_CAPTION = 字符编码:
 IDS_CRLF_CAPTION = 换行符:
 IDS_EXFILTER_FAILED = 外部过滤器失败（退出代码：%d）
+IDS_EXFILTER_PINFULL = 固定列表已满（上限：%d）。
 
 [Menu]
 popup.0 = 文件(&F)
@@ -126,6 +127,8 @@ IDCANCEL = 取消
 IDC_FILTERDELBTN = 删除
 IDC_FILTERUPBTN = 上移
 IDC_FILTERDOWNBTN = 下移
+IDC_FILTERPINBTN = 固定
+IDC_FILTERPINBTN.unpin = 取消固定
 
 [Dialog.IDD_ABOUTDLG]
 Caption = 关于

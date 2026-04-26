@@ -254,6 +254,7 @@ static const NameIdPair kControlNames[] = {
     {L"IDC_FILTERDELBTN",   1036},
     {L"IDC_FILTERUPBTN",    1037},
     {L"IDC_FILTERDOWNBTN",  1038},
+    {L"IDC_FILTERPINBTN",   1044},
     // IDD_EDITLAYOUT controls
     {L"IDC_CHOOSEFONT",     1054},
     {L"IDC_LAY_SHOWEOF",    1056},
@@ -453,6 +454,9 @@ bool LangManager::Load(const wchar_t* path)
                     wchar_t idStr[16];
                     wsprintfW(idStr, L"%u", ctrlId);
                     pImpl_->dialogs_.getOrCreate(currentDialogId)->set(idStr, parsedVal);
+                } else if (wcschr(key, L'.') != nullptr) {
+                    // Virtual keys with dots (e.g. IDC_FILTERPINBTN.unpin) stored as-is
+                    pImpl_->dialogs_.getOrCreate(currentDialogId)->set(key, parsedVal);
                 }
             }
             break;

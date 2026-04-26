@@ -42,26 +42,98 @@ Exit code handling follows the grep convention:
 
 - Window title: `External Filter` (localized per language)
 - Label above combo box: `Command:` (localized)
-- Buttons: `Run` and `Cancel` (localized)
+- Buttons: `Run`, `Cancel`, `Del`, `Up`, `Down`, `Pin` / `Unpin` (localized)
 
 ```
-┌─ External Filter ──────────────────────┐
-│ Command:                               │
-│ [ sort -r                         ]▼  │
-│                                        │
-│                    [  Run  ] [Cancel]  │
-└────────────────────────────────────────┘
+┌─ External Filter ──────────────────────────────┐
+│ Command:                                        │
+│ [ * sort -r                               ]▼   │
+│   * grep -n TODO                               │
+│   wc -l                                        │
+│   cat -v                                       │
+│                                                 │
+│ [Del] [Up] [Down] [Pin]       [  Run  ] [Cancel]│
+└─────────────────────────────────────────────────┘
 ```
 
-- Input area is a combo box:
+- Input area is a combo box (`CBS_SIMPLE`):
   - Up/Down keys cycle through history in the input field.
   - The ▼ button opens the dropdown list.
   - Same UX as the existing search dialog combo box.
-- History is stored in the ini file (same mechanism as the recent files list):
-  - Holds up to 10 entries (may be made configurable in the future).
-  - A command is added to history when `CreateProcess` succeeds.
-    - Launch failures (command not found, etc.) are not added.
-    - Commands that launch but exit with a non-zero code are added.
+
+### Command History
+
+#### Storage
+
+History is stored in the ini file and split into two independent lists:
+
+| List | INI keys | Capacity | Constant |
+|---|---|---|---|
+| Pinned commands | `FilterPin1` – `FilterPin10` | 10 | `kFilterPinnedMax` |
+| Regular history | `FilterCmd1` – `FilterCmd20` | 20 | `kFilterHistoryMax` |
+
+A command is added to regular history when `CreateProcess` succeeds.
+- Launch failures (command not found, etc.) are not added.
+- Commands that launch but exit with a non-zero code are added.
+- If the executed command is already in the pinned list, it is **not** added to regular history.
+
+#### List Order in the Combo Box
+
+Pinned commands are shown first, followed by regular history entries.
+Pinned commands are prefixed with `* ` to distinguish them visually:
+
+```
+* sort -r          ← pinned (pinnedHistory_[0])
+* grep -n TODO     ← pinned (pinnedHistory_[1])
+wc -l              ← regular history (filterHistory_[0])
+cat -v             ← regular history (filterHistory_[1])
+```
+
+When a pinned command is executed, the `* ` prefix is stripped before passing the command to `cmd.exe`.
+
+#### Pin / Unpin Button
+
+The `Pin` button label changes dynamically based on whether the current combo box text matches a pinned command:
+
+| Current selection state | Button label |
+|---|---|
+| Not pinned | `Pin` |
+| Already pinned | `Unpin` |
+
+The label is updated whenever the combo box selection or text changes.
+
+**Pin operation** (not pinned → pinned):
+
+1. Read the current text from the combo box.
+2. If `pinnedHistory_` already holds `kFilterPinnedMax` entries → show error message (`"Pinned list is full"`), abort.
+3. If the same command exists in `filterHistory_`, remove it.
+4. Insert the command at the front of `pinnedHistory_` (shift existing entries down).
+5. Save to INI and refresh the combo box.
+
+**Unpin operation** (pinned → not pinned):
+
+1. Read the current text from the combo box (strip leading `* `).
+2. Remove the command from `pinnedHistory_`.
+3. Insert it at the front of `filterHistory_` (same as `AddFilterHistory`).
+4. Save to INI and refresh the combo box.
+
+#### Del Button
+
+- Selected item is pinned → remove from `pinnedHistory_`.
+- Selected item is regular history → remove from `filterHistory_`.
+
+#### Up / Down Buttons
+
+Movement is constrained **within each group**; commands cannot cross the boundary between the pinned group and the regular history group via Up/Down.
+
+| Situation | Result |
+|---|---|
+| Up on the first pinned item | No-op |
+| Down on the last pinned item | No-op (does not enter regular history) |
+| Up on the first regular history item | No-op (does not enter pinned group) |
+| Down on the last regular history item | No-op |
+
+To move a command between groups, use the Pin / Unpin button explicitly.
 
 ### Language Resources
 
@@ -86,6 +158,13 @@ Add the following entries to each language file.
 | `static.0` | `&Command:` | `コマンド(&C):` | `命令(&C):` | `命令(&C):` | `명령(&C):` | `Команда(&C):` |
 | `IDOK`     | `&Run` | `実行(&R)` | `运行(&R)` | `執行(&R)` | `실행(&R)` | `Выполнить(&R)` |
 | `IDCANCEL` | `Cancel` | `キャンセル` | `取消` | `取消` | `취소` | `Отмена` |
+| `IDC_FILTERDELBTN` | `Del` | `削除` | `删除` | `刪除` | `삭제` | `Удалить` |
+| `IDC_FILTERUPBTN` | `Up` | `上へ` | `上移` | `上移` | `위로` | `Вверх` |
+| `IDC_FILTERDOWNBTN` | `Down` | `下へ` | `下移` | `下移` | `아래로` | `Вниз` |
+| `IDC_FILTERPINBTN` | `Pin` | `固定` | `固定` | `固定` | `고정` | `Закрепить` |
+| `IDC_FILTERPINBTN.unpin` | `Unpin` | `固定解除` | `取消固定` | `取消固定` | `고정 해제` | `Открепить` |
+
+> `IDC_FILTERPINBTN.unpin` is a virtual key used to look up the "Unpin" label at runtime; the dialog code calls `LangManager` to retrieve both strings and swaps the button text dynamically.
 
 #### `[Strings]` — Error dialog
 
@@ -100,6 +179,17 @@ If stderr has output, it is appended after a newline following this string.
 | zh-TW | `外部篩選器失敗（結束代碼：%d）` |
 | ko-KR | `외부 필터가 실패했습니다 (종료 코드: %d)` |
 | ru-RU | `Внешний фильтр завершился с ошибкой (код завершения: %d)` |
+
+Pinned list full message (`IDS_EXFILTER_PINFULL`):
+
+| Language | String |
+|---|---|
+| en-US | `Pinned list is full (max: %d).` |
+| ja-JP | `固定リストが満杯です (上限: %d)。` |
+| zh-CN | `固定列表已满（上限：%d）。` |
+| zh-TW | `固定清單已滿（上限：%d）。` |
+| ko-KR | `고정 목록이 가득 찼습니다 (최대: %d).` |
+| ru-RU | `Список закреплённых команд заполнен (макс.: %d).` |
 
 ### Usage Examples
 
@@ -279,3 +369,17 @@ set PATH=c:\usr\msys2\usr\bin;%PATH% & tac
   - The `Run` button must be wide enough for `Выполнить` (10 characters).
   - Dialog width and combo box width should be based on the caption `Внешний фильтр`.
   - Error messages use `MessageBox` auto-wrap, so no special handling is needed.
+
+#### Pin Feature Implementation Notes
+
+- `ConfigManager` holds two arrays:
+  - `filterHistory_[kFilterHistoryMax]` (existing, `kFilterHistoryMax = 20`)
+  - `pinnedHistory_[kFilterPinnedMax]` (new, `kFilterPinnedMax = 10`)
+- INI read/write follows the same pattern as `FilterCmd*`:
+  - Keys `FilterPin1` – `FilterPin10` under the user section.
+- `ExFilterDlg` receives both arrays and their lengths.
+  - On `on_init()`: add pinned entries (with `* ` prefix) then regular history entries to the combo box.
+  - Track `pinnedCount_` (number of non-empty pinned entries) to determine group boundaries for Up/Down and Pin/Unpin logic.
+- Pin/Unpin button label update: compare combo box text (after stripping leading `* `) against `pinnedHistory_` entries; set button text accordingly.
+- When the combo box selection changes (`CBN_SELCHANGE`) or the edit text changes (`CBN_EDITCHANGE`), refresh the Pin button label.
+- `AddFilterHistory` must check `pinnedHistory_` before inserting into `filterHistory_`; skip the insert if the command is already pinned.
