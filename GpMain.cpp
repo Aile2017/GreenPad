@@ -1499,10 +1499,15 @@ void GreenPadWnd::on_exfilter()
 		bool on_command( UINT notif, UINT id, HWND ) override {
 			if (id == IDC_FILTERCMDBOX && notif == CBN_SELCHANGE) {
 				int sel = (int)SendMsgToItem(IDC_FILTERCMDBOX, CB_GETCURSEL, 0, 0);
-				if (sel != CB_ERR && sel < pinnedCount_) {
-					TCHAR buf[2048];
-					SendMsgToItem(IDC_FILTERCMDBOX, CB_GETLBTEXT, (WPARAM)sel, (LPARAM)buf);
-					::SetWindowText(item(IDC_FILTERCMDBOX), buf + 2);
+				if (sel != CB_ERR) {
+					TCHAR lbBuf[2048]; lbBuf[0] = 0;
+					SendMsgToItem(IDC_FILTERCMDBOX, CB_GETLBTEXT, (WPARAM)sel, (LPARAM)lbBuf);
+					const TCHAR* display = (lbBuf[0]==TEXT('*') && lbBuf[1]==TEXT(' '))
+					                       ? lbBuf+2 : lbBuf;
+					TCHAR editBuf[2048]; editBuf[0] = 0;
+					GetItemText(IDC_FILTERCMDBOX, countof(editBuf), editBuf);
+					if (lstrcmp(editBuf, display) != 0)
+						::SetWindowText(item(IDC_FILTERCMDBOX), display);
 				}
 				UpdatePinBtn();
 				return false;
