@@ -1620,10 +1620,14 @@ void GreenPadWnd::on_exfilter()
 	GetExitCodeProcess(psi.hProcess, &exitCode);
 	CloseHandle(psi.hProcess);
 
-	if (exitCode == 0 && !stdoutBuf) {
+	// exit code 1 with no stderr = "no matches" (grep convention); treat as success
+	bool noStderr = !stderrArgs.buf || stderrArgs.size == 0;
+	bool treatAsSuccess = (exitCode == 0) || (exitCode == 1 && noStderr);
+
+	if (treatAsSuccess && !stdoutBuf) {
 		// stdout buffer allocation failed; leave text unchanged silently
 		if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
-	} else if (exitCode == 0) {
+	} else if (treatAsSuccess) {
 		// Decode stdout bytes directly from memory
 		TextFileR tfr(resolveCSI(csi_));
 		if (tfr.OpenFromMemory(stdoutBuf, stdoutSize)) {
@@ -1650,7 +1654,7 @@ void GreenPadWnd::on_exfilter()
 			}
 		}
 	} else {
-		// Restore cursor when whole-file mode failed
+		// Restore cursor when filter reported an error
 		if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
 
 		// Build error message
