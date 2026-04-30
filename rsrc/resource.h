@@ -35,9 +35,13 @@
 #define IDS_CHARSET_CAPTION             22
 #define IDS_CRLF_CAPTION                23
 #define IDS_PROJECT_URL                 24
-#define IDS_NOTFOUNDUP                  28
-#define IDS_NOTFOUND_SELDOWN            29
-#define IDS_NOTFOUND_SELUP              30
+#define IDS_EXFILTER_FAILED             25
+#define IDS_EXFILTER_PINFULL            26
+#define IDS_EXFILTER_PINNED             27
+#define IDS_EXFILTER_COMMAND            28
+#define IDS_NOTFOUNDUP                  30
+#define IDS_NOTFOUND_SELDOWN            31
+#define IDS_NOTFOUND_SELUP              32
 
 #define IDR_MAIN                        103
 //#define IDD_OPENFILEHOOK                105
@@ -178,10 +182,9 @@
 #define ID_CMD_CHOOSEFONT               50026
 #define ID_CMD_SHOWLINENO               50027
 
-#define IDS_EXFILTER_FAILED             25
-#define IDS_EXFILTER_PINFULL            26
 #define IDD_EXFILTER                    114
 #define IDC_FILTERCMDBOX                1035
+#define IDC_FILTERCOMMANDBOX            1045
 #define IDC_FILTERDELBTN                1036
 #define IDC_FILTERUPBTN                 1037
 #define IDC_FILTERDOWNBTN               1038

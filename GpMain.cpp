@@ -1420,151 +1420,212 @@ void GreenPadWnd::on_exfilter()
 			, parent_(parent), cfg_(cfg)
 		{ GoModal(parent_); }
 
-		void SelectAndShowRaw(int idx) {
-			SendMsgToItem(IDC_FILTERCMDBOX, CB_SETCURSEL, (WPARAM)idx, 0);
-			if (idx < pinnedCount_) {
-				TCHAR buf[2048];
-				SendMsgToItem(IDC_FILTERCMDBOX, CB_GETLBTEXT, (WPARAM)idx, (LPARAM)buf);
-				::SetWindowText(item(IDC_FILTERCMDBOX), buf + 2);
+		void SelectListItem(int idx) {
+			HWND hList = item(IDC_FILTERCMDBOX);
+			ListView_SetItemState(hList, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
+			if (idx >= 0) {
+				ListView_SetItemState(hList, idx, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+				ListView_EnsureVisible(hList, idx, FALSE);
+				// Update command box with selected command
+				TCHAR cmd[2048]; cmd[0] = 0;
+				ListView_GetItemText(hList, idx, 2, cmd, countof(cmd));
+				::SetWindowText(item(IDC_FILTERCOMMANDBOX), cmd);
 			}
+		}
+
+		void RebuildListView(int selectIdx = -1) {
+			HWND hList = item(IDC_FILTERCMDBOX);
+			ListView_DeleteAllItems(hList);
+			pinnedCount_ = 0;
+
+			// Insert pinned items with * marker
+			// Columns: 0=dummy, 1=pin marker, 2=command
+			for (int i = 0; i < pinnedLen_; ++i) {
+				if (pinned_[i].len() == 0) break;
+				LVITEM lvi;
+				lvi.mask = LVIF_TEXT;
+				lvi.iItem = i;
+				lvi.iSubItem = 0;
+				lvi.pszText = TEXT("");
+				ListView_InsertItem(hList, &lvi);
+				lvi.iSubItem = 1;
+				lvi.pszText = TEXT("*");
+				ListView_SetItem(hList, &lvi);
+				lvi.iSubItem = 2;
+				lvi.pszText = (TCHAR*)pinned_[i].c_str();
+				ListView_SetItem(hList, &lvi);
+				++pinnedCount_;
+			}
+
+			// Insert regular history items
+			for (int i = 0; i < histLen_; ++i) {
+				if (hist_[i].len() == 0) continue;
+				LVITEM lvi;
+				lvi.mask = LVIF_TEXT;
+				lvi.iItem = pinnedCount_ + i;
+				lvi.iSubItem = 0;
+				lvi.pszText = TEXT("");
+				ListView_InsertItem(hList, &lvi);
+				lvi.iSubItem = 1;
+				lvi.pszText = TEXT("");
+				ListView_SetItem(hList, &lvi);
+				lvi.iSubItem = 2;
+				lvi.pszText = (TCHAR*)hist_[i].c_str();
+				ListView_SetItem(hList, &lvi);
+			}
+
+			if (selectIdx >= 0)
+				SelectListItem(selectIdx);
 		}
 
 		void UpdatePinBtn() {
-			TCHAR buf[2048]; buf[0] = 0;
-			GetItemText(IDC_FILTERCMDBOX, countof(buf), buf);
-			bool pinned = cfg_.IsFilterPinned(ki::String(buf));
-			const wchar_t* label;
-			if (pinned) {
-				label = LangManager::Get().GetDlgText(IDD_EXFILTER, L"IDC_FILTERPINBTN.unpin");
-				if (!label) label = TEXT("Unpin");
-			} else {
-				label = LangManager::Get().GetDlgCtrlText(IDD_EXFILTER, IDC_FILTERPINBTN);
-				if (!label) label = TEXT("Pin");
+			TCHAR cmd[2048]; cmd[0] = 0;
+			GetItemText(IDC_FILTERCOMMANDBOX, countof(cmd), cmd);
+			if (cmd[0]) {
+				bool pinned = cfg_.IsFilterPinned(ki::String(cmd));
+				const wchar_t* label;
+				if (pinned) {
+					label = LangManager::Get().GetDlgText(IDD_EXFILTER, L"IDC_FILTERPINBTN.unpin");
+					if (!label) label = TEXT("Unpin");
+				} else {
+					label = LangManager::Get().GetDlgCtrlText(IDD_EXFILTER, IDC_FILTERPINBTN);
+					if (!label) label = TEXT("Pin");
+				}
+				::SetWindowText(item(IDC_FILTERPINBTN), label);
 			}
-			::SetWindowText(item(IDC_FILTERPINBTN), label);
-		}
-
-		void RebuildComboList(const TCHAR* selectCmd, bool selectAsPinned) {
-			SendMsgToItem(IDC_FILTERCMDBOX, CB_RESETCONTENT, 0, 0);
-			pinnedCount_ = 0;
-			for (int i = 0; i < pinnedLen_; ++i) {
-				if (pinned_[i].len() == 0) break;
-				ki::String prefixed = TEXT("* "); prefixed += pinned_[i];
-				SendMsgToItem(IDC_FILTERCMDBOX, CB_ADDSTRING, 0, (LPARAM)prefixed.c_str());
-				++pinnedCount_;
-			}
-			for (int i = 0; i < histLen_; ++i)
-				if (hist_[i].len() > 0)
-					SendMsgToItem(IDC_FILTERCMDBOX, CB_ADDSTRING, 0, (LPARAM)hist_[i].c_str());
-			if (selectCmd && selectCmd[0]) {
-				ki::String target;
-				if (selectAsPinned) { target = TEXT("* "); target += selectCmd; }
-				else target = selectCmd;
-				int idx = (int)SendMsgToItem(IDC_FILTERCMDBOX, CB_FINDSTRINGEXACT,
-				                             (WPARAM)-1, (LPARAM)target.c_str());
-				if (idx != CB_ERR)
-					SelectAndShowRaw(idx);
-				else
-					::SetWindowText(item(IDC_FILTERCMDBOX), selectCmd);
-			}
-			UpdatePinBtn();
 		}
 
 		void on_init() override {
 			LangManager::Get().ApplyToDialog(hwnd(), IDD_EXFILTER);
 			SetCenter(hwnd(), parent_);
-			pinnedCount_ = 0;
-			for (int i = 0; i < pinnedLen_; ++i) {
-				if (pinned_[i].len() == 0) break;
-				ki::String prefixed = TEXT("* "); prefixed += pinned_[i];
-				SendMsgToItem(IDC_FILTERCMDBOX, CB_ADDSTRING, 0, (LPARAM)prefixed.c_str());
-				++pinnedCount_;
+
+			HWND hList = item(IDC_FILTERCMDBOX);
+			
+			// Set extended list view style
+			ListView_SetExtendedListViewStyle(hList, LVS_EX_FULLROWSELECT);
+
+			// Add columns with localized titles
+			LVCOLUMN lvc;
+			lvc.mask = LVCF_WIDTH | LVCF_TEXT;
+			
+			// Get column titles: try language file first, fall back to RC resources
+			TCHAR pinnedTitle[32]; pinnedTitle[0] = 0;
+			TCHAR cmdTitle[32]; cmdTitle[0] = 0;
+			
+			const wchar_t* fromLang = LangManager::Get().GetString(IDS_EXFILTER_PINNED);
+			if (fromLang) {
+				wcscpy(pinnedTitle, fromLang);
+			} else {
+				::LoadString(::GetModuleHandle(NULL), IDS_EXFILTER_PINNED, pinnedTitle, countof(pinnedTitle));
 			}
-			for (int i = 0; i < histLen_; ++i)
-				if (hist_[i].len() > 0)
-					SendMsgToItem(IDC_FILTERCMDBOX, CB_ADDSTRING, 0, (LPARAM)hist_[i].c_str());
-			if (pinnedCount_ > 0 || hist_[0].len() > 0)
-				SelectAndShowRaw(0);
+			
+			fromLang = LangManager::Get().GetString(IDS_EXFILTER_COMMAND);
+			if (fromLang) {
+				wcscpy(cmdTitle, fromLang);
+			} else {
+				::LoadString(::GetModuleHandle(NULL), IDS_EXFILTER_COMMAND, cmdTitle, countof(cmdTitle));
+			}
+			
+			lvc.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_FMT;
+
+			// Dummy column at index 0 (workaround: ListView column 0 ignores fmt alignment)
+			lvc.fmt = LVCFMT_LEFT;
+			lvc.pszText = TEXT("");
+			lvc.cx = 0;
+			ListView_InsertColumn(hList, 0, &lvc);
+
+			lvc.fmt = LVCFMT_CENTER;
+			lvc.pszText = pinnedTitle;
+			lvc.cx = 46;
+			ListView_InsertColumn(hList, 1, &lvc);
+
+			lvc.fmt = LVCFMT_LEFT;
+			lvc.pszText = cmdTitle;
+			lvc.cx = 250;
+			ListView_InsertColumn(hList, 2, &lvc);
+
+			// Populate list view
+			RebuildListView(pinnedCount_ > 0 ? 0 : -1);
 			UpdatePinBtn();
-			::SetFocus(item(IDC_FILTERCMDBOX));
+			::SetFocus(item(IDC_FILTERCOMMANDBOX));
 		}
 
 		bool on_ok() override {
-			TCHAR buf[2048];
-			GetItemText(IDC_FILTERCMDBOX, countof(buf), buf);
-			cmd_ = buf;
+			TCHAR cmd[2048]; cmd[0] = 0;
+			GetItemText(IDC_FILTERCOMMANDBOX, countof(cmd), cmd);
+			cmd_ = cmd;
 			return true;
 		}
 
-		bool on_command( UINT notif, UINT id, HWND ) override {
-			if (id == IDC_FILTERCMDBOX && notif == CBN_SELCHANGE) {
-				int sel = (int)SendMsgToItem(IDC_FILTERCMDBOX, CB_GETCURSEL, 0, 0);
-				if (sel != CB_ERR) {
-					TCHAR lbBuf[2048]; lbBuf[0] = 0;
-					SendMsgToItem(IDC_FILTERCMDBOX, CB_GETLBTEXT, (WPARAM)sel, (LPARAM)lbBuf);
-					const TCHAR* display = (lbBuf[0]==TEXT('*') && lbBuf[1]==TEXT(' '))
-					                       ? lbBuf+2 : lbBuf;
-					TCHAR editBuf[2048]; editBuf[0] = 0;
-					GetItemText(IDC_FILTERCMDBOX, countof(editBuf), editBuf);
-					if (lstrcmp(editBuf, display) != 0)
-						::SetWindowText(item(IDC_FILTERCMDBOX), display);
+		bool on_message( UINT msg, WPARAM wp, LPARAM lp ) override {
+			if (msg == WM_NOTIFY) {
+				LPNMHDR pnmh = (LPNMHDR)lp;
+				if (pnmh->idFrom == IDC_FILTERCMDBOX && pnmh->code == LVN_ITEMCHANGED) {
+					LPNMLISTVIEW pnmlv = (LPNMLISTVIEW)pnmh;
+					if (pnmlv->uChanged & LVIF_STATE) {
+						if ((pnmlv->uNewState & LVIS_SELECTED) != 0) {
+							TCHAR cmd[2048]; cmd[0] = 0;
+							ListView_GetItemText(item(IDC_FILTERCMDBOX), pnmlv->iItem, 2, cmd, countof(cmd));
+							::SetWindowText(item(IDC_FILTERCOMMANDBOX), cmd);
+							UpdatePinBtn();
+						}
+					}
+					return true;
 				}
-				UpdatePinBtn();
-				return false;
 			}
-			if (id == IDC_FILTERCMDBOX && notif == CBN_EDITCHANGE) {
+			return false;
+		}
+
+		bool on_command( UINT notif, UINT id, HWND ) override {
+			if (id == IDC_FILTERCOMMANDBOX && notif == EN_CHANGE) {
 				UpdatePinBtn();
 				return false;
 			}
 			if (id == IDC_FILTERDELBTN) {
-				int sel = (int)SendMsgToItem(IDC_FILTERCMDBOX, CB_GETCURSEL, 0, 0);
-				if (sel == CB_ERR) return true;
-				TCHAR buf[2048];
-				SendMsgToItem(IDC_FILTERCMDBOX, CB_GETLBTEXT, (WPARAM)sel, (LPARAM)buf);
+				int sel = (int)SendMsgToItem(IDC_FILTERCMDBOX, LVM_GETNEXTITEM, (WPARAM)-1, MAKELPARAM(LVNI_SELECTED, 0));
+				if (sel == -1) return true;
+				TCHAR cmd[2048]; cmd[0] = 0;
+				ListView_GetItemText(item(IDC_FILTERCMDBOX), sel, 2, cmd, countof(cmd));
 				if (sel < pinnedCount_) {
-					cfg_.RemovePinned(ki::String(buf + 2));
-					--pinnedCount_;
+					cfg_.RemovePinned(ki::String(cmd));
 				} else {
-					cfg_.RemoveFilterHistory(ki::String(buf));
+					cfg_.RemoveFilterHistory(ki::String(cmd));
 				}
-				SendMsgToItem(IDC_FILTERCMDBOX, CB_DELETESTRING, (WPARAM)sel, 0);
-				int count = (int)SendMsgToItem(IDC_FILTERCMDBOX, CB_GETCOUNT, 0, 0);
-				if (count > 0)
-					SelectAndShowRaw(sel < count ? sel : count - 1);
+				RebuildListView(sel > 0 ? sel - 1 : 0);
 				UpdatePinBtn();
 				return true;
 			}
 			if (id == IDC_FILTERUPBTN || id == IDC_FILTERDOWNBTN) {
-				int sel   = (int)SendMsgToItem(IDC_FILTERCMDBOX, CB_GETCURSEL, 0, 0);
-				int count = (int)SendMsgToItem(IDC_FILTERCMDBOX, CB_GETCOUNT,  0, 0);
-				if (sel == CB_ERR) return true;
+				int sel = (int)SendMsgToItem(IDC_FILTERCMDBOX, LVM_GETNEXTITEM, (WPARAM)-1, MAKELPARAM(LVNI_SELECTED, 0));
+				int count = (int)SendMsgToItem(IDC_FILTERCMDBOX, LVM_GETITEMCOUNT, 0, 0);
+				if (sel == -1) return true;
 				int other = (id == IDC_FILTERUPBTN) ? sel - 1 : sel + 1;
 				if (other < 0 || other >= count) return true;
 				if ((sel < pinnedCount_) != (other < pinnedCount_)) return true;
-				TCHAR a[2048], b[2048];
-				SendMsgToItem(IDC_FILTERCMDBOX, CB_GETLBTEXT, (WPARAM)sel,   (LPARAM)a);
-				SendMsgToItem(IDC_FILTERCMDBOX, CB_GETLBTEXT, (WPARAM)other, (LPARAM)b);
-				int hi = sel > other ? sel : other;
-				int lo = sel > other ? other : sel;
-				SendMsgToItem(IDC_FILTERCMDBOX, CB_DELETESTRING,  (WPARAM)hi, 0);
-				SendMsgToItem(IDC_FILTERCMDBOX, CB_DELETESTRING,  (WPARAM)lo, 0);
-				SendMsgToItem(IDC_FILTERCMDBOX, CB_INSERTSTRING, (WPARAM)lo, (LPARAM)(hi == sel ? a : b));
-				SendMsgToItem(IDC_FILTERCMDBOX, CB_INSERTSTRING, (WPARAM)hi, (LPARAM)(lo == sel ? a : b));
+				
+				TCHAR aCmdBuf[2048], bCmdBuf[2048];
+				ListView_GetItemText(item(IDC_FILTERCMDBOX), sel, 2, aCmdBuf, countof(aCmdBuf));
+				ListView_GetItemText(item(IDC_FILTERCMDBOX), other, 2, bCmdBuf, countof(bCmdBuf));
+				
 				if (sel < pinnedCount_)
 					cfg_.SwapPinned(sel, other);
 				else
 					cfg_.SwapFilterHistory(sel - pinnedCount_, other - pinnedCount_);
-				SelectAndShowRaw(other);
+				
+				RebuildListView(other);
 				return true;
 			}
 			if (id == IDC_FILTERPINBTN) {
-				TCHAR buf[2048]; buf[0] = 0;
-				GetItemText(IDC_FILTERCMDBOX, countof(buf), buf);
-				if (buf[0] == 0) return true;
-				if (cfg_.IsFilterPinned(ki::String(buf))) {
-					cfg_.RemovePinned(ki::String(buf));
-					cfg_.AddFilterHistory(ki::String(buf));
-					RebuildComboList(buf, false);
+				int sel = (int)SendMsgToItem(IDC_FILTERCMDBOX, LVM_GETNEXTITEM, (WPARAM)-1, MAKELPARAM(LVNI_SELECTED, 0));
+				if (sel == -1) return true;
+				TCHAR cmd[2048]; cmd[0] = 0;
+				ListView_GetItemText(item(IDC_FILTERCMDBOX), sel, 2, cmd, countof(cmd));
+				if (cmd[0] == 0) return true;
+				
+				if (cfg_.IsFilterPinned(ki::String(cmd))) {
+					cfg_.RemovePinned(ki::String(cmd));
+					cfg_.AddFilterHistory(ki::String(cmd));
+					RebuildListView(sel - 1 >= 0 ? sel - 1 : 0);
 				} else {
 					int pinCount = 0;
 					for (int i = 0; i < pinnedLen_; ++i)
@@ -1577,8 +1638,8 @@ void GreenPadWnd::on_exfilter()
 						::MessageBox(hwnd(), msg, NULL, MB_OK | MB_ICONWARNING);
 						return true;
 					}
-					cfg_.AddPinned(ki::String(buf));
-					RebuildComboList(buf, true);
+					cfg_.AddPinned(ki::String(cmd));
+					RebuildListView(0);
 				}
 				return true;
 			}

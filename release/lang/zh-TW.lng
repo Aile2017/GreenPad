@@ -35,6 +35,8 @@ IDS_CHARSET_CAPTION = 字元編碼:
 IDS_CRLF_CAPTION = 行結尾:
 IDS_EXFILTER_FAILED = 外部篩選器失敗（結束代碼：%d）
 IDS_EXFILTER_PINFULL = 固定清單已滿（上限：%d）。
+IDS_EXFILTER_PINNED = 固定
+IDS_EXFILTER_COMMAND = 命令
 
 [Menu]
 popup.0 = 檔案(&F)

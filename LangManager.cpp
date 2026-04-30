@@ -156,10 +156,13 @@ static const NameIdPair kStringNames[] = {
     {L"IDS_UNTITLED",        21},
     {L"IDS_CHARSET_CAPTION", 22},
     {L"IDS_CRLF_CAPTION",    23},
-    {L"IDS_EXFILTER_FAILED", 25},
-    {L"IDS_NOTFOUNDUP",       28},
-    {L"IDS_NOTFOUND_SELDOWN", 29},
-    {L"IDS_NOTFOUND_SELUP",   30},
+    {L"IDS_EXFILTER_FAILED",  25},
+    {L"IDS_EXFILTER_PINFULL", 26},
+    {L"IDS_EXFILTER_PINNED",  27},
+    {L"IDS_EXFILTER_COMMAND", 28},
+    {L"IDS_NOTFOUNDUP",       30},
+    {L"IDS_NOTFOUND_SELDOWN", 31},
+    {L"IDS_NOTFOUND_SELUP",   32},
 };
 
 static const NameIdPair kCommandNames[] = {

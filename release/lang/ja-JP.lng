@@ -35,6 +35,8 @@ IDS_CHARSET_CAPTION = 文字コード:
 IDS_CRLF_CAPTION = 改行コード:
 IDS_EXFILTER_FAILED = 外部フィルタが失敗しました (終了コード: %d)
 IDS_EXFILTER_PINFULL = 固定リストが満杯です (上限: %d)。
+IDS_EXFILTER_PINNED = 固定
+IDS_EXFILTER_COMMAND = コマンド
 
 [Menu]
 popup.0 = ファイル(&F)

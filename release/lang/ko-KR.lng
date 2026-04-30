@@ -35,6 +35,8 @@ IDS_CHARSET_CAPTION = 문자 인코딩:
 IDS_CRLF_CAPTION = 줄 끝:
 IDS_EXFILTER_FAILED = 외부 필터가 실패했습니다 (종료 코드: %d)
 IDS_EXFILTER_PINFULL = 고정 목록이 가득 찼습니다 (최대: %d).
+IDS_EXFILTER_PINNED = 고정
+IDS_EXFILTER_COMMAND = 명령
 
 [Menu]
 popup.0 = 파일(&F)
