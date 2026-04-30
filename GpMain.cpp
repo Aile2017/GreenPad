@@ -1502,7 +1502,7 @@ void GreenPadWnd::on_exfilter()
 			HWND hList = item(IDC_FILTERCMDBOX);
 			
 			// Set extended list view style
-			ListView_SetExtendedListViewStyle(hList, LVS_EX_FULLROWSELECT);
+			ListView_SetExtendedListViewStyle(hList, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
 
 			// Add columns with localized titles
 			LVCOLUMN lvc;
@@ -1539,9 +1539,11 @@ void GreenPadWnd::on_exfilter()
 			lvc.cx = 46;
 			ListView_InsertColumn(hList, 1, &lvc);
 
+			// Command column fills remaining listview width
+			RECT listRect; ::GetClientRect(hList, &listRect);
 			lvc.fmt = LVCFMT_LEFT;
 			lvc.pszText = cmdTitle;
-			lvc.cx = 250;
+			lvc.cx = listRect.right - 46;
 			ListView_InsertColumn(hList, 2, &lvc);
 
 			// Populate list view
@@ -1560,17 +1562,44 @@ void GreenPadWnd::on_exfilter()
 		bool on_message( UINT msg, WPARAM wp, LPARAM lp ) override {
 			if (msg == WM_NOTIFY) {
 				LPNMHDR pnmh = (LPNMHDR)lp;
-				if (pnmh->idFrom == IDC_FILTERCMDBOX && pnmh->code == LVN_ITEMCHANGED) {
-					LPNMLISTVIEW pnmlv = (LPNMLISTVIEW)pnmh;
-					if (pnmlv->uChanged & LVIF_STATE) {
-						if ((pnmlv->uNewState & LVIS_SELECTED) != 0) {
-							TCHAR cmd[2048]; cmd[0] = 0;
-							ListView_GetItemText(item(IDC_FILTERCMDBOX), pnmlv->iItem, 2, cmd, countof(cmd));
-							::SetWindowText(item(IDC_FILTERCOMMANDBOX), cmd);
-							UpdatePinBtn();
+				if (pnmh->idFrom == IDC_FILTERCMDBOX) {
+					if (pnmh->code == LVN_ITEMCHANGED) {
+						LPNMLISTVIEW pnmlv = (LPNMLISTVIEW)pnmh;
+						if (pnmlv->uChanged & LVIF_STATE) {
+							if ((pnmlv->uNewState & LVIS_SELECTED) != 0) {
+								TCHAR cmd[2048]; cmd[0] = 0;
+								ListView_GetItemText(item(IDC_FILTERCMDBOX), pnmlv->iItem, 2, cmd, countof(cmd));
+								::SetWindowText(item(IDC_FILTERCOMMANDBOX), cmd);
+								UpdatePinBtn();
+							}
+						}
+						return true;
+					}
+					if (pnmh->code == NM_CUSTOMDRAW) {
+						LPNMLVCUSTOMDRAW pCD = (LPNMLVCUSTOMDRAW)lp;
+						if (pCD->nmcd.dwDrawStage == CDDS_PREPAINT) {
+							// Request post-paint notification to draw header separator
+							::SetWindowLongPtr(hwnd(), DWLP_MSGRESULT, CDRF_NOTIFYPOSTPAINT);
+							return true;
+						}
+						if (pCD->nmcd.dwDrawStage == CDDS_POSTPAINT) {
+							// Draw a line below the header
+							HWND hList = item(IDC_FILTERCMDBOX);
+							HWND hHeader = ListView_GetHeader(hList);
+							RECT hdrRect;
+							::GetWindowRect(hHeader, &hdrRect);
+							::MapWindowPoints(NULL, hList, (LPPOINT)&hdrRect, 2);
+							HDC hdc = pCD->nmcd.hdc;
+							HPEN hPen = ::CreatePen(PS_SOLID, 1, ::GetSysColor(COLOR_BTNSHADOW));
+							HPEN hOld = (HPEN)::SelectObject(hdc, hPen);
+							::MoveToEx(hdc, hdrRect.left, hdrRect.bottom, NULL);
+							::LineTo(hdc, hdrRect.right, hdrRect.bottom);
+							::SelectObject(hdc, hOld);
+							::DeleteObject(hPen);
+							::SetWindowLongPtr(hwnd(), DWLP_MSGRESULT, CDRF_DODEFAULT);
+							return true;
 						}
 					}
-					return true;
 				}
 			}
 			return false;
