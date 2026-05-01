@@ -1506,8 +1506,6 @@ void GreenPadWnd::on_exfilter()
 
 			// Add columns with localized titles
 			LVCOLUMN lvc;
-			lvc.mask = LVCF_WIDTH | LVCF_TEXT;
-			
 			// Get column titles: try language file first, fall back to RC resources
 			TCHAR pinnedTitle[32]; pinnedTitle[0] = 0;
 			TCHAR cmdTitle[32]; cmdTitle[0] = 0;
@@ -1547,7 +1545,7 @@ void GreenPadWnd::on_exfilter()
 			ListView_InsertColumn(hList, 2, &lvc);
 
 			// Populate list view
-			RebuildListView(pinnedCount_ > 0 ? 0 : -1);
+			RebuildListView(0);
 			UpdatePinBtn();
 			::SetFocus(item(IDC_FILTERCOMMANDBOX));
 		}
@@ -1650,16 +1648,14 @@ void GreenPadWnd::on_exfilter()
 				TCHAR cmd[2048]; cmd[0] = 0;
 				ListView_GetItemText(item(IDC_FILTERCMDBOX), sel, 2, cmd, countof(cmd));
 				if (cmd[0] == 0) return true;
-				
-				if (cfg_.IsFilterPinned(ki::String(cmd))) {
-					cfg_.RemovePinned(ki::String(cmd));
-					cfg_.AddFilterHistory(ki::String(cmd));
+				ki::String kcmd(cmd);
+
+				if (sel < pinnedCount_) {
+					cfg_.RemovePinned(kcmd);
+					cfg_.AddFilterHistory(kcmd);
 					RebuildListView(sel - 1 >= 0 ? sel - 1 : 0);
 				} else {
-					int pinCount = 0;
-					for (int i = 0; i < pinnedLen_; ++i)
-						if (pinned_[i].len() > 0) ++pinCount;
-					if (pinCount >= pinnedLen_) {
+					if (pinnedCount_ >= pinnedLen_) {
 						TCHAR msg[256];
 						const wchar_t* fmt = LangManager::Get().GetString(IDS_EXFILTER_PINFULL);
 						if (!fmt) fmt = TEXT("Pinned list is full (max: %d).");
@@ -1667,7 +1663,7 @@ void GreenPadWnd::on_exfilter()
 						::MessageBox(hwnd(), msg, NULL, MB_OK | MB_ICONWARNING);
 						return true;
 					}
-					cfg_.AddPinned(ki::String(cmd));
+					cfg_.AddPinned(kcmd);
 					RebuildListView(0);
 				}
 				return true;
