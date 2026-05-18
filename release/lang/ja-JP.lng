@@ -51,7 +51,6 @@ popup.3.6 = 文書タイプ(&T)
 ID_CMD_NEWFILE = 新規作成(&N)\tCtrl+N
 ID_CMD_OPENFILE = 開く(&O)...\tCtrl+O
 ID_CMD_REOPENFILE = 開き直す(&R)...\tCtrl+R
-ID_CMD_REFRESHFILE = 再表示(&F)\tF5
 ID_CMD_OPENELEVATED = 管理者で開く(&L)...\tCtrl+L
 ID_CMD_SAVEFILE = 保存(&S)\tCtrl+S
 ID_CMD_SAVEFILEAS = 別名で保存(&A)...\tCtrl+Shift+S

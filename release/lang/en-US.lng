@@ -51,7 +51,6 @@ popup.3.6 = &Document Type
 ID_CMD_NEWFILE = &New File\tCtrl+N
 ID_CMD_OPENFILE = &Open...\tCtrl+O
 ID_CMD_REOPENFILE = &ReOpen...\tCtrl+R
-ID_CMD_REFRESHFILE = Re&fresh\tF5
 ID_CMD_OPENELEVATED = Open e&levated...\tCtrl+L
 ID_CMD_SAVEFILE = &Save\tCtrl+S
 ID_CMD_SAVEFILEAS = Save &As...\tCtrl+Shift+S

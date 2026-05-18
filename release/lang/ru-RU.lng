@@ -51,7 +51,6 @@ popup.3.6 = &Тип документа
 ID_CMD_NEWFILE = &Новый файл\tCtrl+N
 ID_CMD_OPENFILE = &Открыть...\tCtrl+O
 ID_CMD_REOPENFILE = &Переоткрыть...\tCtrl+R
-ID_CMD_REFRESHFILE = Обновить\tF5
 ID_CMD_OPENELEVATED = Открыть от имени &администратора...\tCtrl+L
 ID_CMD_SAVEFILE = &Сохранить\tCtrl+S
 ID_CMD_SAVEFILEAS = Сохранить &как...\tCtrl+Shift+S

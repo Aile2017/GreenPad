@@ -51,7 +51,6 @@ popup.3.6 = 파일 형식(&T)
 ID_CMD_NEWFILE = 새 파일(&N)\tCtrl+N
 ID_CMD_OPENFILE = 열기(&O)...\tCtrl+O
 ID_CMD_REOPENFILE = 다시 열기(&R)...\tCtrl+R
-ID_CMD_REFRESHFILE = 새로 고침(&F)\tF5
 ID_CMD_OPENELEVATED = 관리자 권한으로 열기(&L)...\tCtrl+L
 ID_CMD_SAVEFILE = 저장(&S)\tCtrl+S
 ID_CMD_SAVEFILEAS = 다른 이름으로 저장(&A)...\tCtrl+Shift+S

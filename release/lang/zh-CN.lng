@@ -51,7 +51,6 @@ popup.3.6 = 文档类型(&T)
 ID_CMD_NEWFILE = 新建(&N)\tCtrl+N
 ID_CMD_OPENFILE = 打开(&O)...\tCtrl+O
 ID_CMD_REOPENFILE = 重新载入(&R)...\tCtrl+R
-ID_CMD_REFRESHFILE = 刷新(&F)\tF5
 ID_CMD_OPENELEVATED = 用管理员权限打开 (&L)...\tCtrl+L
 ID_CMD_SAVEFILE = 保存(&S)\tCtrl+S
 ID_CMD_SAVEFILEAS = 另存为(&A)...\tCtrl+Shift+S

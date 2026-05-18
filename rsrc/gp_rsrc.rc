@@ -114,7 +114,6 @@ BEGIN
     VK_F2,          ID_CMD_FINDPREV,        VIRTKEY, NOINVERT
     VK_F3,          ID_CMD_FINDPREV,        VIRTKEY, SHIFT, NOINVERT
     VK_F4,          ID_CMD_EXIT,            VIRTKEY, CONTROL, NOINVERT
-    VK_F5,          ID_CMD_REFRESHFILE,     VIRTKEY, NOINVERT
     VK_F6,          ID_CMD_DATETIME,        VIRTKEY, NOINVERT
     "I",            ID_CMD_INSERTUNI,       VIRTKEY, CONTROL, NOINVERT
     VK_F12,         ID_CMD_SAVEFILEAS,      VIRTKEY, NOINVERT
@@ -153,7 +152,6 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "&Open...\tCtrl+O",            ID_CMD_OPENFILE
         MENUITEM "&ReOpen...\tCtrl+R",          ID_CMD_REOPENFILE
-        MENUITEM "Re&fresh\tF5",                ID_CMD_REFRESHFILE
         MENUITEM "Open e&levated...\tCtrl+L",   ID_CMD_OPENELEVATED
         MENUITEM SEPARATOR
         MENUITEM "&Save\tCtrl+S",               ID_CMD_SAVEFILE
