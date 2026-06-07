@@ -41,25 +41,39 @@ Exit code handling follows the grep convention:
 ### Command Input Dialog
 
 - Window title: `External Filter` (localized per language)
-- Label above combo box: `Command:` (localized)
+- Layout: Command history list (ListView) with input field and control buttons
 - Buttons: `Run`, `Cancel`, `Del`, `Up`, `Down`, `Pin` / `Unpin` (localized)
+
+**UI Layout:**
 
 ```
 ┌─ External Filter ──────────────────────────────┐
-│ Command:                                        │
-│ [ * sort -r                               ]▼   │
-│   * grep -n TODO                               │
-│   wc -l                                        │
-│   cat -v                                       │
 │                                                 │
-│ [Del] [Up] [Down] [Pin]       [  Run  ] [Cancel]│
+│ Command History:                                │
+│ ┌─────────────────────────────────────────┐    │
+│ │ Pin │ Command                           │    │
+│ ├─────┼─────────────────────────────────────┤    │
+│ │  *  │ sort -r                           │    │
+│ │  *  │ grep -n TODO                      │    │
+│ │     │ wc -l                             │    │
+│ │     │ cat -v                            │    │
+│ └─────────────────────────────────────────┘    │
+│ [Del] [Up] [Down] [Pin]   [  Run  ] [Cancel]  │
+│                                                 │
+│ Command: [________________________]             │
 └─────────────────────────────────────────────────┘
 ```
 
-- Input area is a combo box (`CBS_SIMPLE`):
-  - Up/Down keys cycle through history in the input field.
-  - The ▼ button opens the dropdown list.
-  - Same UX as the existing search dialog combo box.
+**Interaction:**
+
+- The ListView displays command history with two columns:
+  - Column 1: Pin marker (`*` for pinned items, empty for regular history)
+  - Column 2: Command text
+- Click a list item to select it; the command appears in the input field below.
+- `Del`, `Up`, `Down` buttons operate on the selected list item.
+- `Pin` / `Unpin` button toggles the pin state of the selected item.
+- The input field allows manual entry of new commands.
+- `Run` executes the command from the input field.
 
 ### Command History
 
@@ -77,45 +91,45 @@ A command is added to regular history when `CreateProcess` succeeds.
 - Commands that launch but exit with a non-zero code are added.
 - If the executed command is already in the pinned list, it is **not** added to regular history.
 
-#### List Order in the Combo Box
+#### List Order in the ListView
 
-Pinned commands are shown first, followed by regular history entries.
-Pinned commands are prefixed with `* ` to distinguish them visually:
+Pinned commands are shown first in the ListView, followed by regular history entries.
+Pinned commands are marked with `*` in the first column:
 
 ```
-* sort -r          ← pinned (pinnedHistory_[0])
-* grep -n TODO     ← pinned (pinnedHistory_[1])
-wc -l              ← regular history (filterHistory_[0])
-cat -v             ← regular history (filterHistory_[1])
+* │ sort -r          ← pinned (pinnedHistory_[0])
+* │ grep -n TODO     ← pinned (pinnedHistory_[1])
+  │ wc -l            ← regular history (filterHistory_[0])
+  │ cat -v           ← regular history (filterHistory_[1])
 ```
 
-When a pinned command is executed, the `* ` prefix is stripped before passing the command to `cmd.exe`.
+When a pinned command is executed, the `*` prefix is stripped before passing the command to `cmd.exe`.
 
 #### Pin / Unpin Button
 
-The `Pin` button label changes dynamically based on whether the current combo box text matches a pinned command:
+The `Pin` button label changes dynamically based on whether the selected list item is pinned:
 
 | Current selection state | Button label |
 |---|---|
 | Not pinned | `Pin` |
 | Already pinned | `Unpin` |
 
-The label is updated whenever the combo box selection or text changes.
+The label is updated whenever the list selection changes.
 
 **Pin operation** (not pinned → pinned):
 
-1. Read the current text from the combo box.
+1. Read the current text from the selected list item or input field.
 2. If `pinnedHistory_` already holds `kFilterPinnedMax` entries → show error message (`"Pinned list is full"`), abort.
 3. If the same command exists in `filterHistory_`, remove it.
 4. Insert the command at the front of `pinnedHistory_` (shift existing entries down).
-5. Save to INI and refresh the combo box.
+5. Save to INI and refresh the list view.
 
 **Unpin operation** (pinned → not pinned):
 
-1. Read the current text from the combo box (strip leading `* `).
+1. Read the current text from the selected list item (strip leading `* `).
 2. Remove the command from `pinnedHistory_`.
 3. Insert it at the front of `filterHistory_` (same as `AddFilterHistory`).
-4. Save to INI and refresh the combo box.
+4. Save to INI and refresh the list view.
 
 #### Del Button
 
@@ -353,7 +367,7 @@ set PATH=c:\usr\msys2\usr\bin;%PATH% & tac
 
 ### Implementation Notes
 
-- Dialog: a single-line input dialog using the existing `DlgImpl` base class.
+- Dialog: ListViewベースの履歴管理 UI と入力フィールド、制御ボタンを含むダイアログ（`DlgImpl` 継承）
 - Use `CreateProcess` with anonymous pipes connected to stdin/stdout/stderr.
 - Block UI during filter execution (to prevent corruption of the edit buffer).
 - Use threads to avoid pipe buffer deadlock:
@@ -367,7 +381,7 @@ set PATH=c:\usr\msys2\usr\bin;%PATH% & tac
 - Reuse the existing thread wrapper in `kilib/thread.cpp`.
 - Size dialog controls to fit the Russian locale:
   - The `Run` button must be wide enough for `Выполнить` (10 characters).
-  - Dialog width and combo box width should be based on the caption `Внешний фильтр`.
+  - Dialog width and list view width should be based on the caption `Внешний фильтр`.
   - Error messages use `MessageBox` auto-wrap, so no special handling is needed.
 
 #### Pin Feature Implementation Notes
@@ -378,8 +392,8 @@ set PATH=c:\usr\msys2\usr\bin;%PATH% & tac
 - INI read/write follows the same pattern as `FilterCmd*`:
   - Keys `FilterPin1` – `FilterPin10` under the user section.
 - `ExFilterDlg` receives both arrays and their lengths.
-  - On `on_init()`: add pinned entries (with `* ` prefix) then regular history entries to the combo box.
+  - On `on_init()`: populate the ListView with pinned entries (marked with `*` in column 1) then regular history entries.
   - Track `pinnedCount_` (number of non-empty pinned entries) to determine group boundaries for Up/Down and Pin/Unpin logic.
-- Pin/Unpin button label update: compare combo box text (after stripping leading `* `) against `pinnedHistory_` entries; set button text accordingly.
-- When the combo box selection changes (`CBN_SELCHANGE`) or the edit text changes (`CBN_EDITCHANGE`), refresh the Pin button label.
+- Pin/Unpin button label update: compare selected list item text (after stripping leading `*` if present) against `pinnedHistory_` entries; set button text accordingly.
+- When the ListView selection changes, refresh the Pin button label and update the input field with the selected command.
 - `AddFilterHistory` must check `pinnedHistory_` before inserting into `filterHistory_`; skip the insert if the command is already pinned.

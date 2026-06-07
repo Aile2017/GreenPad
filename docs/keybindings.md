@@ -42,12 +42,13 @@ Complete reference of all keyboard shortcuts, organized by category.
 
 | Key | Action |
 |-----|--------|
-| `Ctrl+F` / `Ctrl+H` | Open Find/Replace dialog |
+| `Ctrl+F` | Open Find dialog |
+| `Ctrl+H` | Open Find dialog (alternative) |
 | `F3` | Find next |
 | `Shift+F3` / `F2` | Find previous |
 | `Ctrl+J` | Jump to line number |
 | `Ctrl+G` | External filter |
-| `F7` | Open selection as file path or URL |
+| `F7` | Open file/URL at cursor line |
 | `F8` | Show selection length |
 
 ---

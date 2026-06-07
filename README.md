@@ -130,11 +130,11 @@ C:/usr/msys64/usr/bin/bash.exe -c "export PATH=/clang64/bin:/usr/bin:$PATH; /usr
 | `Ctrl+Y` | Redo |
 | `F5` | Reload file |
 | `F6` | Insert date & time |
-| `F7` | Open selection as file/URL |
+| `F7` | Open file/URL at cursor line |
 | `F8` | Display selection length |
 | `Ctrl+F` | Find |
 | `F3` / `Shift+F3` | Find next / prev |
-| `Ctrl+H` | Replace |
+| `Ctrl+H` | Find (alternative) |
 | `Ctrl+J` | Jump to line |
 | `Ctrl+G` | External filter |
 | `Ctrl+1/2/3` | Wrap: none / fixed width / window width |
