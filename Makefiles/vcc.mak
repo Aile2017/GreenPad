@@ -30,6 +30,7 @@ OBJS = \
  $(INTDIR)\ip_text.$(OBJ_SUFFIX)     \
  $(INTDIR)\ip_parse.$(OBJ_SUFFIX)    \
  $(INTDIR)\GpMain.$(OBJ_SUFFIX)      \
+ $(INTDIR)\GpExFilter.$(OBJ_SUFFIX)  \
  $(INTDIR)\OpenSaveDlg.$(OBJ_SUFFIX) \
  $(INTDIR)\Search.$(OBJ_SUFFIX)      \
  $(INTDIR)\RSearch.$(OBJ_SUFFIX)     \
