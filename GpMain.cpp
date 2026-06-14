@@ -1842,13 +1842,18 @@ void GreenPadWnd::UpdateWindowName()
 void GreenPadWnd::SetupMRUMenu()
 {
 	int nmru=0;
+	// File menu position of the "Recent Files" popup. NOTE: this is a raw
+	// positional index into the File menu; keep it in sync with rsrc/gp_rsrc.rc
+	// whenever items are added/removed above it (see commit 26b8259, which
+	// shifted this from 13 to 12 by removing the F5/Refresh item).
+	enum { MRU_SUBMENU_POS = 12 };
 	HMENU mparent = ::GetSubMenu(::GetMenu(hwnd()),0);
-	if( HMENU m = ::GetSubMenu(mparent, 13) )
+	if( HMENU m = ::GetSubMenu(mparent, MRU_SUBMENU_POS) )
 	{
 		nmru = cfg_.SetUpMRUMenu( m, ID_CMD_MRU );
 		::DrawMenuBar( hwnd() );
 	}
-	::EnableMenuItem(mparent, 13, MF_BYPOSITION|(nmru?MF_ENABLED:MF_GRAYED));
+	::EnableMenuItem(mparent, MRU_SUBMENU_POS, MF_BYPOSITION|(nmru?MF_ENABLED:MF_GRAYED));
 }
 
 void GreenPadWnd::on_mru( int no )
