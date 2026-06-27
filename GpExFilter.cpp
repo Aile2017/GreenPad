@@ -365,6 +365,17 @@ void GreenPadWnd::on_exfilter()
 	}
 	aarr<unicode> selText = edit_.getCursor().getSelectedStr();
 
+	// Pick the codepage used to talk to the external command. Byte-oriented
+	// Unix-style tools (busybox sort/sed/awk/grep...) cannot process UTF-16 /
+	// UTF-32 streams: the embedded NUL bytes and the 2-byte newline desync the
+	// byte pairing and the result comes back garbled. For those wide encodings
+	// (ki::UTF16b..UTF32LE == -3..-10) fall back to UTF-8 without BOM; every
+	// other encoding (SJIS, UTF-8, single-byte...) is a plain byte stream and
+	// is passed through unchanged so native tools keep working.
+	int filterCp = resolveCSI(csi_);
+	if (filterCp <= UTF16b && filterCp >= UTF32LE)
+		filterCp = UTF8N;
+
 	// --- Write selected text to temp input file ---
 	TCHAR tmpDir[MAX_PATH], tmpIn[MAX_PATH];
 	GetTempPath(MAX_PATH, tmpDir);
@@ -374,7 +385,7 @@ void GreenPadWnd::on_exfilter()
 	}
 
 	{
-		TextFileW tf(resolveCSI(csi_), lb_);
+		TextFileW tf(filterCp, lb_);
 		if (!tf.Open(tmpIn)) {
 			DeleteFile(tmpIn);
 			if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
@@ -504,7 +515,7 @@ void GreenPadWnd::on_exfilter()
 		if (!hadSelection) edit_.getCursor().MoveCur(origCurPos, false);
 	} else if (treatAsSuccess) {
 		// Decode stdout bytes directly from memory
-		TextFileR tfr(resolveCSI(csi_));
+		TextFileR tfr(filterCp);
 		if (tfr.OpenFromMemory(stdoutBuf, stdoutSize)) {
 			const size_t READ_CHUNK = 4096;
 			size_t resCap = READ_CHUNK * 2;
