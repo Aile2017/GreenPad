@@ -105,6 +105,7 @@ private:
 	short            wrap_;
 	bool             showLN_;
 	bool             readonly_;
+	bool             elevated_;
 
 	static ClsName   className_;
 

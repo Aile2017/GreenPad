@@ -171,6 +171,22 @@ void BootNewProcess( const TCHAR* cmd = TEXT("") )
 	}
 }
 
+// True if this process runs with an elevated (administrator) token.
+static bool isProcessElevated()
+{
+	bool elevated = false;
+	HANDLE token;
+	if( ::OpenProcessToken( ::GetCurrentProcess(), TOKEN_QUERY, &token ) )
+	{
+		TOKEN_ELEVATION te;
+		DWORD cb = 0;
+		if( ::GetTokenInformation( token, TokenElevation, &te, sizeof(te), &cb ) )
+			elevated = (te.TokenIsElevated != 0);
+		::CloseHandle( token );
+	}
+	return elevated;
+}
+
 static HMENU LoadLocalizedMainMenu(HINSTANCE hInst)
 {
 	HMENU hMenu = ::LoadMenu(hInst, MAKEINTRESOURCE(IDR_MAIN));
@@ -833,6 +849,12 @@ int GreenPadWnd::resolveCSI(int csi) const
 }
 void GreenPadWnd::on_openelevated(const ki::Path& fn)
 {
+	// ExitProcess below kills this instance, so unsaved changes must be
+	// dealt with first. Note: when called with filename_, saving an
+	// untitled document here also updates fn (it aliases filename_).
+	if( !AskToSave() )
+		return;
+
 	const view::VPos *cur, *sel;
 	edit_.getCursor().getCurPosUnordered(&cur, &sel);
 	int cp = resolveCSI(csi_);
@@ -1783,12 +1805,14 @@ void GreenPadWnd::SetupSubMenu()
 
 void GreenPadWnd::GetTitleText( TCHAR *name )
 {
-	TCHAR *end = name+1;
+	TCHAR *end = name;
 	RzsString untitled(IDS_UNTITLED);
 	const TCHAR* untitledText = untitled.c_str();
 	RzsString appName(IDS_APPNAME);
 	const TCHAR* appNameText = appName.c_str();
-	name[0] = TEXT('[');
+	if( elevated_ )
+		end = my_lstrkpy( end, TEXT("(A)") );
+	*end++ = TEXT('[');
 	if( isUntitled() )
 		end = my_lstrkpy( end, untitledText );
 	else
@@ -1804,7 +1828,7 @@ void GreenPadWnd::UpdateWindowName()
 	// Adjusting the text displayed in the title bar
 	// [FileName *] - GreenPad
 	{
-		TCHAR name[1+MAX_PATH+6+32+1];
+		TCHAR name[3+1+MAX_PATH+6+32+1]; // 3 = "(A)" elevated marker
 		GetTitleText( name );
 		SetText( name );
 	}
@@ -2271,6 +2295,7 @@ GreenPadWnd::GreenPadWnd()
 	, lb_      ( cfg_.GetNewfileLB() )
 	, wrap_    ( -1 )
 	, readonly_( false )
+	, elevated_( isProcessElevated() )
 {
 	LOGGER( "GreenPadWnd::Construct begin" );
 
