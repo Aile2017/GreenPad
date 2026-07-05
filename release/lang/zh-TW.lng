@@ -89,6 +89,7 @@ ID_CMD_HELP = 關聯說明(&C)...\tF1
 ID_CMD_HELPABOUT = 關於(&A)
 ID_CMD_CHOOSEFONT = 字型(&F)...
 ID_CMD_SHOWLINENO = 顯示行號(&L)
+ID_CMD_UNDERLINE = 顯示目前行底線(&U)
 
 [Dialog.IDD_REOPENDLG]
 Caption = 重新載入

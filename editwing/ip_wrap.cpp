@@ -34,6 +34,10 @@ ViewImpl::ViewImpl( View& vw, doc::Document& dc )
 	, textCx_( 0 )
 	, accdelta_  ( 0 )
 	, accdeltax_ ( 0 )
+	, showUL_    ( false )
+	, curtl_     ( 0 )
+	, curVlTop_  ( 0 )
+	, curRows_   ( 1 )
 	, hwnd_  ( vw.hwnd() )
 {
 	// Initialize return information appropriately

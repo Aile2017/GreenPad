@@ -219,6 +219,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Status&Bar",                  ID_CMD_STATUSBAR
         MENUITEM "Show &Line Numbers",          ID_CMD_SHOWLINENO
+        MENUITEM "&Underline Current Line",     ID_CMD_UNDERLINE
         MENUITEM "Read &Only Mode",             ID_CMD_READONLY
     END
     POPUP "&Help"

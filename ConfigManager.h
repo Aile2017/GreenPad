@@ -130,6 +130,10 @@ public:
 	inline bool showStatusBar() const { return showStatusBar_; }
 	inline void ShowStatusBarSwitch() { showStatusBar_ = !showStatusBar_; inichanged_=1; SaveIni(); }
 
+	//@{Current line underline display //@}
+	inline bool showUnderline() const { return showUnderline_; }
+	inline bool ShowUnderlineSwitch() { showUnderline_ = !showUnderline_; inichanged_=1; SaveIni(); return showUnderline_; }
+
 	//@{ date //@}
 	inline const ki::String& dateFormat() const { return dateFormat_; }
 
@@ -218,6 +222,7 @@ private:
 	bool       openSame_;
 	bool       countbyunicode_;
 	bool       showStatusBar_;
+	bool       showUnderline_;
 	bool       rememberWindowSize_;
 	bool       rememberWindowPlace_;
 	bool       useQuickExit_;

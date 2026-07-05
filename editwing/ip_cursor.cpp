@@ -162,6 +162,7 @@ void Cursor::UpdateCaretPos()
 
 	// set
 	caret_.SetPos( x, y );
+	view_.SetCurrentTL( cur_.tl, cur_.vl - cur_.rl );
 	pEvHan_->on_move( cur_, sel_ );
 }
 

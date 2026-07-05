@@ -54,6 +54,9 @@ public:
 	//@{ draw a line, Draw a line from point x to point y //@}
 	void DrawLine( int x1, int y1, int x2, int y2 );
 
+	//@{ horizontal underline for the caret line (darkened text color) //@}
+	void DrawUnderline( int x1, int y, int x2 );
+
 	//@{Clip region settings, (IntersectClipRect()) //@}
 	void SetClip( const RECT& rc );
 
@@ -167,6 +170,7 @@ private:
 	HDC          cdc_; // Compatible DC used for W() (const)
 	HFONT        font_;
 	HPEN         pen_;
+	HPEN         ulpen_;
 	HBRUSH       brush_;
 	HFONT  oldfont_;   // Old objects to be released before
 	HPEN   oldpen_;    // the EndPaint() call.
@@ -361,6 +365,14 @@ public:
 	inline void ShowLineNo( bool show )
 		{ cvs_.on_config_change( cvs_.wrapType(), show, cvs_.wrapSmart() ); DoConfigChange(); }
 
+	//@{Show/hide caret line underline //@}
+	inline void ShowUnderline( bool show )
+		{ if( showUL_ != show ) { showUL_ = show;
+		  InvalidateULBand( curVlTop_, curRows_ ); } }
+
+	//@{ Caret line change notification (called by Cursor) //@}
+	void SetCurrentTL( ulong tl, ulong vlTop );
+
 	//@{ Display color/font switching //@}
 	inline void SetFont( const VConfig& vcc, short zoom )
 	{
@@ -448,12 +460,17 @@ private:
 	ulong            textCx_;
 	short            accdelta_;
 	short            accdeltax_;
+	bool             showUL_;    // [Whether to underline the caret line]
+	ulong            curtl_;     // caret logical line
+	ulong            curVlTop_;  // first visual line of the caret line
+	ulong            curRows_;   // its wrapped row count at last update
 
 private:
 
 	void DrawLNA( const VDrawInfo& v, Painter& p );
 	void DrawTXT( const VDrawInfo& v, Painter& p );
 	void Inv( int y, int xb, int xe, Painter& p );
+	void InvalidateULBand( ulong vlTop, ulong rows ) const;
 
 	void CalcEveryLineWidth();
 	ulong CalcLineWidth( const unicode* txt, ulong len ) const;
@@ -520,6 +537,9 @@ public:
 
 	//@{Show/hide line number //@}
 	void ShowLineNo( bool show );
+
+	//@{Show/hide caret line underline //@}
+	void ShowUnderline( bool show );
 
 	//@{ Display color/font switching //@}
 	void SetFont( const VConfig& vc, short zoom );

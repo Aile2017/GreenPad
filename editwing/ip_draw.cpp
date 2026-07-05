@@ -128,6 +128,9 @@ void View::SetWrapSmart( bool ws )
 void View::ShowLineNo( bool show )
 	{ impl_->ShowLineNo( show ); }
 
+void View::ShowUnderline( bool show )
+	{ impl_->ShowUnderline( show ); }
+
 void View::SetFont( const VConfig& vc, short zoom )
 	{ impl_->SetFont( vc, zoom ); }
 
@@ -315,6 +318,7 @@ Painter::Painter( HWND hwnd, const VConfig& vc )
 	, cdc_       ( NULL )
 	, font_      ( NULL )
 	, pen_       ( NULL )
+	, ulpen_     ( NULL )
 	, brush_     ( NULL )
 //	, widthTable_( new int[65536] )
 	, widthTable_( wtable )
@@ -363,6 +367,12 @@ void Painter::Init( const VConfig& vc )
 	// Create a pen that is a 16th of font height. (min is 1px)
 	pen_ = ::CreatePen( PS_SOLID, height_/16, vc.color[CTL] );
 	::SelectObject( cdc_, pen_ );
+
+	// Pen for the caret-line underline: darkened text color.
+	ulpen_ = ::CreatePen( PS_SOLID, height_/16, RGB(
+		GetRValue(vc.color[TXT])/2,
+		GetGValue(vc.color[TXT])/2,
+		GetBValue(vc.color[TXT])/2 ) );
 
 
 	// Initialize character width table (delayed processing for characters other than those in the ASCII range)
@@ -489,6 +499,7 @@ void Painter::Destroy()
 
 	::DeleteObject( font_ );
 	::DeleteObject( pen_ );
+	::DeleteObject( ulpen_ );
 	::DeleteObject( brush_ );
 	if( fontranges_ )
 		free(fontranges_);
@@ -497,6 +508,7 @@ void Painter::Destroy()
 	cdc_ = NULL;
 	font_ = NULL;
 	pen_ = NULL;
+	ulpen_ = NULL;
 	brush_ = NULL;
 	fontranges_ = NULL;
 //	delete [] widthTable_;
@@ -569,6 +581,14 @@ inline void Painter::DrawLine( int x1, int y1, int x2, int y2 )
 {
 	::MoveToEx( dc_, x1, y1, NULL );
 	::LineTo( dc_, x2, y2 );
+}
+
+inline void Painter::DrawUnderline( int x1, int y, int x2 )
+{
+	HGDIOBJ old = ::SelectObject( dc_, ulpen_ );
+	::MoveToEx( dc_, x1, y, NULL );
+	::LineTo( dc_, x2, y );
+	::SelectObject( dc_, old );
 }
 
 inline void Painter::SetClip( const RECT& rc )
@@ -752,6 +772,35 @@ inline void ViewImpl::Inv( int y, int xb, int xe, Painter& p )
 	p.Invert( rc );
 }
 
+// Repaint the horizontal band occupied by a logical line
+// (vlTop/rows are visual-line based so no document access is needed).
+void ViewImpl::InvalidateULBand( ulong vlTop, ulong rows ) const
+{
+	const int H = cvs_.font_.H();
+	const long y = ((long)vlTop - udScr_.nPos) * H;
+	RECT rc = { left(), (int)y, right(), (int)(y + (long)rows*H) };
+	if( rc.bottom > 0 && rc.top < bottom() )
+		::InvalidateRect( hwnd_, &rc, FALSE );
+}
+
+void ViewImpl::SetCurrentTL( ulong tl, ulong vlTop )
+{
+	if( tl == curtl_ )
+	{	// Same line: just keep the cached band up to date.
+		curVlTop_ = vlTop;
+		curRows_  = rln(tl);
+		return;
+	}
+	if( showUL_ )
+	{
+		InvalidateULBand( curVlTop_, curRows_ );
+		InvalidateULBand( vlTop, rln(tl) );
+	}
+	curtl_    = tl;
+	curVlTop_ = vlTop;
+	curRows_  = rln(tl);
+}
+
 void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 {
 	if( doc_.isBusy() ) return;
@@ -877,6 +926,10 @@ void ViewImpl::DrawTXT( const VDrawInfo &v, Painter& p )
 				a.right= v.XBASE + v.XMAX;
 				p.Fill( a );
 			}
+
+			// Caret line underline (drawn on every wrapped row)
+			if( showUL_ && tl == curtl_ )
+				p.DrawUnderline( left(), a.top+H-1, right() );
 		}
 
 		// line end symbol rendering inversion, line end symbol rendering inversion

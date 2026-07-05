@@ -1289,6 +1289,7 @@ void ConfigManager::LoadIni()
 	countbyunicode_ = ini_.GetBool( TEXT("CountUni"), true );
 	bool havestb = true;
 	showStatusBar_ = ini_.GetBool( TEXT("StatusBar"), havestb );
+	showUnderline_ = ini_.GetBool( TEXT("UnderlineCurLine"), false );
 
 	dateFormat_   = ini_.GetStr( TEXT("DateFormat"), TEXT("HH:mm yyyy/MM/dd") );
 
@@ -1537,6 +1538,7 @@ void ConfigManager::SaveIni()
 	ini_.PutBool( TEXT("OpenSame"), openSame_ );
 	ini_.PutBool( TEXT("CountUni"), countbyunicode_ );
 	ini_.PutBool( TEXT("StatusBar"), showStatusBar_ );
+	ini_.PutBool( TEXT("UnderlineCurLine"), showUnderline_ );
 
 	// Cannot be modified from the GUI
 	// ini_.PutStr( TEXT("DateFormat"), dateFormat_.c_str() );

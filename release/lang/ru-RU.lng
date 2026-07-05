@@ -89,6 +89,7 @@ ID_CMD_HELP = &Контекстная справка...\tF1
 ID_CMD_HELPABOUT = &О программе
 ID_CMD_CHOOSEFONT = &Шрифт...
 ID_CMD_SHOWLINENO = Показывать номера ст&рок
+ID_CMD_UNDERLINE = Под&чёркивать текущую строку
 
 [Dialog.IDD_REOPENDLG]
 Caption = Переоткр.

@@ -89,6 +89,7 @@ ID_CMD_HELP = &Context Help...\tF1
 ID_CMD_HELPABOUT = &About
 ID_CMD_CHOOSEFONT = &Font...
 ID_CMD_SHOWLINENO = Show &Line Numbers
+ID_CMD_UNDERLINE = &Underline Current Line
 
 [Dialog.IDD_REOPENDLG]
 Caption = ReOpen File

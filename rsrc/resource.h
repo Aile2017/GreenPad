@@ -181,6 +181,7 @@
 #define ID_CMD_EXFILTER                 50025
 #define ID_CMD_CHOOSEFONT               50026
 #define ID_CMD_SHOWLINENO               50027
+#define ID_CMD_UNDERLINE                50028
 
 #define IDD_EXFILTER                    114
 #define IDC_FILTERCMDBOX                1035
