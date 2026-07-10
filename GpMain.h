@@ -104,6 +104,7 @@ private:
 	short            lb_;
 	short            wrap_;
 	bool             showLN_;
+	bool             showUL_;
 	bool             readonly_;
 	bool             elevated_;
 

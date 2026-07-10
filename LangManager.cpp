@@ -267,6 +267,7 @@ static const NameIdPair kControlNames[] = {
     {L"IDC_LAY_SHOWSPACE",  1059},
     {L"IDC_LAY_SHOWCTRLC",  1060},
     {L"IDC_LAY_SHOWLN",     1061},
+    {L"IDC_LAY_SHOWUL",     1076},
     {L"IDC_LAY_SMARTWRAP",  1062},
     {L"IDC_LAY_WRAP_NONE",  1071},
     {L"IDC_LAY_WRAP_RIGHT", 1072},

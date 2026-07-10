@@ -198,6 +198,7 @@ IDC_LAY_SHOWTAB = Таб
 IDC_LAY_SHOWSPACE = Полупроб.
 IDC_LAY_SHOWCTRLC = Ширпроб.
 IDC_LAY_SHOWLN = Показывать номера строк
+IDC_LAY_SHOWUL = Подчёркивать текущую строку
 IDC_LAY_WRAP_NONE = Нет
 IDC_LAY_WRAP_RIGHT = Правый край
 IDC_LAY_WRAP_WIDTH = Ширина:

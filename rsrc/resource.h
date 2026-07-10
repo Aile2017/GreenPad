@@ -122,6 +122,7 @@
 #define IDC_LAY_WRAP_WIDTH              1073
 #define IDC_LAY_WRAPWIDTH               1074
 #define IDC_LAY_WRAP_CHAR               1075
+#define IDC_LAY_SHOWUL                  1076
 
 #define ID_CMD_OPENELEVATED             40001
 #define ID_CMD_REOPENFILE               40002

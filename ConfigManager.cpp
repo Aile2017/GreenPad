@@ -161,6 +161,7 @@ void LayData::SetDefaults()
 	wrapWidth    = 80;
 	wrapSmart    = true;
 	showLN       = true;
+	showUL       = false;
 }
 
 //-------------------------------------------------------------------------
@@ -225,6 +226,7 @@ void ConfigManager::ParseLayBuf(unicode* buf, size_t len, LayData& out)
 		case 0x7777: out.wrapWidth = GetInt(ptr);      break; // ww: wrap width
 		case 0x7773: out.wrapSmart = (0!=GetInt(ptr)); break; // ws: wrap smart
 		case 0x6C6E: out.showLN    = (0!=GetInt(ptr)); break; // ln: line number
+		case 0x756C: out.showUL    = (0!=GetInt(ptr)); break; // ul: caret line underline
 		}
 	}
 
@@ -285,6 +287,7 @@ size_t ConfigManager::WriteLayBuf(unicode* out, const LayData& d)
 	p += wsprintf(p, L"ww=%d\n",  d.wrapWidth);
 	p += wsprintf(p, L"ws=%d\n",  d.wrapSmart ? 1 : 0);
 	p += wsprintf(p, L"ln=%d\n",  d.showLN    ? 1 : 0);
+	p += wsprintf(p, L"ul=%d\n",  d.showUL    ? 1 : 0);
 	return (size_t)(p - out);
 }
 
@@ -310,6 +313,7 @@ private:
 	int        wrapWidth_;
 	bool       wrapSmart_; // true=word false=char
 	bool       showLN_;
+	bool       showUL_;
 
 	static const UINT kColorIds_[7];
 
@@ -398,6 +402,7 @@ private:
 		ld.wrapWidth  = wrapWidth_;
 		ld.wrapSmart  = wrapSmart_;
 		ld.showLN     = showLN_;
+		ld.showUL     = showUL_;
 	}
 
 	void LayDataToDialog(const LayData& ld)
@@ -416,6 +421,7 @@ private:
 		wrapWidth_  = ld.wrapWidth;
 		wrapSmart_  = ld.wrapSmart;
 		showLN_     = ld.showLN;
+		showUL_     = ld.showUL;
 	}
 
 	void ParseLayData(unicode* buf, size_t len)
@@ -506,6 +512,7 @@ private:
 		else           CheckItem(IDC_LAY_WRAP_CHAR);
 
 		if(showLN_) CheckItem(IDC_LAY_SHOWLN);
+		if(showUL_) CheckItem(IDC_LAY_SHOWUL);
 
 		UpdateWrapControls();
 
@@ -517,7 +524,7 @@ private:
 		static const UINT kTranslateCtrl[] = {
 			IDC_CHOOSEFONT,
 			IDC_LAY_SHOWEOF, IDC_LAY_SHOWNL,   IDC_LAY_SHOWTAB,
-			IDC_LAY_SHOWSPACE, IDC_LAY_SHOWCTRLC, IDC_LAY_SHOWLN,
+			IDC_LAY_SHOWSPACE, IDC_LAY_SHOWCTRLC, IDC_LAY_SHOWLN, IDC_LAY_SHOWUL,
 			IDC_LAY_WRAP_NONE, IDC_LAY_WRAP_RIGHT, IDC_LAY_WRAP_WIDTH,
 			IDC_LAY_SMARTWRAP, IDC_LAY_WRAP_CHAR,
 		};
@@ -552,6 +559,7 @@ private:
 
 		wrapSmart_ = (isItemChecked(IDC_LAY_SMARTWRAP) != 0);
 		showLN_    = (isItemChecked(IDC_LAY_SHOWLN)    != 0);
+		showUL_    = (isItemChecked(IDC_LAY_SHOWUL)    != 0);
 
 		if(!SaveToFile())
 		{
@@ -1078,6 +1086,7 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 		dt->wrapType  = ref->wrapType;
 		dt->wrapSmart = ref->wrapSmart;
 		dt->showLN    = ref->showLN;
+		dt->showUL    = ref->showUL;
 		dt->fontCS    = ref->fontCS;
 		dt->fontQual  = ref->fontQual;
 	}
@@ -1099,6 +1108,7 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 		dt->wrapType   = ld.wrapType;
 		dt->wrapSmart  = ld.wrapSmart;
 		dt->showLN     = ld.showLN;
+		dt->showUL     = ld.showUL;
 		dt->fontCS     = defaultFontCS_;
 		dt->fontQual   = ld.fontQual;
 
@@ -1137,6 +1147,7 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 		ld.wrapWidth = dt->wrapWidth;
 		ld.wrapSmart = dt->wrapSmart;
 		ld.showLN   = dt->showLN;
+		ld.showUL   = dt->showUL;
 
 		ParseLayBuf( buf, len, ld );
 
@@ -1156,6 +1167,7 @@ void ConfigManager::LoadLayout( ConfigManager::DocType* dt )
 		dt->wrapWidth = ld.wrapWidth;
 		dt->wrapSmart = ld.wrapSmart;
 		dt->showLN   = ld.showLN;
+		dt->showUL   = ld.showUL;
 		if( ld.fontName[0] != TEXT('\0') && ld.fontSize > 0 )
 			dt->vc.SetFont( ld.fontName, ld.fontSize, ld.fontCS,
 			                ld.fontWeight, ld.fontFlags, ld.fontXWidth, ld.fontQual );
@@ -1289,7 +1301,6 @@ void ConfigManager::LoadIni()
 	countbyunicode_ = ini_.GetBool( TEXT("CountUni"), true );
 	bool havestb = true;
 	showStatusBar_ = ini_.GetBool( TEXT("StatusBar"), havestb );
-	showUnderline_ = ini_.GetBool( TEXT("UnderlineCurLine"), false );
 
 	dateFormat_   = ini_.GetStr( TEXT("DateFormat"), TEXT("HH:mm yyyy/MM/dd") );
 
@@ -1538,7 +1549,6 @@ void ConfigManager::SaveIni()
 	ini_.PutBool( TEXT("OpenSame"), openSame_ );
 	ini_.PutBool( TEXT("CountUni"), countbyunicode_ );
 	ini_.PutBool( TEXT("StatusBar"), showStatusBar_ );
-	ini_.PutBool( TEXT("UnderlineCurLine"), showUnderline_ );
 
 	// Cannot be modified from the GUI
 	// ini_.PutStr( TEXT("DateFormat"), dateFormat_.c_str() );

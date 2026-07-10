@@ -30,6 +30,7 @@ struct LayData
 	int      wrapWidth;
 	bool     wrapSmart;            // true=word-wrap false=char-wrap
 	bool     showLN;
+	bool     showUL;               // underline the caret line (ul=)
 
 	// Apply built-in defaults for colour and layout fields.
 	// Font fields (fontName/fontSize) are left zeroed; the caller is
@@ -99,6 +100,9 @@ public:
 	//@{ Display line number? //@}
 	inline bool showLN() const { return curDt_->showLN; }
 
+	//@{ Underline the caret line? //@}
+	inline bool showUL() const { return curDt_->showUL; }
+
 	//@{Display color, font, etc. //@}
 	inline const editwing::VConfig& vConfig() const { return curDt_->vc; }
 	void SetTempFont( const TCHAR* name, short size, uchar charset,
@@ -129,10 +133,6 @@ public:
 	//@{Status bar display //@}
 	inline bool showStatusBar() const { return showStatusBar_; }
 	inline void ShowStatusBarSwitch() { showStatusBar_ = !showStatusBar_; inichanged_=1; SaveIni(); }
-
-	//@{Current line underline display //@}
-	inline bool showUnderline() const { return showUnderline_; }
-	inline bool ShowUnderlineSwitch() { showUnderline_ = !showUnderline_; inichanged_=1; SaveIni(); return showUnderline_; }
 
 	//@{ date //@}
 	inline const ki::String& dateFormat() const { return dateFormat_; }
@@ -222,7 +222,6 @@ private:
 	bool       openSame_;
 	bool       countbyunicode_;
 	bool       showStatusBar_;
-	bool       showUnderline_;
 	bool       rememberWindowSize_;
 	bool       rememberWindowPlace_;
 	bool       useQuickExit_;
@@ -248,6 +247,7 @@ private:
 		signed char       wrapType;
 		bool              wrapSmart;
 		bool              showLN;
+		bool              showUL;
 		uchar             fontCS;
 		uchar             fontQual;
 		bool              loaded;

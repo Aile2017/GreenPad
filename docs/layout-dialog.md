@@ -74,9 +74,14 @@ The `ww` input and the `Word` / `Char` choices are enabled only when **Width** i
 
 `ww` is clamped to at least `1` on save.
 
-### 5. Show Line Numbers
+### 5. Show Line Numbers / Underline Current Line
 
 - **Show Line Numbers** -> `ln=1` or `ln=0`
+- **Underline Current Line** -> `ul=1` or `ul=0`
+
+The View menu also has an **Underline Current Line** toggle, but like the
+line-number toggle it only affects the current session; the persistent
+value is the one stored in the layout file.
 
 ## Default Values
 
@@ -89,6 +94,7 @@ If the layout file is missing, or if some values are not specified, the dialog s
 - Special character visibility: `sc=11100`
 - Wrapping: `wp=-1`, `ww=80`, `ws=1`
 - Line numbers: enabled
+- Current line underline: disabled
 - Font: application default font
 
 ## Save Behavior
