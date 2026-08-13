@@ -207,6 +207,7 @@ public:
 	static bool isEBCDIC( int cs ) A_XPURE;
 	static bool IsChardetAvailable();
 	static bool GetChardetVersionStr( wchar_t* buf, int bufSize );
+	static bool IsCedAvailable();
 
 	const uchar* rawData() const
 		{ return fp_.base(); }
@@ -224,6 +225,7 @@ private:
 	int AutoDetection( int cs, const uchar* ptr, size_t siz );
 	int MLangAutoDetection( const uchar* ptr, size_t siz );
 	int chardetAutoDetection( const uchar* ptr, size_t siz );
+	int cedAutoDetection( const uchar* ptr, size_t siz );
 
 	bool IsNonUnicodeRange(qbyte u) const A_XPURE;
 	bool IsAscii(uchar c) const A_XPURE;

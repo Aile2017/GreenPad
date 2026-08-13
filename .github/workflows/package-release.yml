@@ -99,7 +99,7 @@ jobs:
       - name: Assemble release folder
         shell: pwsh
         run: |
-          # GreenPad.exe from clang64 build; pcre2-16.dll and chardet.dll come from the repo
+          # GreenPad.exe from clang64 build; pcre2-16.dll, chardet.dll and ced.dll come from the repo
           Copy-Item built\* release\
           # README.md and docs/ are not kept in release/ in the repo; copy them here
           Copy-Item README.md release\README.md
@@ -132,7 +132,8 @@ jobs:
             |------|-------------|
             | `GreenPad.exe`   | Executable (LLVM Clang / clang64) |
             | `pcre2-16.dll`   | PCRE2 regex engine (optional) |
-            | `chardet.dll`    | Charset auto-detection (optional) |
+            | `chardet.dll`    | Charset auto-detection (optional, takes priority over ced.dll) |
+            | `ced.dll`        | Charset auto-detection fallback (optional, used when chardet.dll is absent) |
             | `type/`          | Syntax highlight / layout files |
             | `lang/`          | UI language files |
             | `GreenPad.hlp`   | Help file |

@@ -25,7 +25,7 @@
    Tested with Win3.11fw + Win32s-1.30c with 3MB of ram. Performances
    are not great on an i386 even clocked at 33MHz and an i486 or faster
    is recomended. GreenPad will not benefit from a x87 FPU. However
-   chardet.dll will.
+   chardet.dll or ced.dll will.
 
  < OS >
    You can run Green pad on Win32s from beta build 61. If you want the
@@ -62,6 +62,13 @@
 <<What's New in 1.23 (by RamonUnch, 2025/02/11)>>
  < NEW >
    * Added Zoom option
+   * Added ced.dll support (Google Compact Encoding Detection) as a
+     charset auto-detection fallback when chardet.dll is absent.
+     Place ced.dll in the same directory as GreenPad.exe to use.
+     ced.dll is available under the Apache 2.0 licence.
+     If both chardet.dll and ced.dll are present, chardet.dll takes
+     priority. The active detector is shown in the encoding drop-down
+     as AutoDetect(chardet) or AutoDetect(ced).
 
  < FIXED >
    * Word wrap would go at bad locations sometime

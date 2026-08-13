@@ -172,17 +172,27 @@ CharSetList::CharSetList()
 	#undef EnrollS
 	#undef EnrollL
 
-	// Add (chardet) to AutoDetect label if chardet.dll is available
-	if( TextFileR::IsChardetAvailable() )
+	// Add detector name to AutoDetect label based on which DLL is available.
+	// chardet.dll takes priority over ced.dll; if neither is present the
+	// label stays as-is.
 	{
-		static TCHAR s_label[64];
-		for( size_t k = 0; k < list_.size(); ++k )
-			if( list_[k].ID == AutoDetect )
-			{
-				::wsprintf( s_label, TEXT("%s(chardet)"), list_[k].longName );
-				list_[k].longName = s_label;
-				break;
-			}
+		const TCHAR* suffix = nullptr;
+		if( TextFileR::IsChardetAvailable() )
+			suffix = TEXT("chardet");
+		else if( TextFileR::IsCedAvailable() )
+			suffix = TEXT("ced");
+
+		if( suffix )
+		{
+			static TCHAR s_label[64];
+			for( size_t k = 0; k < list_.size(); ++k )
+				if( list_[k].ID == AutoDetect )
+				{
+					::wsprintf( s_label, TEXT("%s(%s)"), list_[k].longName, suffix );
+					list_[k].longName = s_label;
+					break;
+				}
+		}
 	}
 }
 

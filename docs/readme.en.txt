@@ -113,6 +113,12 @@ TODO:
     fixed on NT 3.5/3.1/Win32s version because GetScrollInfo API is not
     available)
   * [110429] Fixed chardet UTF-8 detection
+  * Add ced.dll support (Google Compact Encoding Detection) as a charset
+    auto-detection fallback when chardet.dll is absent. Place ced.dll in
+    the same directory as GreenPad.exe to use. ced.dll is available under
+    the Apache 2.0 licence. If both chardet.dll and ced.dll are present,
+    chardet.dll takes priority. The active detector is shown in the
+    encoding drop-down as AutoDetect(chardet) or AutoDetect(ced).
 
 
 <<What's New in 1.08>>

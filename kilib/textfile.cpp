@@ -145,6 +145,28 @@ bool TextFileR::GetChardetVersionStr( wchar_t* buf, int bufSize )
 	return true;
 }
 
+bool TextFileR::IsCedAvailable()
+{
+#if defined(_M_AMD64) || defined(_M_X64)
+	const TCHAR* cedDll = TEXT("ced.dll");
+#elif defined(_M_ARM64)
+	const TCHAR* cedDll = TEXT("ced_arm64.dll");
+#elif defined(_M_ARM)
+	const TCHAR* cedDll = TEXT("ced_arm.dll");
+#else
+	const TCHAR* cedDll = TEXT("ced_x86.dll");
+#endif
+	Path p = Path(Path::Exe) + cedDll;
+	if( !p.exist() ) return false;
+
+	HMODULE h = ::LoadLibrary( p.c_str() );
+	if( !h ) return false;
+	typedef const char* (__cdecl *FnCedDetect)(const char*, int, int*);
+	bool ok = ::GetProcAddress(h, "ced_detect_encoding") != nullptr;
+	::FreeLibrary(h);
+	return ok;
+}
+
 //=========================================================================
 // Common interface for reading text files
 //=========================================================================
@@ -1859,8 +1881,9 @@ int TextFileR::AutoDetection( int cs, const uchar* ptr, size_t totsiz )
 		if( cs == ASCIICP ) return defCs;
 		if( cs ) return cs;
 	}
-	// Chardet may be the only auto detection method
+	// Chardet may be the only auto detection method; fall back to CED if chardet.dll absent
 	cs = chardetAutoDetection( ptr, siz );
+	if( cs == 0 ) cs = cedAutoDetection( ptr, siz );
 	if( cs == ASCIICP ) return defCs;
 	if( cs ) return cs;
 
@@ -2177,6 +2200,96 @@ int TextFileR::chardetAutoDetection( const uchar* ptr, size_t siz )
 	::MessageBox(NULL, SInt2Str(cs).c_str(), TEXT("CHARDET"),0);
 	#endif
 
+#endif //NO_CHARDET
+	return cs;
+}
+
+// Detect encoding using ced.dll (compact_enc_det by Google).
+// Used as a fallback when chardet.dll is not present.
+// Returns a ki::charset value, or 0 if detection failed.
+int TextFileR::cedAutoDetection( const uchar* ptr, size_t siz )
+{
+	int cs = 0;
+#ifndef NO_CHARDET
+	typedef const char* (__cdecl *FnCedDetect)(const char*, int, int*);
+
+	#if defined(_M_AMD64) || defined(_M_X64)
+	# define CED_DLL TEXT("ced.dll")
+	#elif defined(_M_ARM64)
+	# define CED_DLL TEXT("ced_arm64.dll")
+	#elif defined(_M_ARM)
+	# define CED_DLL TEXT("ced_arm.dll")
+	#else
+	# define CED_DLL TEXT("ced_x86.dll")
+	#endif
+
+	Path cedPath = Path(Path::Exe) + CED_DLL;
+	if( !cedPath.exist() )
+		return 0;
+
+	HINSTANCE hCed = ::LoadLibrary( cedPath.c_str() );
+	if( !hCed )
+		return 0;
+
+	FnCedDetect ced_detect = (FnCedDetect)::GetProcAddress(hCed, "ced_detect_encoding");
+	if( !ced_detect )
+	{
+		::FreeLibrary(hCed);
+		return 0;
+	}
+
+	int reliable = 0;
+	const char* encName = ced_detect(reinterpret_cast<const char*>(ptr), static_cast<int>(siz), &reliable);
+	if( encName )
+	{
+		// Map MIME name to ki::charset
+		static const struct { const char* str; int cs; } cslist[] = {
+			{ "UTF-8",          UTF8N },
+			{ "Shift_JIS",      SJIS },
+			{ "EUC-JP",         EucJP },
+			{ "ISO-2022-JP",    IsoJP },
+			{ "EUC-KR",         UHC },
+			{ "ISO-2022-KR",    IsoKR },
+			{ "GBK",            GBK },
+			{ "GB2312",         GBK },
+			{ "GB18030",        GB18030 },
+			{ "ISO-2022-CN",    IsoCN },
+			{ "Big5",           Big5 },
+			{ "Big5-HKSCS",     Big5 },
+			{ "windows-1252",   Western },
+			{ "ISO-8859-1",     Western },
+			{ "ISO-8859-15",    WesternISO },
+			{ "windows-1251",   Cyrillic },
+			{ "ISO-8859-5",     CyrillicISO },
+			{ "KOI8-R",         Koi8R },
+			{ "KOI8-U",         Koi8U },
+			{ "windows-1250",   Central },
+			{ "ISO-8859-2",     CentralISO },
+			{ "windows-1253",   Greek },
+			{ "ISO-8859-7",     GreekISO },
+			{ "windows-1255",   Hebrew },
+			{ "ISO-8859-8",     HebrewMAC },
+			{ "windows-1256",   Arabic },
+			{ "ISO-8859-6",     ArabicISO },
+			{ "windows-1258",   Vietnamese },
+			{ "TIS-620",        Thai },
+			{ "windows-874",    Thai },
+			{ "US-ASCII",       ASCIICP },
+		};
+		for( size_t i = 0; i < countof(cslist); ++i )
+		{
+			if( 0 == my_lstrcmpiAsciiA(encName, cslist[i].str) )
+			{
+				cs = cslist[i].cs;
+				break;
+			}
+		}
+	}
+
+	if( cs == GB18030 && !::IsValidCodePage(GB18030) )
+		cs = GBK;
+
+	::FreeLibrary(hCed);
 #endif //NO_CHARDET
 	return cs;
 }
