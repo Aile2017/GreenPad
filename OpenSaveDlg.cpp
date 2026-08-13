@@ -179,6 +179,8 @@ CharSetList::CharSetList()
 		const TCHAR* suffix = nullptr;
 		if( TextFileR::IsChardetAvailable() )
 			suffix = TEXT("chardet");
+		else if( TextFileR::IsUchardetAvailable() )
+			suffix = TEXT("uchardet");
 		else if( TextFileR::IsCedAvailable() )
 			suffix = TEXT("ced");
 

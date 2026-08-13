@@ -129,6 +129,49 @@ static const ChardetProbeResult& QueryChardetProbe()
 	return s_chardetProbe;
 }
 
+static bool s_uchardetProbe_tried = false;
+static bool s_uchardetProbe_available = false;
+
+static const TCHAR* GetUchardetDllName()
+{
+	#if defined(_M_AMD64) || defined(_M_X64)
+	return TEXT("uchardet.dll");
+	#elif defined(_M_ARM64)
+	return TEXT("uchardet_arm64.dll");
+	#elif defined(_M_ARM)
+	return TEXT("uchardet_arm.dll");
+	#else
+	return TEXT("uchardet_x86.dll");
+	#endif
+}
+
+static bool QueryUchardetProbe()
+{
+	if( s_uchardetProbe_tried )
+		return s_uchardetProbe_available;
+
+	s_uchardetProbe_tried = true;
+	Path p = Path(Path::Exe) + GetUchardetDllName();
+	if( !p.exist() )
+		return false;
+
+	HMODULE h = ::LoadLibrary( p.c_str() );
+	if( !h )
+		return false;
+
+	typedef struct uchardet* uchardet_t;
+	bool ok =
+		::GetProcAddress(h, "uchardet_new")         != nullptr &&
+		::GetProcAddress(h, "uchardet_delete")       != nullptr &&
+		::GetProcAddress(h, "uchardet_handle_data")  != nullptr &&
+		::GetProcAddress(h, "uchardet_data_end")     != nullptr &&
+		::GetProcAddress(h, "uchardet_get_encoding") != nullptr;
+	::FreeLibrary(h);
+
+	s_uchardetProbe_available = ok;
+	return ok;
+}
+
 } // namespace
 
 bool TextFileR::IsChardetAvailable()
@@ -165,6 +208,11 @@ bool TextFileR::IsCedAvailable()
 	bool ok = ::GetProcAddress(h, "ced_detect_encoding") != nullptr;
 	::FreeLibrary(h);
 	return ok;
+}
+
+bool TextFileR::IsUchardetAvailable()
+{
+	return QueryUchardetProbe();
 }
 
 //=========================================================================
@@ -1881,8 +1929,9 @@ int TextFileR::AutoDetection( int cs, const uchar* ptr, size_t totsiz )
 		if( cs == ASCIICP ) return defCs;
 		if( cs ) return cs;
 	}
-	// Chardet may be the only auto detection method; fall back to CED if chardet.dll absent
+	// Chardet may be the only auto detection method; fall back to uchardet then CED if chardet.dll absent
 	cs = chardetAutoDetection( ptr, siz );
+	if( cs == 0 ) cs = uchardetAutoDetection( ptr, siz );
 	if( cs == 0 ) cs = cedAutoDetection( ptr, siz );
 	if( cs == ASCIICP ) return defCs;
 	if( cs ) return cs;
@@ -2294,7 +2343,114 @@ int TextFileR::cedAutoDetection( const uchar* ptr, size_t siz )
 	return cs;
 }
 
-// functions for detecting BOM-less UTF-16/32
+// Detect encoding using uchardet.dll.
+// Returns a ki::charset value, or 0 if detection failed.
+int TextFileR::uchardetAutoDetection( const uchar* ptr, size_t siz )
+{
+	int cs = 0;
+#ifndef NO_CHARDET
+	typedef struct uchardet* uchardet_t;
+	typedef uchardet_t  (__cdecl *FnNew)    (void);
+	typedef void        (__cdecl *FnDelete) (uchardet_t);
+	typedef int         (__cdecl *FnHandle) (uchardet_t, const char*, size_t);
+	typedef void        (__cdecl *FnEnd)    (uchardet_t);
+	typedef const char* (__cdecl *FnGetEnc) (uchardet_t, size_t);
+
+	Path dllPath = Path(Path::Exe) + GetUchardetDllName();
+	if( !dllPath.exist() )
+		return 0;
+
+	HINSTANCE hDll = ::LoadLibrary( dllPath.c_str() );
+	if( !hDll )
+		return 0;
+
+	FnNew    ud_new    = (FnNew)   ::GetProcAddress(hDll, "uchardet_new");
+	FnDelete ud_delete = (FnDelete)::GetProcAddress(hDll, "uchardet_delete");
+	FnHandle ud_handle = (FnHandle)::GetProcAddress(hDll, "uchardet_handle_data");
+	FnEnd    ud_end    = (FnEnd)   ::GetProcAddress(hDll, "uchardet_data_end");
+	FnGetEnc ud_getenc = (FnGetEnc)::GetProcAddress(hDll, "uchardet_get_encoding");
+
+	if( !(ud_new && ud_delete && ud_handle && ud_end && ud_getenc) )
+	{
+		::FreeLibrary(hDll);
+		return 0;
+	}
+
+	uchardet_t ud = ud_new();
+	if( !ud )
+	{
+		::FreeLibrary(hDll);
+		return 0;
+	}
+
+	if( 0 == ud_handle(ud, reinterpret_cast<const char*>(ptr), siz) )
+	{
+		ud_end(ud);
+		const char* encName = ud_getenc(ud, 0);
+
+		if( encName && encName[0] )
+		{
+			static const struct { const char* str; int cs; } cslist[] = {
+				{ "UTF-8",          UTF8N },
+				{ "ASCII",          ASCIICP },
+				{ "Shift_JIS",      SJIS },
+				{ "EUC-JP",         EucJP },
+				{ "ISO-2022-JP",    IsoJP },
+				{ "EUC-KR",         UHC },
+				{ "ISO-2022-KR",    IsoKR },
+				{ "x-euc-tw",       CNS },
+				{ "Big5",           Big5 },
+				{ "GB18030",        GB18030 },
+				{ "GBK",            GBK },
+				{ "GB2312",         GBK },
+				{ "ISO-2022-CN",    IsoCN },
+				{ "windows-1253",   Greek },
+				{ "ISO-8859-7",     GreekISO },
+				{ "KOI8-R",         Koi8R },
+				{ "KOI8-U",         Koi8U },
+				{ "windows-1251",   Cyrillic },
+				{ "IBM866",         CyrillicDOS },
+				{ "IBM855",         CyrillicIBM },
+				{ "x-mac-cyrillic", CyrillicMAC },
+				{ "MAC-CYRILLIC",   CyrillicMAC },
+				{ "ISO-8859-5",     CyrillicISO },
+				{ "windows-1255",   Hebrew },
+				{ "ISO-8859-8",     HebrewMAC },
+				{ "windows-1250",   Central },
+				{ "ISO-8859-2",     CentralISO },
+				{ "TIS-620",        Thai },
+				{ "ISO-8859-11",    ThaiISO },
+				{ "windows-874",    Thai },
+				{ "windows-1252",   Western },
+				{ "ISO-8859-1",     Western },
+				{ "ISO-8859-15",    WesternISO },
+				{ "ISO-8859-3",     EsperantoISO },
+				{ "ISO-8859-9",     TurkishISO },
+				{ "ISO-8859-6",     ArabicISO },
+				{ "windows-1256",   Arabic },
+				{ "windows-1258",   Vietnamese },
+				{ "US-ASCII",       ASCIICP },
+			};
+			for( size_t i = 0; i < countof(cslist); ++i )
+			{
+				if( 0 == my_lstrcmpiAsciiA(encName, cslist[i].str) )
+				{
+					cs = cslist[i].cs;
+					break;
+				}
+			}
+		}
+	}
+
+	ud_delete(ud);
+
+	if( cs == GB18030 && !::IsValidCodePage(GB18030) )
+		cs = GBK;
+
+	::FreeLibrary(hDll);
+#endif //NO_CHARDET
+	return cs;
+}
 bool TextFileR::IsNonUnicodeRange(qbyte u) const
 { // Unicode 14.0 based, Updated to Unicode 15.0
 	if( u < 0x012550 ) // Quick most likely check.
