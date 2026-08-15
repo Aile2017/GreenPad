@@ -208,7 +208,9 @@ public:
 	static bool IsChardetAvailable();
 	static bool GetChardetVersionStr( wchar_t* buf, int bufSize );
 	static bool IsCedAvailable();
+	static bool GetCedVersionStr( wchar_t* buf, int bufSize );
 	static bool IsUchardetAvailable();
+	static bool GetUchardetVersionStr( wchar_t* buf, int bufSize );
 
 	const uchar* rawData() const
 		{ return fp_.base(); }

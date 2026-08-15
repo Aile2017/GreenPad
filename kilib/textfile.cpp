@@ -9,13 +9,28 @@ using namespace ki;
 
 namespace {
 
-struct ChardetProbeResult {
+//-- chardet.dll ----------------------------------------------------------
+// The DLL is probed (LoadLibrary + GetProcAddress) at most once per process;
+// the resolved module and function pointers are cached and reused both for
+// availability queries (IsChardetAvailable / GetChardetVersionStr) and for
+// the actual detection call (chardetAutoDetection), instead of loading the
+// DLL again from scratch each time a file is opened.
+
+typedef void* chardet_handle_t;
+
+struct ChardetApi
+{
 	bool tried;
-	bool available;
+	HMODULE hDll; // non-NULL only once fully validated (this is the "available" flag)
 	bool hasVersion;
 	wchar_t version[64];
+	int  (__cdecl *create)     ( chardet_handle_t* );
+	void (__cdecl *destroy)    ( chardet_handle_t );
+	int  (__cdecl *handleData) ( chardet_handle_t, const char*, unsigned int );
+	int  (__cdecl *dataEnd)    ( chardet_handle_t );
+	int  (__cdecl *getCharset) ( chardet_handle_t, char*, unsigned int );
 };
-static ChardetProbeResult s_chardetProbe = { false, false, false, L"" };
+static ChardetApi s_chardet = { false, NULL, false, L"", NULL, NULL, NULL, NULL, NULL };
 
 static const TCHAR* GetChardetDllName()
 {
@@ -36,11 +51,6 @@ static const TCHAR* GetChardetDllName()
 	#else
 	return TEXT("chardet_x86.dll");
 	#endif
-}
-
-static Path GetChardetDllPath()
-{
-	return Path(Path::Exe) + GetChardetDllName();
 }
 
 static bool GetFileVersionText( const TCHAR* filePath, wchar_t* buf, int bufSize )
@@ -98,39 +108,70 @@ static bool GetFileVersionText( const TCHAR* filePath, wchar_t* buf, int bufSize
 	return ok;
 }
 
-static const ChardetProbeResult& QueryChardetProbe()
+static const ChardetApi& QueryChardetApi()
 {
-	if( s_chardetProbe.tried )
-		return s_chardetProbe;
+	if( s_chardet.tried )
+		return s_chardet;
+	s_chardet.tried = true;
 
-	s_chardetProbe.tried = true;
-	Path chardetDllPath = GetChardetDllPath();
-	if( !chardetDllPath.exist() )
-		return s_chardetProbe;
+	Path dllPath = Path(Path::Exe) + GetChardetDllName();
+	if( !dllPath.exist() )
+		return s_chardet;
 
-	HMODULE hIL = ::LoadLibrary( chardetDllPath.c_str() );
-	if( !hIL )
-		return s_chardetProbe;
+	HMODULE h = ::LoadLibrary( dllPath.c_str() );
+	if( !h )
+		return s_chardet;
 
-	typedef void* chardet_t;
-	int  (__cdecl*chardet_create)(chardet_t*) = (int (__cdecl*)(chardet_t*))::GetProcAddress(hIL, "chardet_create");
-	void (__cdecl*chardet_destroy)(chardet_t) = (void (__cdecl*)(chardet_t))::GetProcAddress(hIL, "chardet_destroy");
-	int  (__cdecl*chardet_handle_data)(chardet_t, const char*, unsigned int) = (int (__cdecl*)(chardet_t, const char*, unsigned int))::GetProcAddress(hIL, "chardet_handle_data");
-	int  (__cdecl*chardet_data_end)(chardet_t) = (int (__cdecl*)(chardet_t))::GetProcAddress(hIL, "chardet_data_end");
-	int  (__cdecl*chardet_get_charset)(chardet_t, char*, unsigned int) = (int (__cdecl*)(chardet_t, char*, unsigned int))::GetProcAddress(hIL, "chardet_get_charset");
+	s_chardet.create     = (int  (__cdecl*)(chardet_handle_t*))                       ::GetProcAddress(h, "chardet_create");
+	s_chardet.destroy    = (void (__cdecl*)(chardet_handle_t))                        ::GetProcAddress(h, "chardet_destroy");
+	s_chardet.handleData = (int  (__cdecl*)(chardet_handle_t, const char*, unsigned int))::GetProcAddress(h, "chardet_handle_data");
+	s_chardet.dataEnd    = (int  (__cdecl*)(chardet_handle_t))                        ::GetProcAddress(h, "chardet_data_end");
+	s_chardet.getCharset = (int  (__cdecl*)(chardet_handle_t, char*, unsigned int))    ::GetProcAddress(h, "chardet_get_charset");
 
-	if( chardet_create && chardet_destroy && chardet_handle_data && chardet_data_end && chardet_get_charset )
+	if( !(s_chardet.create && s_chardet.destroy && s_chardet.handleData && s_chardet.dataEnd && s_chardet.getCharset) )
 	{
-		s_chardetProbe.available = true;
-		s_chardetProbe.hasVersion = GetFileVersionText( chardetDllPath.c_str(), s_chardetProbe.version, countof(s_chardetProbe.version) );
+		::FreeLibrary( h );
+		return s_chardet;
 	}
 
-	::FreeLibrary( hIL );
-	return s_chardetProbe;
+	s_chardet.hDll = h; // keep loaded: reused by chardetAutoDetection()
+
+	// Prefer the library's own version string (detect_version(), e.g. "1.0.6")
+	// over the Windows PE VERSIONINFO resource: this chardet.dll build embeds
+	// no VERSIONINFO at all, but does export its version natively.
+	typedef const char* (__cdecl *FnDetectVersion)(void);
+	FnDetectVersion detectVersion = (FnDetectVersion)::GetProcAddress(h, "detect_version");
+	if( detectVersion )
+	{
+		const char* verAnsi = detectVersion();
+		if( verAnsi && verAnsi[0] &&
+		    ::MultiByteToWideChar( CP_ACP, 0, verAnsi, -1, s_chardet.version, countof(s_chardet.version) ) > 0 )
+			s_chardet.hasVersion = true;
+	}
+	if( !s_chardet.hasVersion )
+		s_chardet.hasVersion = GetFileVersionText( dllPath.c_str(), s_chardet.version, countof(s_chardet.version) );
+
+	return s_chardet;
 }
 
-static bool s_uchardetProbe_tried = false;
-static bool s_uchardetProbe_available = false;
+//-- uchardet.dll -----------------------------------------------------------
+// Same load-once / reuse pattern as chardet.dll above.
+
+typedef struct uchardet* uchardet_handle_t;
+
+struct UchardetApi
+{
+	bool tried;
+	HMODULE hDll; // non-NULL only once fully validated (this is the "available" flag)
+	bool hasVersion;
+	wchar_t version[64];
+	uchardet_handle_t (__cdecl *newDetector)    ( void );
+	void               (__cdecl *deleteDetector)( uchardet_handle_t );
+	int                (__cdecl *handleData)    ( uchardet_handle_t, const char*, size_t );
+	void               (__cdecl *dataEnd)       ( uchardet_handle_t );
+	const char*        (__cdecl *getEncoding)   ( uchardet_handle_t, size_t );
+};
+static UchardetApi s_uchardet = { false, NULL, false, L"", NULL, NULL, NULL, NULL, NULL };
 
 static const TCHAR* GetUchardetDllName()
 {
@@ -145,74 +186,133 @@ static const TCHAR* GetUchardetDllName()
 	#endif
 }
 
-static bool QueryUchardetProbe()
+static const UchardetApi& QueryUchardetApi()
 {
-	if( s_uchardetProbe_tried )
-		return s_uchardetProbe_available;
+	if( s_uchardet.tried )
+		return s_uchardet;
+	s_uchardet.tried = true;
 
-	s_uchardetProbe_tried = true;
-	Path p = Path(Path::Exe) + GetUchardetDllName();
-	if( !p.exist() )
-		return false;
+	Path dllPath = Path(Path::Exe) + GetUchardetDllName();
+	if( !dllPath.exist() )
+		return s_uchardet;
 
-	HMODULE h = ::LoadLibrary( p.c_str() );
+	HMODULE h = ::LoadLibrary( dllPath.c_str() );
 	if( !h )
-		return false;
+		return s_uchardet;
 
-	typedef struct uchardet* uchardet_t;
-	bool ok =
-		::GetProcAddress(h, "uchardet_new")         != nullptr &&
-		::GetProcAddress(h, "uchardet_delete")       != nullptr &&
-		::GetProcAddress(h, "uchardet_handle_data")  != nullptr &&
-		::GetProcAddress(h, "uchardet_data_end")     != nullptr &&
-		::GetProcAddress(h, "uchardet_get_encoding") != nullptr;
-	::FreeLibrary(h);
+	s_uchardet.newDetector    = (uchardet_handle_t (__cdecl*)(void))                       ::GetProcAddress(h, "uchardet_new");
+	s_uchardet.deleteDetector = (void        (__cdecl*)(uchardet_handle_t))                ::GetProcAddress(h, "uchardet_delete");
+	s_uchardet.handleData     = (int         (__cdecl*)(uchardet_handle_t, const char*, size_t))::GetProcAddress(h, "uchardet_handle_data");
+	s_uchardet.dataEnd        = (void        (__cdecl*)(uchardet_handle_t))                ::GetProcAddress(h, "uchardet_data_end");
+	s_uchardet.getEncoding    = (const char* (__cdecl*)(uchardet_handle_t, size_t))        ::GetProcAddress(h, "uchardet_get_encoding");
 
-	s_uchardetProbe_available = ok;
-	return ok;
+	if( !(s_uchardet.newDetector && s_uchardet.deleteDetector && s_uchardet.handleData && s_uchardet.dataEnd && s_uchardet.getEncoding) )
+	{
+		::FreeLibrary( h );
+		return s_uchardet;
+	}
+
+	s_uchardet.hDll = h; // keep loaded: reused by uchardetAutoDetection()
+	s_uchardet.hasVersion = GetFileVersionText( dllPath.c_str(), s_uchardet.version, countof(s_uchardet.version) );
+	return s_uchardet;
+}
+
+//-- ced.dll (Google compact_enc_det) ----------------------------------------
+// Same load-once / reuse pattern as chardet.dll above.
+
+typedef const char* (__cdecl *FnCedDetect)(const char*, int, int*);
+
+struct CedApi
+{
+	bool tried;
+	HMODULE hDll; // non-NULL only once fully validated (this is the "available" flag)
+	bool hasVersion;
+	wchar_t version[64];
+	FnCedDetect detect;
+};
+static CedApi s_ced = { false, NULL, false, L"", NULL };
+
+static const TCHAR* GetCedDllName()
+{
+	#if defined(_M_AMD64) || defined(_M_X64)
+	return TEXT("ced.dll");
+	#elif defined(_M_ARM64)
+	return TEXT("ced_arm64.dll");
+	#elif defined(_M_ARM)
+	return TEXT("ced_arm.dll");
+	#else
+	return TEXT("ced_x86.dll");
+	#endif
+}
+
+static const CedApi& QueryCedApi()
+{
+	if( s_ced.tried )
+		return s_ced;
+	s_ced.tried = true;
+
+	Path dllPath = Path(Path::Exe) + GetCedDllName();
+	if( !dllPath.exist() )
+		return s_ced;
+
+	HMODULE h = ::LoadLibrary( dllPath.c_str() );
+	if( !h )
+		return s_ced;
+
+	s_ced.detect = (FnCedDetect)::GetProcAddress(h, "ced_detect_encoding");
+	if( !s_ced.detect )
+	{
+		::FreeLibrary( h );
+		return s_ced;
+	}
+
+	s_ced.hDll = h; // keep loaded: reused by cedAutoDetection()
+	s_ced.hasVersion = GetFileVersionText( dllPath.c_str(), s_ced.version, countof(s_ced.version) );
+	return s_ced;
 }
 
 } // namespace
 
 bool TextFileR::IsChardetAvailable()
 {
-	return QueryChardetProbe().available;
+	return QueryChardetApi().hDll != NULL;
 }
 
 bool TextFileR::GetChardetVersionStr( wchar_t* buf, int bufSize )
 {
-	const ChardetProbeResult& info = QueryChardetProbe();
-	if( !info.available || !info.hasVersion || bufSize <= 0 )
+	const ChardetApi& api = QueryChardetApi();
+	if( !api.hDll || !api.hasVersion || bufSize <= 0 )
 		return false;
-	::lstrcpynW( buf, info.version, bufSize );
+	::lstrcpynW( buf, api.version, bufSize );
 	return true;
 }
 
 bool TextFileR::IsCedAvailable()
 {
-#if defined(_M_AMD64) || defined(_M_X64)
-	const TCHAR* cedDll = TEXT("ced.dll");
-#elif defined(_M_ARM64)
-	const TCHAR* cedDll = TEXT("ced_arm64.dll");
-#elif defined(_M_ARM)
-	const TCHAR* cedDll = TEXT("ced_arm.dll");
-#else
-	const TCHAR* cedDll = TEXT("ced_x86.dll");
-#endif
-	Path p = Path(Path::Exe) + cedDll;
-	if( !p.exist() ) return false;
+	return QueryCedApi().hDll != NULL;
+}
 
-	HMODULE h = ::LoadLibrary( p.c_str() );
-	if( !h ) return false;
-	typedef const char* (__cdecl *FnCedDetect)(const char*, int, int*);
-	bool ok = ::GetProcAddress(h, "ced_detect_encoding") != nullptr;
-	::FreeLibrary(h);
-	return ok;
+bool TextFileR::GetCedVersionStr( wchar_t* buf, int bufSize )
+{
+	const CedApi& api = QueryCedApi();
+	if( !api.hDll || !api.hasVersion || bufSize <= 0 )
+		return false;
+	::lstrcpynW( buf, api.version, bufSize );
+	return true;
 }
 
 bool TextFileR::IsUchardetAvailable()
 {
-	return QueryUchardetProbe();
+	return QueryUchardetApi().hDll != NULL;
+}
+
+bool TextFileR::GetUchardetVersionStr( wchar_t* buf, int bufSize )
+{
+	const UchardetApi& api = QueryUchardetApi();
+	if( !api.hDll || !api.hasVersion || bufSize <= 0 )
+		return false;
+	::lstrcpynW( buf, api.version, bufSize );
+	return true;
 }
 
 //=========================================================================
@@ -2111,82 +2211,22 @@ int TextFileR::chardetAutoDetection( const uchar* ptr, size_t siz )
 	int cs = 0;
 #ifndef NO_CHARDET
 
-#define CHARDET_RESULT_OK               ( 0)
-#define CHARDET_RESULT_NOMEMORY         (-1)
-#define CHARDET_RESULT_INVALID_DETECTOR (-2)
+	const ChardetApi& api = QueryChardetApi();
+	if( !api.hDll )
+		return 0;
 
-	typedef void* chardet_t;
-
-	// function calls
-	int (__cdecl*chardet_create)(chardet_t*);
-	void (__cdecl*chardet_destroy)(chardet_t);
-	int (__cdecl*chardet_handle_data)(chardet_t, const char*, unsigned int);
-	int (__cdecl*chardet_data_end)(chardet_t);
-	int (__cdecl*chardet_get_charset)(chardet_t, char*, unsigned int);
-	//int (__cdecl*chardet_reset)(chardet_t) = 0;
-	HINSTANCE hIL;
-
-	chardet_t pdet = NULL;
+	chardet_handle_t pdet = NULL;
 	char charset[128];
 
-	#if defined(_M_AMD64) || defined(_M_X64)
-	# define CHARDET_DLL "chardet.dll"
-	#elif defined(_M_IA64)
-	# define CHARDET_DLL "chardet_ia64.dll"
-	#elif defined(_M_ARM64)
-	# define CHARDET_DLL "chardet_arm64.dll"
-	#elif defined(_M_ARM)
-	# define CHARDET_DLL "chardet_arm.dll"
-	#elif defined(_M_ALPHA)
-	# define CHARDET_DLL "cdetaxp.dll"
-	#elif defined(_M_MRX000) || defined(_MIPS_)
-	# define CHARDET_DLL "cdetmips.dll"
-	#elif defined(_M_PPC)
-	# define CHARDET_DLL "cdetppc.dll"
-	#else
-	# define CHARDET_DLL "chardet_x86.dll"
-	#endif
-
-	// On Win32s we must check if CHARDET.DLL exist before trying LoadLibrary()
-	// Otherwise we would get a system  message
-	Path chardet_in_gp_dir = Path(Path::Exe) + TEXT(CHARDET_DLL);
-	if( !chardet_in_gp_dir.exist() )
-		return 0;
-
-	// Use LoadLibrary with full pathname (safer)
-	hIL = ::LoadLibrary( chardet_in_gp_dir.c_str() );
-	if( !hIL )
-	{
-		#ifdef MLANG_DEBUG
-		::MessageBox(NULL,TEXT("Cannot Load CHARDET.DLL"),NULL,0);
-		#endif
-		return 0;
-	}
-
-	chardet_create = (int(__cdecl*)(chardet_t*))::GetProcAddress(hIL, "chardet_create");
-	chardet_destroy = (void(__cdecl*)(chardet_t))::GetProcAddress(hIL, "chardet_destroy");
-	chardet_handle_data = (int(__cdecl*)(chardet_t, const char*, unsigned int))::GetProcAddress(hIL, "chardet_handle_data");
-	chardet_data_end = (int(__cdecl*)(chardet_t))::GetProcAddress(hIL, "chardet_data_end");
-	chardet_get_charset = (int(__cdecl*)(chardet_t, char*, unsigned int))::GetProcAddress(hIL, "chardet_get_charset");
-	//chardet_reset = (int(__cdecl*)(chardet_t))::GetProcAddress(hIL, "chardet_reset");
-
-	if( !(chardet_create && chardet_destroy && chardet_handle_data && chardet_data_end && chardet_get_charset) )
-	{
-		#ifdef MLANG_DEBUG
-		::MessageBox(NULL,TEXT("Unable to find all procs in chardet.dll"),NULL,0);
-		#endif
-		goto freeandexit;
-	}
-
-    if( 0 != chardet_create(&pdet) )
+    if( 0 != api.create(&pdet) )
 	{
 		#ifdef MLANG_DEBUG
 		::MessageBox(NULL,TEXT("chardet_create() failed!"),NULL,0);
 		#endif
-		goto freeandexit;
+		return 0;
 	}
 
-	if( 0 == chardet_handle_data(pdet, reinterpret_cast<const char *>(ptr), siz-1) )
+	if( 0 == api.handleData(pdet, reinterpret_cast<const char *>(ptr), siz-1) )
 	{
 		static const struct {
 			const char *str; int cs;
@@ -2223,8 +2263,8 @@ int TextFileR::chardetAutoDetection( const uchar* ptr, size_t siz )
 			{ "windows-1258",   Vietnamese }
 		};
 
-		chardet_data_end(pdet);
-		chardet_get_charset(pdet, charset, 128);
+		api.dataEnd(pdet);
+		api.getCharset(pdet, charset, 128);
 
 		for (size_t i =0; i < countof(cslist); i++)
 		{
@@ -2235,15 +2275,12 @@ int TextFileR::chardetAutoDetection( const uchar* ptr, size_t siz )
 				break;
 			}
 		}
-		chardet_destroy(pdet);
+		api.destroy(pdet);
 	}
 
 	// Spetial GB18030 check!
 	if( cs == GB18030 && !::IsValidCodePage(GB18030) )
 		cs = GBK;
-
-	freeandexit:
-	::FreeLibrary(hIL);
 
 	#ifdef MLANG_DEBUG
 	::MessageBox(NULL, SInt2Str(cs).c_str(), TEXT("CHARDET"),0);
@@ -2260,35 +2297,12 @@ int TextFileR::cedAutoDetection( const uchar* ptr, size_t siz )
 {
 	int cs = 0;
 #ifndef NO_CHARDET
-	typedef const char* (__cdecl *FnCedDetect)(const char*, int, int*);
-
-	#if defined(_M_AMD64) || defined(_M_X64)
-	# define CED_DLL TEXT("ced.dll")
-	#elif defined(_M_ARM64)
-	# define CED_DLL TEXT("ced_arm64.dll")
-	#elif defined(_M_ARM)
-	# define CED_DLL TEXT("ced_arm.dll")
-	#else
-	# define CED_DLL TEXT("ced_x86.dll")
-	#endif
-
-	Path cedPath = Path(Path::Exe) + CED_DLL;
-	if( !cedPath.exist() )
+	const CedApi& api = QueryCedApi();
+	if( !api.hDll )
 		return 0;
-
-	HINSTANCE hCed = ::LoadLibrary( cedPath.c_str() );
-	if( !hCed )
-		return 0;
-
-	FnCedDetect ced_detect = (FnCedDetect)::GetProcAddress(hCed, "ced_detect_encoding");
-	if( !ced_detect )
-	{
-		::FreeLibrary(hCed);
-		return 0;
-	}
 
 	int reliable = 0;
-	const char* encName = ced_detect(reinterpret_cast<const char*>(ptr), static_cast<int>(siz), &reliable);
+	const char* encName = api.detect(reinterpret_cast<const char*>(ptr), static_cast<int>(siz), &reliable);
 	if( encName )
 	{
 		// Map MIME name to ki::charset
@@ -2338,7 +2352,6 @@ int TextFileR::cedAutoDetection( const uchar* ptr, size_t siz )
 	if( cs == GB18030 && !::IsValidCodePage(GB18030) )
 		cs = GBK;
 
-	::FreeLibrary(hCed);
 #endif //NO_CHARDET
 	return cs;
 }
@@ -2349,44 +2362,18 @@ int TextFileR::uchardetAutoDetection( const uchar* ptr, size_t siz )
 {
 	int cs = 0;
 #ifndef NO_CHARDET
-	typedef struct uchardet* uchardet_t;
-	typedef uchardet_t  (__cdecl *FnNew)    (void);
-	typedef void        (__cdecl *FnDelete) (uchardet_t);
-	typedef int         (__cdecl *FnHandle) (uchardet_t, const char*, size_t);
-	typedef void        (__cdecl *FnEnd)    (uchardet_t);
-	typedef const char* (__cdecl *FnGetEnc) (uchardet_t, size_t);
-
-	Path dllPath = Path(Path::Exe) + GetUchardetDllName();
-	if( !dllPath.exist() )
+	const UchardetApi& api = QueryUchardetApi();
+	if( !api.hDll )
 		return 0;
 
-	HINSTANCE hDll = ::LoadLibrary( dllPath.c_str() );
-	if( !hDll )
-		return 0;
-
-	FnNew    ud_new    = (FnNew)   ::GetProcAddress(hDll, "uchardet_new");
-	FnDelete ud_delete = (FnDelete)::GetProcAddress(hDll, "uchardet_delete");
-	FnHandle ud_handle = (FnHandle)::GetProcAddress(hDll, "uchardet_handle_data");
-	FnEnd    ud_end    = (FnEnd)   ::GetProcAddress(hDll, "uchardet_data_end");
-	FnGetEnc ud_getenc = (FnGetEnc)::GetProcAddress(hDll, "uchardet_get_encoding");
-
-	if( !(ud_new && ud_delete && ud_handle && ud_end && ud_getenc) )
-	{
-		::FreeLibrary(hDll);
-		return 0;
-	}
-
-	uchardet_t ud = ud_new();
+	uchardet_handle_t ud = api.newDetector();
 	if( !ud )
-	{
-		::FreeLibrary(hDll);
 		return 0;
-	}
 
-	if( 0 == ud_handle(ud, reinterpret_cast<const char*>(ptr), siz) )
+	if( 0 == api.handleData(ud, reinterpret_cast<const char*>(ptr), siz) )
 	{
-		ud_end(ud);
-		const char* encName = ud_getenc(ud, 0);
+		api.dataEnd(ud);
+		const char* encName = api.getEncoding(ud, 0);
 
 		if( encName && encName[0] )
 		{
@@ -2442,12 +2429,11 @@ int TextFileR::uchardetAutoDetection( const uchar* ptr, size_t siz )
 		}
 	}
 
-	ud_delete(ud);
+	api.deleteDetector(ud);
 
 	if( cs == GB18030 && !::IsValidCodePage(GB18030) )
 		cs = GBK;
 
-	::FreeLibrary(hDll);
 #endif //NO_CHARDET
 	return cs;
 }
