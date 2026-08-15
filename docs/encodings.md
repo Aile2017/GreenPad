@@ -176,7 +176,7 @@ Negative values denote variants with BOM or ISO-2022/EUC wrappers as noted below
 
 | Encoding | Code | Notes |
 |---|---|---|
-| Auto-detect | `0` | SJIS / EUC-JP / ISO-2022-JP / EUC-KR / ISO-2022-CN / UTF-5/8/16/32. Uses `chardet.dll` if present, falls back to `ced.dll`, then MLang |
+| Auto-detect | `0` | SJIS / EUC-JP / ISO-2022-JP / EUC-KR / ISO-2022-CN / UTF-5/8/16/32. Uses `chardet.dll` if present, falls back to `uchardet.dll`, then `ced.dll`, then MLang |
 | ASCII | `20127` | Plain ASCII (CP20127) |
 | Baltic (Windows-1257) | `1257` | |
 | Baltic (CP775, MS-DOS) | `775` | |

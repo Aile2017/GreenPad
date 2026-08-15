@@ -2,7 +2,8 @@ name: Package Release
 
 # Creates a tagged release with a ZIP of the full release/ folder.
 # Tag format: GreenPad_[version]_[yyyymmdd]
-# ZIP contents: GreenPad.exe (=clang64), pcre2-16.dll, type/, lang/, GreenPad.hlp, README.md, etc.
+# ZIP contents: GreenPad.exe (=clang64), pcre2-16.dll, chardet.dll, uchardet.dll,
+# ced.dll, type/, lang/, GreenPad.hlp, README.md, etc.
 
 on:
   workflow_dispatch:
@@ -99,7 +100,8 @@ jobs:
       - name: Assemble release folder
         shell: pwsh
         run: |
-          # GreenPad.exe from clang64 build; pcre2-16.dll, chardet.dll and ced.dll come from the repo
+          # GreenPad.exe from clang64 build; pcre2-16.dll, chardet.dll, uchardet.dll
+          # and ced.dll come from the repo
           Copy-Item built\* release\
           # README.md and docs/ are not kept in release/ in the repo; copy them here
           Copy-Item README.md release\README.md
@@ -132,8 +134,9 @@ jobs:
             |------|-------------|
             | `GreenPad.exe`   | Executable (LLVM Clang / clang64) |
             | `pcre2-16.dll`   | PCRE2 regex engine (optional) |
-            | `chardet.dll`    | Charset auto-detection (optional, takes priority over ced.dll) |
-            | `ced.dll`        | Charset auto-detection fallback (optional, used when chardet.dll is absent) |
+            | `chardet.dll`    | Charset auto-detection (optional, top priority) |
+            | `uchardet.dll`   | Charset auto-detection fallback (optional, used when chardet.dll is absent) |
+            | `ced.dll`        | Charset auto-detection fallback (optional, used when neither chardet.dll nor uchardet.dll is present) |
             | `type/`          | Syntax highlight / layout files |
             | `lang/`          | UI language files |
             | `GreenPad.hlp`   | Help file |

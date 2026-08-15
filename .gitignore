@@ -3,6 +3,8 @@ obj/
 release/*.exe
 release/*.dll
 !release/chardet.dll
+!release/uchardet.dll
+!release/ced.dll
 release/*.ini
 release/*.res
 release/*.pch
