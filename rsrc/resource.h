@@ -197,13 +197,14 @@
 #define IDC_DELKWD                      1040
 #define IDC_ADDLAY                      1041
 #define IDC_DELLAY                      1042
+#define IDC_ABOUTLIBS                   1045
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        113
 #define _APS_NEXT_COMMAND_VALUE         40040
-#define _APS_NEXT_CONTROL_VALUE         1034
+#define _APS_NEXT_CONTROL_VALUE         1046
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

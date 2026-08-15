@@ -4,6 +4,7 @@
 #include "GpMain.h"
 #include "LangManager.h"
 #include "GpProc.h"
+#include "PcreSearch.h"
 using namespace ki;
 using namespace editwing;
 
@@ -709,6 +710,21 @@ void GreenPadWnd::on_openfile()
 		Open( fn, cs, true );
 }
 
+// Appends "<name> <version>" (or just "<name>" if the version is unknown)
+// to out, one per line. Caller is responsible for only invoking this for a
+// library that is actually present, so we never touch a DLL just to skip it.
+static void AppendLibVersionLine( String& out, const TCHAR* name, bool hasVersion, const wchar_t* version )
+{
+	if( out.len() )
+		out += TEXT("\r\n");
+	out += name;
+	if( hasVersion )
+	{
+		out += TEXT(" ");
+		out += version;
+	}
+}
+
 void GreenPadWnd::on_helpabout()
 {
 	// Crazy double macro so that an int define
@@ -808,6 +824,26 @@ void GreenPadWnd::on_helpabout()
 			s += SInt2Str( osbuild ).c_str();
 
 			SetItemText(IDC_ABOUTSTR, s.c_str());
+
+			// Optional libraries (charset detectors, regex engine).
+			// Charset detection only ever uses one DLL at runtime, in priority
+			// order chardet > uchardet > ced (see TextFileR::AutoDetection());
+			// mirror that same short-circuit here so a lower-priority detector
+			// DLL is never LoadLibrary'd just to populate this dialog.
+			String libs;
+			wchar_t ver[64];
+			if( TextFileR::IsChardetAvailable() )
+				AppendLibVersionLine( libs, TEXT("chardet"), TextFileR::GetChardetVersionStr(ver, countof(ver)), ver );
+			else if( TextFileR::IsUchardetAvailable() )
+				AppendLibVersionLine( libs, TEXT("uchardet"), TextFileR::GetUchardetVersionStr(ver, countof(ver)), ver );
+			else if( TextFileR::IsCedAvailable() )
+				AppendLibVersionLine( libs, TEXT("ced"), TextFileR::GetCedVersionStr(ver, countof(ver)), ver );
+
+			if( PcreSearch::IsAvailable() )
+				AppendLibVersionLine( libs, TEXT("PCRE2"), PcreSearch::GetVersionStr(ver, countof(ver)), ver );
+
+			SetItemText(IDC_ABOUTLIBS, libs.c_str());
+
 			SetItemText(IDC_ABOUTURL, RzsString(IDS_PROJECT_URL).c_str());
 			SetCenter(hwnd(), parent_);
 		}
