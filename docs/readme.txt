@@ -662,6 +662,37 @@ TODO:
     SB( http://homepage3.nifty.com/scriba/ ). Thanks.
 
 
+<<Third-Party Libraries>>
+
+  GreenPad.exe itself is distributed under the NYSL licence (see
+  below). It optionally loads the following DLLs at runtime when they
+  are placed in the same directory as GreenPad.exe; none of them are
+  required to run GreenPad, and each is licensed separately from
+  GreenPad itself:
+
+  * pcre2-16.dll - Perl-Compatible Regular Expressions (PCRE2), used
+    for regular expression search & replace.
+    Licence: BSD 3-Clause (Copyright (c) 2016-2024 University of
+    Cambridge)
+
+  * chardet.dll - charset auto-detection (highest priority detector
+    when present).
+    Licence: tri-licensed under MPL 1.1 / GPL 2.0+ / LGPL 2.1+
+
+  * uchardet.dll - charset auto-detection, used when chardet.dll is
+    absent. A C++ port of Mozilla's universalchardet.
+    Licence: tri-licensed under MPL 1.1 / GPL 2.0+ / LGPL 2.0+
+
+  * ced.dll (Google Compact Encoding Detection) - charset
+    auto-detection fallback, used when neither chardet.dll nor
+    uchardet.dll is present.
+    Licence: Apache License 2.0
+
+  Detector priority is chardet.dll > uchardet.dll > ced.dll. The
+  active detector is shown in the encoding drop-down as
+  AutoDetect(chardet), AutoDetect(uchardet) or AutoDetect(ced).
+
+
 <<License>>
 
   NYSL Version 0.9982  http://www.kmonos.net/nysl/

@@ -31,12 +31,12 @@ This fork targets 64-bit Windows only and drops all legacy compatibility code, r
 
 Place these DLLs in the same directory as `GreenPad.exe` to enable additional features:
 
-| DLL | Purpose |
-|-----|---------|
-| `chardet.dll` | Charset auto-detection (libchardet-based, MPL/GPL/LGPL) |
-| `uchardet.dll` | Charset auto-detection fallback when `chardet.dll` is absent (MPL 1.1) |
-| `ced.dll` | Charset auto-detection fallback when neither `chardet.dll` nor `uchardet.dll` is present (Google CED, Apache 2.0) |
-| `pcre2-16.dll` | PCRE2 regex engine; falls back to built-in NFA if absent |
+| DLL | Purpose | License |
+|-----|---------|---------|
+| `chardet.dll` | Charset auto-detection (libchardet-based) | MPL 1.1 / GPL 2.0+ / LGPL 2.1+ (tri-license) |
+| `uchardet.dll` | Charset auto-detection fallback when `chardet.dll` is absent | MPL 1.1 / GPL 2.0+ / LGPL 2.0+ (tri-license) |
+| `ced.dll` | Charset auto-detection fallback when neither `chardet.dll` nor `uchardet.dll` is present (Google CED) | Apache License 2.0 |
+| `pcre2-16.dll` | PCRE2 regex engine; falls back to built-in NFA if absent | BSD 3-Clause (Copyright (c) 2016-2024 University of Cambridge) |
 
 When multiple charset detector DLLs are present, `chardet.dll` takes priority, then `uchardet.dll`, then `ced.dll`. The active detector is shown in parentheses next to "AutoDetect" in the encoding drop-down (e.g. `AutoDetect(chardet)`), and its version (when available) is shown in Help → About.
 
