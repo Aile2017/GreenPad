@@ -1458,6 +1458,14 @@ void ConfigManager::ReadAllDocTypes( const TCHAR *ininame )
 
 	for( ; p < end && *p; )
 	{
+		// Only numbered entries (1=..., 2=...) are document types
+		if( !( TEXT('0') <= *p && *p <= TEXT('9') ) )
+		{
+			while( p<end && *p ) p++; // go to end of string
+			p++; // skip NUL
+			continue;
+		}
+
 		while( *p != TEXT('=') && p < end ) p++;
 		if( *p != TEXT('=') )
 			break;
