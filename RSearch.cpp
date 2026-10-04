@@ -87,7 +87,29 @@ RegToken RegLexer::GetToken()
 	case L'+': return R_Plus;
 	case L'?': return R_Quest;
 	case L'\\': if( x==end_ ) return R_End; switch( *x++ ) {
+		case L'x': case L'X': // \xXX  : Latin-1 code point
+		case L'u':            // \uXXXX: UCS-2 code point
+		{
+			const int maxDigits = (*(x-1)==L'u' ? 4 : 2);
+			int ndigits = 0;
+			wchar_t v = 0;
+			for( ; ndigits<maxDigits && x<end_; ++ndigits, ++x )
+			{
+				const wchar_t ch = *x;
+				if(      L'0'<=ch && ch<=L'9' ) v = 16*v + (ch-L'0');
+				else if( L'A'<=ch && ch<=L'F' ) v = 16*v + (ch-L'A'+10);
+				else if( L'a'<=ch && ch<=L'f' ) v = 16*v + (ch-L'a'+10);
+				else break;
+			}
+			chr_ = ndigits ? v : *(x-1); // no hex digit: literal x/u
+			return R_Char;
+		}
 		case L't': chr_=L'\t';            return R_Char;
+		case L'n': chr_=L'\n';            return R_Char;
+		case L'r': chr_=L'\r';            return R_Char;
+		case L'f': chr_=L'\f';            return R_Char;
+		case L'v': chr_=L'\v';            return R_Char;
+		case L'a': chr_=L'\a';            return R_Char;
 		case L'w': sub_=L"[0-9a-zA-Z_]";  return GetToken();
 		case L'W': sub_=L"[^0-9a-zA-Z_]"; return GetToken();
 		case L'd': sub_=L"[0-9]";         return GetToken();
@@ -118,7 +140,10 @@ enum RegTypeEnum
 	N_Closure,  // *          (left)
 	N_Closure1, // +          (left)
 	N_01,       // ?          (left)
-	N_Empty     // empty (--)
+	N_ClosureNg,  // *? non-greedy (left)
+	N_Closure1Ng, // +? non-greedy (left)
+	N_01Ng,       // ?? non-greedy (left)
+	N_Empty    // empty (--)
 };
 typedef byte RegType;
 
@@ -178,6 +203,7 @@ public:
 	~RegParser() { delete root_; }
 	RegNode* root() const { return root_; }
 	bool err() { return err_; }
+	bool hasLazy() const { return hasLazy_; }
 	bool isHeadType() const { return isHeadType_; }
 	bool isTailType() const { return isTailType_; }
 
@@ -194,6 +220,7 @@ private:
 
 private:
 	bool    err_;
+	bool    hasLazy_;
 	bool    isHeadType_;
 	bool    isTailType_;
 	RegNode *root_;
@@ -214,6 +241,7 @@ namespace { static int tmp; }
 
 inline RegParser::RegParser( const unicode* pat )
 	: err_       ( false )
+	, hasLazy_   ( false )
 	, isHeadType_( *pat==L'^' )
 	, isTailType_( (tmp=my_lstrlenW(pat), tmp && pat[tmp-1]==L'$') )
 	, lex_(
@@ -346,14 +374,27 @@ RegNode* RegParser::factor()
 //	            PRIMARY '*'
 //			    PRIMARY '+'
 //			    PRIMARY '?'
+//	            PRIMARY '*?' / '+?' / '??'  (non-greedy)
 
 	RegNode* node = primary();
+	RegType greedy, lazy;
 	switch( nextToken_ )
 	{
-	case R_Star: node=make_node(N_Closure,node,NULL); eat_token();break;
-	case R_Plus: node=make_node(N_Closure1,node,NULL);eat_token();break;
-	case R_Quest:node=make_node(N_01,node,NULL );     eat_token();break;
-	default: break;
+	case R_Star:  greedy=N_Closure;  lazy=N_ClosureNg;  break;
+	case R_Plus:  greedy=N_Closure1; lazy=N_Closure1Ng; break;
+	case R_Quest: greedy=N_01;       lazy=N_01Ng;       break;
+	default: return node;
+	}
+	eat_token();
+	if( nextToken_ == R_Quest )
+	{
+		hasLazy_ = true;
+		node = make_node( lazy, node, NULL );
+		eat_token();
+	}
+	else
+	{
+		node = make_node( greedy, node, NULL );
 	}
 	return node;
 }
@@ -464,7 +505,7 @@ public:
 	RegNFA( const wchar_t* pat );
 	~RegNFA();
 
-	int match( const wchar_t* str, int len, bool caseS );
+	int match( const wchar_t* str, int len, bool caseS, bool needEnd );
 	bool isHeadType() const { return parser.isHeadType(); }
 	bool isTailType() const { return parser.isTailType(); }
 
@@ -561,25 +602,49 @@ void RegNFA::gen_nfa( int entry, RegNode* t, int exit )
 		//    |                left                ^
 		//    >------->------------------->------>-|
 		//                      e
-	case N_Closure1: {
+	case N_Closure1:
 		//                       e
 		//         e          <------        e
 		//  entry ---> before ------> after ---> exit
 		//                     left
+	case N_ClosureNg:
+	case N_Closure1Ng: {
+		// The first transition added from a state is tried first.
+		// Greedy prefers looping/consuming, non-greedy prefers exiting.
+		const bool lazy = (t->type==N_ClosureNg || t->type==N_Closure1Ng);
+		const bool star = (t->type==N_Closure   || t->type==N_ClosureNg);
 		int before = gen_state();
 		int after = gen_state();
-		add_e_transition( entry, before );
-		add_e_transition( after, exit );
-		add_e_transition( after, before );
-		gen_nfa( before, t->left, after );
-		if( t->type != N_Closure1 )
-			add_e_transition( entry, exit );
+		if( !lazy )
+		{
+			add_e_transition( entry, before );
+			add_e_transition( after, before );
+			add_e_transition( after, exit );
+			gen_nfa( before, t->left, after );
+			if( star )
+				add_e_transition( entry, exit );
+		}
+		else
+		{
+			if( star )
+				add_e_transition( entry, exit );
+			add_e_transition( after, exit );
+			add_e_transition( after, before );
+			gen_nfa( before, t->left, after );
+			add_e_transition( entry, before );
+		}
 		} break;
 	case N_01:
 		//           e
 		//        ------>
 		//  entry ------> exit
 		//         left
+		// greedy: prefer consuming
+		gen_nfa( entry, t->left, exit );
+		add_e_transition( entry, exit );
+		break;
+	case N_01Ng:
+		// non-greedy: prefer skipping
 		add_e_transition( entry, exit );
 		gen_nfa( entry, t->left, exit );
 		break;
@@ -619,13 +684,38 @@ RegNFA::st_ele RegNFA::pop(storage<st_ele>& stack)
 	return se;
 }
 
-int RegNFA::match( const wchar_t* str, int len, bool caseS )
+// needEnd: only a match that reaches the end of str is acceptable
+// (pattern anchored with '$', or a full-string match is required).
+int RegNFA::match( const wchar_t* str, int len, bool caseS, bool needEnd )
 {
 	if( parser.err() )
 		return -1; // I can't match it because it's in an error state.
 	//if( st.size() <= 31 )
 	//	return dfa_match(str,len,caseS); // Maybe use DFA if the number of states is small
 
+	if( parser.hasLazy() )
+	{
+		// Non-greedy pattern: transitions are explored in preference order,
+		// so the first acceptable match found is the right one.
+		storage<st_ele> stack(16);
+		push(stack, start, 0);
+		while( stack.size() > 0 )
+		{
+			st_ele se = pop(stack);
+			if( se.st == final && (!needEnd || se.ps == len) )
+				return se.ps;
+			for( RegTrans* tr=st[se.st]; tr!=NULL; tr=tr->next.get() )
+			{
+				if( tr->type == RegTrans::Epsilon )
+					push(stack, tr->to, se.ps);
+				else if( se.ps<len && tr->match( str[se.ps], caseS ) )
+					push(stack, tr->to, se.ps+1);
+			}
+		}
+		return -1;
+	}
+
+	// Greedy only: the longest match
 	int matchpos = -1;
 
 	storage<st_ele> stack(16);
@@ -706,7 +796,7 @@ bool reg_match( const wchar_t* pat, const wchar_t* str, bool caseS )
 	int len = my_lstrlenW(str);
 
 	RegNFA re( pat );
-	return len == re.match( str, len, caseS );
+	return len == re.match( str, len, caseS, true );
 }
 
 
@@ -741,7 +831,7 @@ bool RSearch::Search(
 
 	for( ; s!=e; s+=d )
 	{
-		const int L = re_->match( str+s, len-s, caseS_ );
+		const int L = re_->match( str+s, len-s, caseS_, re_->isTailType() );
 		if( L >= 0 )
 		{
 			if( re_->isTailType() && L!=static_cast<int>(len-s) )

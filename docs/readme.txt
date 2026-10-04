@@ -560,12 +560,15 @@ TODO:
 
   * Which regular expressions can be used?
 
-    Here is the complete list of the regular expressions available in GreenPad:
+    Here is the complete list of the regular expressions supported by the
+    built-in engine (used when pcre2-16.dll is absent, and always for the
+    file-name patterns of document types):
       =========================================================
       quanitification:
         ?    : 0 or 1
         *    : 0 or more
         +    : 1 or more
+        ??, *?, +? : shortest (non-greedy) versions of the above
 
       alternation:
         a|b
@@ -574,6 +577,9 @@ TODO:
 
       special escape characters:
         \t   : tab
+        \n, \r, \f, \v, \a : LF, CR, form feed, vertical tab, bell
+        \xXX   : character with hex code XX (e.g. \x41 = 'A')
+        \uXXXX : character with hex code XXXX (e.g. \u3042)
         \\   : '\' itself
         \[   : '['
 
@@ -596,7 +602,9 @@ TODO:
       * GreenPad does searching line by line, thus
         you cannot search "aaa\nbbb" or something like it.
       * No forward/backward references.
-      * No shortest matches (every * is greedy)
+      * The list above is for the built-in engine. When pcre2-16.dll
+        is present, the full PCRE2 syntax is available instead, and
+        \0-\9 in the replacement refer to the match and capture groups.
 
   * External Grep Program ?
 
