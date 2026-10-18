@@ -569,8 +569,8 @@ void Cursor::Del( bool wide )
 		return;
 	// If selected, delete cur_ ~ sel_
 	// Otherwise, remove cur_ ~ rightOf(cur_)
-	// Ctrl+Del == Right + delete
-	if( wide )
+	// Ctrl+Del == Right + delete (only when nothing is selected)
+	if( wide && cur_==sel_ )
 		Right( true, true );
 	DPos dp = (cur_==sel_ ? doc_.rightOf(cur_) : (DPos)sel_ );
 	if( cur_ != dp )
@@ -1037,9 +1037,6 @@ void Cursor::Right( bool wide, bool select )
 void Cursor::GotoMatchingBrace( bool select )
 {
 	VPos np;
-	if( cur_!=sel_ && !select )
-		np = Max( cur_, sel_ ), np.rx = np.vx;
-
 	view_.ConvDPosToVPos( doc_.findMatchingBrace( cur_ ), &np, &cur_ );
 	MoveTo( np, select );
 }
